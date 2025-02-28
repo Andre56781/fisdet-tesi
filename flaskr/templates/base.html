@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Titolo Pagina{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">FISDeT</div>
+            <nav>
+                <ul>
+                    <li><a href="#">INPUT VARIABLES</a></li>
+                    <li><a href="#">...</a></li>
+                </ul>
+            </nav>
+        </aside>
+        
+        <main class="content">
+            <div class="breadcrumb">Homepage > {% block breadcrumb %}Sezione{% endblock %}</div>
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <footer>
+        <p>Footer</p>
+    </footer>
+</body>
+</html>
