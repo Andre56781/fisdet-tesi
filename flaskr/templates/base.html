@@ -4,30 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Titolo Pagina{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='/css/style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <div class="logo">FISDeT</div>
-            <nav>
-                <ul>
-                    <li><a href="#">INPUT VARIABLES</a></li>
-                    <li><a href="#">...</a></li>
-                </ul>
-            </nav>
-        </aside>
-        
-        <main class="content">
-            <div class="breadcrumb">Homepage > {% block breadcrumb %}Sezione{% endblock %}</div>
-            <div class="page-content">
-                {% block content %}{% endblock %}
-            </div>
-        </main>
-    </div>
-    
-    <footer>
-        <p>Footer</p>
+
+    <!-- Sidebar -->
+    <aside class="sidemenu">
+        <div class="logo-section">
+          <a href="{{ url_for('index.index') }}"><img src="{{ url_for('static', filename='images/LogoInt.png') }}" alt="Logo"></a>
+        </div>
+        <div class="divider"></div>
+        <nav class="nav-menu">
+          <!-- Bottoni della sidebar -->
+          <a href="/input" class="nav-button">Input</a>
+          <a href="/output" class="nav-button">Output</a>
+          <a href="/rules" class="nav-button">Rules</a>
+          <a href="/test" class="nav-button">Test</a>
+        </nav>
+      </aside>
+    <!-- End Of Sidebar --> 
+
+
+
+    <!-- Footer -->
+    <div class="footer-divider"></div>
+    <footer class="footer">
+        © 2025 FISDeT
     </footer>
+    <!-- End Of Footer -->    
+        
 </body>
 </html>

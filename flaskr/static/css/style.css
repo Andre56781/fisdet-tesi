@@ -1,91 +1,88 @@
-body, html {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
+/* Azzeramento dei margini e padding di default */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.container {
-    display: flex;
-    height: 100vh;
+body {
+  font-family: Arial, sans-serif;
 }
 
-.sidebar {
-    width: 200px;
-    background: #007BFF;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
+/* Sidemenu laterale */
+.sidemenu {
+  position: fixed;         
+  width: 220px;            
+  height: 100vh;           
+  background-color: #52b2cf;  
+  padding: 1rem;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.logo {
-    background: white;
-    color: black;
-    text-align: center;
-    padding: 10px;
-    font-weight: bold;
-    margin-bottom: 10px;
+/* Sezione logo */
+.logo-section {
+  text-align: center;
+  width: 100%;
+  margin-bottom: 1rem;
 }
 
-nav ul {
-    list-style: none;
-    padding: 0;
+.logo-section img {
+  max-width: 70px;
+  height: auto;
 }
 
-nav ul li {
-    margin: 10px 0;
+/* Divider con gradiente */
+.divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(to left, #3a8ba3, #7fd9ff);
 }
 
-nav ul li a {
-    display: flex;
-    align-items: center;
-    color: white;
-    text-decoration: none;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 5px;
+/* Menu di navigazione */
+.nav-menu {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
 }
 
-nav ul li a:hover {
-    background: rgba(255, 255, 255, 0.4);
+/* Bottoni della navigazione */
+.nav-menu a {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  text-align: center;
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid;
+  border-image: linear-gradient(to left, #3a8ba3, #7fd9ff) 1;
+  transition: background 0.3s;
 }
 
-/* Indicatori colorati */
-.dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 8px;
+/* Effetto hover */
+.nav-menu a:hover {
+  background: linear-gradient(to left, #3a8ba3, #7fd9ff);
+  color: #fff;
 }
 
-.yellow { background: yellow; }
-.red { background: red; }
-.green { background: green; }
-
-.content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.breadcrumb {
-    background: #f0f0f0;
-    padding: 10px;
-}
-
-.main-content {
-    flex-grow: 1;
-    background: #d3d3d3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-}
-
+/* Footer fisso in basso */
 .footer {
-    background: #c0c0c0;
-    text-align: center;
-    padding: 10px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  color: white;
+  background-color: #52b2cf;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Divider sopra il footer */
+.footer-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(to left, #3a8ba3, #7fd9ff);
 }
