@@ -4,6 +4,7 @@ from flaskr.file_handler import save_data, load_data
 from flaskr.dash_application import create_dash_application
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 def create_app(test_config=None):
@@ -42,9 +43,5 @@ def create_app(test_config=None):
         """API per caricare i dati utente."""
         data = load_data()
         return jsonify(data), 200
-    
-    @app.route("/assets/<path:filename>")
-    def serve_static(filename):
-        return send_from_directory(app.config['STATIC_FOLDER'], filename)
 
     return app

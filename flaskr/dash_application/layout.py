@@ -3,6 +3,7 @@ from dash import html, dcc
 
 def serve_layout():
     return html.Div([
+        dcc.Location(id="url", refresh=False),
         # Sidebar
         html.Div([
             html.Img(src=dash.get_asset_url('images/LogoInt.png'), style={"width": "100px"}),
