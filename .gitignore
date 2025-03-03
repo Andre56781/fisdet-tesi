@@ -1,6 +1,38 @@
-/.venv/
-instance/
-*.pyc
-__pycache__/
+# Ambiente virtuale
+.venv/
+venv/
+env/
+
+# File di ambiente
 .env
+.env.local
+.env.development
+.env.production
+
+# Database e file utente
+instance/
 *.sqlite
+*.db
+*.sql
+*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info
+*.log
+*.pot
+*.pyc
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dash cache
+.dash/
+
+# File di sistema
+.DS_Store
+Thumbs.db
