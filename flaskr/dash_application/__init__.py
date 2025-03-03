@@ -7,14 +7,16 @@ from .layout import serve_layout
 from .pages import home, input, output, rules
 
 def create_dash_application(flask_app):
-
-    assets_path = os.path.join(os.path.dirname(__file__), "..", "assets")
-
+    # Percorso assoluto indipendente dal sistema operativo
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    assets_path = os.path.join(base_dir, 'flaskr', 'assets')
+    
     dash_app = dash.Dash(
         server=flask_app,
         name="Dashboard",
         url_base_pathname="/",
         assets_folder=assets_path,
+        assets_url_path="/assets"  # URL pubblico per gli assets
     )
 
     dash_app.layout = serve_layout()
