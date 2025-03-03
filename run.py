@@ -1,8 +1,14 @@
-from flaskr import create_app
+from flask import Flask
+from flaskr.dash_application import create_dash_application
 
 # Crea l'app Flask
-app = create_app()
+print("Creazione dell'app Flask...")
+flask_app = Flask(__name__)
 
-if __name__ == "__main__":
-    # Avvia l'app Flask in modalità debug
-    app.run(debug=True)
+# Crea l'app Dash, collegata all'app Flask
+print("Creazione dell'app Dash...")
+dash_app = create_dash_application(flask_app)
+
+if __name__ == '__main__':
+    print("Avvio del server Flask...")
+    flask_app.run(debug=True)
