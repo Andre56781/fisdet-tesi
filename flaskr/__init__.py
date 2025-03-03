@@ -1,39 +1,42 @@
 import os
-
-from flask import Flask
-from flaskr.index import index_bp
-from flaskr.input import input_bp
-from flaskr.output import output_bp
-from flaskr.rules import rules_bp
-
+from flask import Flask, jsonify, request
+from flaskr.file_handler import save_data, load_data
+from flaskr.dash_application import create_dash_application
 
 def create_app(test_config=None):
-    # create and configure the app
+    # Crea l'app Flask
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
 
+    # Inizializza Dash come sottodominio di Flask
+    create_dash_application(app)
+
     if test_config is None:
-        # load the instance config, if it exists, when not testing
         app.config.from_pyfile('config.py', silent=True)
     else:
-        # load the test config if passed in
         app.config.from_mapping(test_config)
 
-    # ensure the instance folder exists
+    # Assicura che la cartella 'instance' esista
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
 
-    #Blueprints
-    app.register_blueprint(index_bp)
-    app.register_blueprint(input_bp)
-    app.register_blueprint(output_bp)
-    app.register_blueprint(rules_bp)
-    
+    # API per il salvataggio e il recupero dei dati utente
+    @app.route("/api/save", methods=["POST"])
+    def save():
+        """API per salvare i dati utente."""
+        data = request.json
+        save_data(data)
+        return jsonify({"message": "Dati salvati con successo"}), 200
 
+    @app.route("/api/load", methods=["GET"])
+    def load():
+        """API per caricare i dati utente."""
+        data = load_data()
+        return jsonify(data), 200
 
     return app
