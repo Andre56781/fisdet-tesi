@@ -1,7 +1,10 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flaskr.file_handler import save_data, load_data
 from flaskr.dash_application import create_dash_application
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def create_app(test_config=None):
     # Crea l'app Flask
@@ -9,6 +12,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
+        STATIC_FOLDER=os.path.join(app.root_path, 'static')
     )
 
     # Inizializza Dash come sottodominio di Flask
@@ -38,5 +42,9 @@ def create_app(test_config=None):
         """API per caricare i dati utente."""
         data = load_data()
         return jsonify(data), 200
+    
+    @app.route("/assets/<path:filename>")
+    def serve_static(filename):
+        return send_from_directory(app.config['STATIC_FOLDER'], filename)
 
     return app
