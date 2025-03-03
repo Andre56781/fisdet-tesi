@@ -12,7 +12,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
-        STATIC_FOLDER=os.path.join(app.root_path, 'static')
+        # STATIC_FOLDER=os.path.join(app.root_path, 'assets')
     )
 
     # Inizializza Dash come sottodominio di Flask
