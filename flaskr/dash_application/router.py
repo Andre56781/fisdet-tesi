@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Callable
 from dash import Output, Input, html, dcc
-from .pages import home, input, output, rules
+from .pages import home, input_page, output, rules
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +41,7 @@ def register_routing(dash_app: Any) -> None:
     # Mappa delle route con controllo di tipo
     routes: Dict[str, Callable[[], html.Div]] = {
         "/": home.layout,
-        "/input": input.layout,
+        "/input": input_page.layout,
         "/output": output.layout,
         "/rules": rules.layout
     }

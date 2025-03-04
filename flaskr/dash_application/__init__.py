@@ -1,7 +1,8 @@
 import os
 import dash
+import dash_bootstrap_components as dbc
 from .layout import serve_layout
-from .router import register_routing  # Import corretto
+from .router import register_routing
 
 def create_dash_application(flask_app):
     # Configurazione percorsi
@@ -14,10 +15,16 @@ def create_dash_application(flask_app):
         url_base_pathname="/",
         assets_folder=assets_path,
         assets_url_path="/assets",
-        serve_locally=True
+        serve_locally=True,
+        external_stylesheets=[dbc.themes.BOOTSTRAP],
     )
 
     dash_app.layout = serve_layout()
-    register_routing(dash_app)  # Registra il routing
+
+    register_routing(dash_app)
+    
+    # Registra i callback
+    from . import callbacks
+    callbacks.register_callbacks(dash_app)
 
     return dash_app

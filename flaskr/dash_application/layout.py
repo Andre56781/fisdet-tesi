@@ -4,12 +4,17 @@ from dash import html, dcc
 def serve_layout():
     return html.Div([
         dcc.Location(id="url", refresh=False),
+        
         # Sidebar
         html.Div([
-            html.Img(src=dash.get_asset_url('images/LogoInt.png'), style={"width": "100px"}),
-            html.H2("Menu"),
+            html.A(
+                html.Img(
+                    src=dash.get_asset_url('images/LogoInt.png'),
+                    style={"width": "100px", "cursor": "pointer"}
+                ),
+                href="/"
+            ),
             html.Nav([
-                dcc.Link("Home", href="/"),
                 dcc.Link("Input", href="/input"),
                 dcc.Link("Output", href="/output"),
                 dcc.Link("Rules", href="/rules"),
@@ -22,3 +27,4 @@ def serve_layout():
         # Footer
         html.Footer("© 2025 FISDeT", className="footer"),
     ])
+
