@@ -36,3 +36,4 @@ __pycache__/
 # File di sistema
 .DS_Store
 Thumbs.db
+/flaskr/__pycache__
