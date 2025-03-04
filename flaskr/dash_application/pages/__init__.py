@@ -1,1 +1,1 @@
-__all__ = ["home", "input", "output", "rules"]
+__all__ = ["home", "input_page", "output", "rules"]

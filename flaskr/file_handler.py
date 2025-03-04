@@ -8,7 +8,8 @@ BASE_DIR = "instance/user_files"
 def get_session_id():
     """Crea un identificativo di sessione basato sul browser senza autenticazione."""
     user_info = request.headers.get('User-Agent', '') + request.remote_addr
-    session_id = hashlib.md5(user_info.encode()).hexdigest()
+    user_id = request.cookies.get('user_id', 'default_user')  # Ad esempio, usando un cookie per identificare univocamente l'utente
+    session_id = hashlib.md5((user_info + user_id).encode()).hexdigest()
     return session_id
 
 def get_session_file():
@@ -20,13 +21,35 @@ def save_data(data):
     """Salva i dati dell'utente in un file JSON."""
     os.makedirs(BASE_DIR, exist_ok=True)  # Crea la cartella se non esiste
     file_path = get_session_file()
-    with open(file_path, "w") as f:
-        json.dump(data, f)
+    try:
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Errore durante il salvataggio dei dati: {e}")
+        raise
 
 def load_data():
     """Carica i dati dell'utente dalla sessione, se esistono."""
     file_path = get_session_file()
-    if os.path.exists(file_path):
-        with open(file_path, "r") as f:
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Errore durante il caricamento dei dati: {e}")
+    return {}  # Ritorna un dizionario vuoto in caso di errore
+
+#Prova
+file_paths = 'terms_data.json'
+
+def load_terms():
+    """Carica i dati dal file JSON, se esiste."""
+    if os.path.exists(file_paths):
+        with open(file_paths, 'r') as f:
             return json.load(f)
-    return {}  # Ritorna un dizionario vuoto se il file non esiste
+    return {}
+
+def save_terms(data):
+    """Salva i dati nel file JSON."""
+    with open(file_paths, 'w') as f:
+        json.dump(data, f, indent=4)

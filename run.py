@@ -11,4 +11,4 @@ dash_app = create_dash_application(flask_app)
 
 if __name__ == '__main__':
     print("Avvio del server Flask...")
-    flask_app.run(debug=True)
+    flask_app.run(debug=True, port=5000)
