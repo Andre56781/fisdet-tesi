@@ -26,7 +26,7 @@ def register_callbacks(dash_app):
             if num_vars < 1:
                 raise ValueError
 
-            file_handler.save_terms({"num_variables": num_vars})
+            file_handler.save_data({"num_variables": num_vars})
             return [False, {"display": "block", "position": "relative"}, num_vars]
         except:
             return [True, {"display": "none"}, None]
@@ -222,6 +222,12 @@ def register_callbacks(dash_app):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
 
     def create_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
+        try:
+            domain_min = float(domain_min)
+            domain_max = float(domain_max)
+        except (ValueError, TypeError):
+            return dash.no_update, "Errore: I valori del dominio devono essere numeri.", dash.no_update
+
         if domain_min > domain_max:
             return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo.", dash.no_update
 
@@ -235,18 +241,13 @@ def register_callbacks(dash_app):
 
         # Creazione del payload nel formato richiesto
         payload = {
-            variable_name: {
-                "domain": [domain_min, domain_max],
-                "terms": [
-                    {
-                        "term_name": term_name,
-                        "function_type": function_type,
-                        "params": params
-                    }
-                ]
-            }
+            'term_name': term_name,
+            'variable_name': variable_name,
+            'domain_min': domain_min,
+            'domain_max': domain_max,
+            'function_type': function_type,
+            'params': params
         }
-
         try:
             file_handler.save_terms(payload)
             terms_list, figure = update_terms_list_and_figure(variable_name)
@@ -288,17 +289,13 @@ def register_callbacks(dash_app):
 
         # Creazione del payload nel formato richiesto
         payload = {
-            variable_name: {
-                "domain": [domain_min, domain_max],
-                "terms": [
-                    {
-                        "term_name": term_name,
-                        "function_type": function_type,
-                        "params": params
-                    }
-                ]
-            }
-        }
+        'term_name': term_name,
+        'variable_name': variable_name,
+        'domain_min': domain_min,
+        'domain_max': domain_max,
+        'function_type': function_type,
+        'params': params
+    }
 
         try:
             file_handler.save_terms(payload)

@@ -40,16 +40,17 @@ def load_data():
     return {}  # Ritorna un dizionario vuoto in caso di errore
 
 #Prova
-file_paths = 'instance/user_files/terms_data.json'
 
 def load_terms():
-    """Carica i dati dal file JSON, se esiste."""
-    if os.path.exists(file_paths):
-        with open(file_paths, 'r') as f:
+    """Carica i dati dell'utente dalla sessione, se esistono."""
+    file_path = get_session_file()
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
             return json.load(f)
     return {}
 
 def save_terms(data):
     """Salva i dati nel file JSON."""
-    with open(file_paths, 'w') as f:
+    file_path = get_session_file()
+    with open(file_path, 'w') as f:
         json.dump(data, f, indent=4)

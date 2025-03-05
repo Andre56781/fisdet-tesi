@@ -7,7 +7,7 @@ def layout():
         dcc.Store(id='num-variables-store'),
         dcc.Store(id='current-index', data=0),
         dcc.Store(id='variables-data', data={}),
-
+        html.Div(id='terms-list', children=[]),
         # Modal per numero variabili
         Modal(
             id="variable-modal",
