@@ -33,10 +33,11 @@ body {
 .sidebar-logo {
   margin-bottom: 2rem;
   text-align: center;
+  margin-top: -2rem;
 }
 
 .sidebar-logo img {
-  max-width: 130px;
+  max-width: 120px;
   filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
   transition: transform 0.3s ease;
 }
@@ -166,11 +167,11 @@ body {
 /* ==================== FORM ELEMENTS ==================== */
 .input-field {
   width: 100%;
-  padding: 0.8rem 1.2rem;
+  padding: 0.4rem 0.8rem; /* prima era 0.8rem 1.2rem */
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 1rem;
+  font-size: 0.9rem; /* leggermente più piccolo */
   background: #fff;
 }
 
@@ -208,9 +209,11 @@ body {
 .card-header-gradient {
   background: linear-gradient(135deg, #52b2cf, #7fd9ff);
   color: white;
-  padding: 1.5rem;
-  border-bottom: none;
+  /* Riduci il padding per un header più compatto */
+  padding: 0.75rem; /* prima era 1.5rem */
   position: relative;
+  border-bottom: none;
+  font-size: 1rem; /* se vuoi ridurre anche la dimensione del testo */
 }
 
 .card-header-gradient::after {
@@ -225,15 +228,25 @@ body {
 
 /* ==================== BUTTONS ==================== */
 .nav-btn {
-  padding: 0.8rem 2rem;
+  padding: 0.4rem 1rem; 
   border-radius: 25px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.9rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.5rem;
   font-weight: 500;
   border: none;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-btn {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .nav-btn:hover {
@@ -244,6 +257,28 @@ body {
 .nav-btn i {
   font-size: 1.1em;
 }
+
+.custom-dropdown .Select-control {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  min-height: 38px;
+}
+
+
+.custom-dropdown .Select-placeholder {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  color: #999;
+}
+
 
 /* ==================== PROGRESS BAR ==================== */
 .custom-progress {
@@ -257,7 +292,11 @@ body {
 .custom-progress .progress-bar {
   background: linear-gradient(135deg, #52b2cf, #7fd9ff);
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  justify-content: center;
+  align-items: center;
 }
+
+
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
