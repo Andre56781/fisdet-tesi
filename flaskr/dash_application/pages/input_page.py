@@ -10,26 +10,26 @@ def layout():
 
         # Modal per numero variabili
         Modal(
-            [
-                ModalHeader("Configurazione Iniziale", className="gradient-header"),
-                ModalBody(
-                    html.Div([
-                        html.H4("Seleziona il numero di variabili", className="modal-title"),
-                        dcc.Input(
-                            id="num-variables-input",
-                            type="number",
-                            min=1,
-                            value=1,
-                            className="modal-input"
-                        ),
-                        dbc.Button("Conferma", id="modal-submit-button", color="primary", className="mt-3")
-                    ], className="modal-content-wrapper")
-                ),
-            ],
             id="variable-modal",
             is_open=True,
             className="custom-modal",
-            backdrop="static"
+            backdrop="static",
+            children=[
+                ModalHeader("Configurazione Iniziale", className="gradient-header"),
+                ModalBody(
+                html.Div([
+                    html.H4("Seleziona il numero di variabili", style={"textAlign": "center"}),
+                    dcc.Input(
+                        id="num-variables-input",
+                        type="number",
+                        min=1,
+                        value=1,
+                        className="modal-input"
+                    ),
+                        dbc.Button("Conferma", id="modal-submit-button", color="primary", className="mt-3")
+                     ], className="modal-content-wrapper")
+                ),
+            ]
         ),
         
         # Contenuto principale

@@ -71,7 +71,6 @@ def register_routing(dash_app: Any) -> None:
         logger.info(f"Richiesta route: {pathname}")
         
         try:
-            # Normalizza il path rimuovendo lo slash finale
             normalized_path = pathname.rstrip('/') if pathname != '/' else pathname
             layout_func = routes.get(normalized_path, lambda: error_404_layout())
             return layout_func()

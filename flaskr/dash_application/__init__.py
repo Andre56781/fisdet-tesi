@@ -41,7 +41,7 @@ def create_dash_application(flask_app):
     register_routing(dash_app)
     
     try:
-        from .pages import callbacks  # Registrazione callback centralizzata
+        from . import callbacks  # Registrazione callback centralizzata
         callbacks.register_callbacks(dash_app)
     except ImportError as e:
         if flask_app.config.get('DEBUG'):
