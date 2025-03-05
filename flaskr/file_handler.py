@@ -49,8 +49,33 @@ def load_terms():
             return json.load(f)
     return {}
 
-def save_terms(data):
-    """Salva i dati nel file JSON."""
+def save_terms(new_data):
+    """Salva i dati nel file JSON senza sovrascrivere i dati esistenti."""
     file_path = get_session_file()
+    
+    # Carica i dati esistenti
+    existing_data = load_terms()
+    
+    # Aggiorna i dati esistenti con i nuovi dati
+    variable_name = new_data.get('variable_name')
+    term_name = new_data.get('term_name')
+    
+    if variable_name not in existing_data:
+        existing_data[variable_name] = {"terms": []}
+    
+    # Cerca se il termine esiste già
+    term_exists = False
+    for term in existing_data[variable_name]["terms"]:
+        if term['term_name'] == term_name:
+            # Aggiorna il termine esistente
+            term.update(new_data)
+            term_exists = True
+            break
+    
+    if not term_exists:
+        # Aggiungi il nuovo termine
+        existing_data[variable_name]["terms"].append(new_data)
+    
+    # Salva i dati aggiornati
     with open(file_path, 'w') as f:
-        json.dump(data, f, indent=4)
+        json.dump(existing_data, f, indent=4)
