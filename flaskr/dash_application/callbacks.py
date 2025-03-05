@@ -170,6 +170,18 @@ def register_callbacks(dash_app):
         triggered_id = ctx.triggered[0]['prop_id']
 
         if triggered_id == 'create-term-btn.n_clicks':
+            # Controlla se i campi obbligatori sono vuoti
+            if not all([variable_name, domain_min, domain_max, function_type, term_name]):
+                return dash.no_update, "Errore: Tutti i campi obbligatori devono essere compilati.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+
+            # Controlla i parametri in base al tipo di funzione
+            if function_type == 'Triangolare' and not all([param_a, param_b, param_c]):
+                return dash.no_update, "Errore: Tutti i parametri per la funzione triangolare devono essere compilati.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+            elif function_type == 'Gaussian' and not all([param_mean, param_sigma]):
+                return dash.no_update, "Errore: Tutti i parametri per la funzione gaussiana devono essere compilati.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+            elif function_type == 'Trapezoidale' and not all([param_a, param_b, param_c, param_d]):
+                return dash.no_update, "Errore: Tutti i parametri per la funzione trapezoidale devono essere compilati.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+
             if button_label == 'Salva Modifica':
                 terms_list, message, figure = modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
                 return terms_list, message, figure, '', '', '', '', '', '', '', 'Crea Termine'
@@ -221,10 +233,49 @@ def register_callbacks(dash_app):
 
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
 
+    def validate_params(params, domain_min, domain_max, function_type):
+        """
+        Valida che i parametri siano compresi tra domain_min e domain_max.
+        """
+        if function_type == 'Triangolare':
+            a, b, c = params.get('a'), params.get('b'), params.get('c')
+            
+            # Controllo che i parametri siano compresi tra domain_min e domain_max
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
+                return False, "Errore: I parametri a, b, c devono essere compresi tra il dominio minimo e massimo."
+            
+            # Controllo che a <= b <= c
+            if not (a <= b <= c):
+                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
+            
+        elif function_type == 'Gaussian':
+            mean, sigma = params.get('mean'), params.get('sigma')
+            
+            # Controllo che mean sia compreso tra domain_min e domain_max
+            if not (domain_min <= mean <= domain_max):
+                return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
+            
+            # Controllo che sigma sia positivo (opzionale, se necessario)
+            if sigma <= 0:
+                return False, "Errore: Il parametro sigma deve essere maggiore di zero."
+            
+        elif function_type == 'Trapezoidale':
+            a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
+            
+            # Controllo che i parametri siano compresi tra domain_min e domain_max
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
+                return False, "Errore: I parametri a, b, c, d devono essere compresi tra il dominio minimo e massimo."
+            
+            # Controllo che a <= b <= c <= d
+            if not (a <= b <= c <= d):
+                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
+            
+        return True, ""
+
     def create_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
         try:
-            domain_min = float(domain_min)
-            domain_max = float(domain_max)
+            domain_min = int(domain_min)
+            domain_max = int(domain_max)
         except (ValueError, TypeError):
             return dash.no_update, "Errore: I valori del dominio devono essere numeri.", dash.no_update
 
@@ -239,6 +290,11 @@ def register_callbacks(dash_app):
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
 
+        # Validazione dei parametri
+        is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
+        if not is_valid:
+            return dash.no_update, error_message, dash.no_update
+
         # Creazione del payload nel formato richiesto
         payload = {
             'term_name': term_name,
@@ -252,6 +308,41 @@ def register_callbacks(dash_app):
             file_handler.save_terms(payload)
             terms_list, figure = update_terms_list_and_figure(variable_name)
             return terms_list, "Termine creato con successo!", figure
+        except Exception as e:
+            print(f"Errore durante il salvataggio dei dati: {str(e)}")
+            return dash.no_update, "Errore durante il salvataggio dei dati.", dash.no_update
+
+    def modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
+        if domain_min > domain_max:
+            return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo."
+
+        params = {}
+        if function_type == 'Triangolare':
+            params = {'a': param_a, 'b': param_b, 'c': param_c}
+        elif function_type == 'Gaussian':
+            params = {'mean': param_mean, 'sigma': param_sigma}
+        elif function_type == 'Trapezoidale':
+            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
+
+        # Validazione dei parametri
+        is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
+        if not is_valid:
+            return dash.no_update, error_message, dash.no_update
+
+        # Creazione del payload nel formato richiesto
+        payload = {
+            'term_name': term_name,
+            'variable_name': variable_name,
+            'domain_min': domain_min,
+            'domain_max': domain_max,
+            'function_type': function_type,
+            'params': params
+        }
+
+        try:
+            file_handler.save_terms(payload)
+            terms_list, figure = update_terms_list_and_figure(variable_name)
+            return terms_list, "Termine modificato con successo!", figure
         except Exception as e:
             print(f"Errore durante il salvataggio dei dati: {str(e)}")
             return dash.no_update, "Errore durante il salvataggio dei dati.", dash.no_update
@@ -275,35 +366,6 @@ def register_callbacks(dash_app):
             print(f"Errore durante l'eliminazione del termine: {str(e)}")
             return dash.no_update, "Errore durante l'eliminazione del termine.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    def modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
-        if domain_min > domain_max:
-            return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo."
-
-        params = {}
-        if function_type == 'Triangolare':
-            params = {'a': param_a, 'b': param_b, 'c': param_c}
-        elif function_type == 'Gaussian':
-            params = {'mean': param_mean, 'sigma': param_sigma}
-        elif function_type == 'Trapezoidale':
-            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-
-        # Creazione del payload nel formato richiesto
-        payload = {
-        'term_name': term_name,
-        'variable_name': variable_name,
-        'domain_min': domain_min,
-        'domain_max': domain_max,
-        'function_type': function_type,
-        'params': params
-    }
-
-        try:
-            file_handler.save_terms(payload)
-            terms_list, figure = update_terms_list_and_figure(variable_name)
-            return terms_list, "Termine modificato con successo!", figure
-        except Exception as e:
-            print(f"Errore durante il salvataggio dei dati: {str(e)}")
-            return dash.no_update, "Errore durante il salvataggio dei dati.", dash.no_update
 
     def update_terms_list_and_figure(variable_name):
         # Ottieni i dati salvati
