@@ -1,88 +1,141 @@
-from dash import dash, dcc, html, Input, Output, State
-from dash_bootstrap_components import Modal
-
+from dash import dcc, html, Input, Output, State
+from dash_bootstrap_components import Modal, themes, ModalHeader, ModalBody
+import dash_bootstrap_components as dbc
 
 def layout():
     return html.Div([
-        # Store per il numero di variabili, l'indice corrente e i dati inseriti
-        dcc.Store(id='num-variables-store'),      # Numero di variabili scelto
-        dcc.Store(id='current-index', data=0),      # Indice della variabile attuale (inizia da 0)
-        dcc.Store(id='variables-data', data={}),    # Dati inseriti per ogni variabile
+        dcc.Store(id='num-variables-store'),
+        dcc.Store(id='current-index', data=0),
+        dcc.Store(id='variables-data', data={}),
 
-        # Modal per la selezione del numero di variabili POPUP VAR
+        # Modal per numero variabili
         Modal(
+            [
+                ModalHeader("Configurazione Iniziale", className="gradient-header"),
+                ModalBody(
+                    html.Div([
+                        html.H4("Seleziona il numero di variabili", className="modal-title"),
+                        dcc.Input(
+                            id="num-variables-input",
+                            type="number",
+                            min=1,
+                            value=1,
+                            className="modal-input"
+                        ),
+                        dbc.Button("Conferma", id="modal-submit-button", color="primary", className="mt-3")
+                    ], className="modal-content-wrapper")
+                ),
+            ],
             id="variable-modal",
-            is_open=True,  # Aperto al caricamento
-            children=[
-                html.Div([
-                    html.H3("Seleziona il numero di variabili", style={"textAlign": "center"}),
-                    dcc.Input(
-                        id="num-variables-input",
-                        type="number",
-                        min=1,
-                        value=1,
-                        style={"margin": "10px", "width": "200px"}
-                    ),
-                    html.Br(),
-                    html.Button("Conferma", id="modal-submit-button", n_clicks=0, style={"margin": "10px"}),
-                    html.Div(id="modal-error-message", style={"color": "red"})
-                ], style={"textAlign": "center", "padding": "20px"})
-            ]
+            is_open=True,
+            className="custom-modal",
+            backdrop="static"
         ),
         
-        # Contenuto principale: input per una variabile alla volta
-        html.Div(id="main-content", style={"display": "none", "position": "relative"}, children=[
-        html.H1("Gestione Termini Fuzzy"),
-        html.Div(id="variable-title", style={"textAlign": "left", "fontWeight": "bold", "margin": "10px"}), #N var da x su x
+        # Contenuto principale
+        html.Div(id="main-content", className="content", children=[
+            dbc.Progress(id="progress-bar", className="my-4 custom-progress"),
             
-            # Input per il nome della variabile
-        html.Label("Nome Variabile:"),
-        dcc.Input(id='variable-name', type='text',pattern="^[a-zA-Z0-9]*$", value='', debounce=True, required=True),
+            dbc.Card([
+                dbc.CardHeader(
+                    [
+                        html.H4(id="variable-title", className="card-title"),
+                        dbc.Badge("Variabile Corrente", color="info", className="ml-2")
+                    ],
+                    className="card-header-gradient d-flex justify-content-between align-items-center"
+                ),
+                
+                dbc.CardBody([
+                    dbc.Form([
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Nome Variabile", html_for="variable-name"),
+                                dbc.Input(id='variable-name', type='text', className="mb-3 input-field")
+                            ], md=6),
+                            
+                            dbc.Col([
+                                dbc.Label("Dominio", className="form-label"),
+                                dbc.InputGroup([
+                                    dbc.Input(id='domain-min', type='number', className="input-field"),
+                                    dbc.Input(id='domain-max', type='number', className="input-field")
+                                ], className="domain-input-group")
+                            ], md=6)
+                        ], className="mb-4"),
 
-        # Input per il dominio minimo e massimo
-        html.Label("Dominio Minimo:"),
-        dcc.Input(id='domain-min', type='number', value=0, debounce=True, required=True),
+                        dbc.Row([
+                            dbc.Col([
+                                dbc.Label("Tipo Funzione Fuzzy"),
+                                dcc.Dropdown(
+                                    id='function-type',
+                                    options=[
+                                        {'label': 'Triangolare', 'value': 'Triangolare'},
+                                        {'label': 'Gaussiana', 'value': 'Gaussian'},
+                                        {'label': 'Trapezoidale', 'value': 'Trapezoidale'}
+                                    ],
+                                    className="custom-dropdown"
+                                )
+                            ], md=6),
+                            
+                            dbc.Col([
+                                dbc.Label("Nome Termine Fuzzy"),
+                                dbc.Input(id='term-name', type='text', className="input-field")
+                            ], md=6)
+                        ], className="mb-4"),
 
-        html.Label("Dominio Massimo:"),
-        dcc.Input(id='domain-max', type='number', value='', debounce=True, required=True),
-
-        # Dropdown per selezionare la funzione fuzzy
-        html.Label("Tipo di Funzione Fuzzy:"),
-        dcc.Dropdown(
-            id='function-type',
-            options=[
-                {'label': 'Triangolare', 'value': 'Triangolare'},
-                {'label': 'Gaussiana', 'value': 'Gaussian'},
-                {'label': 'Trapezoidale', 'value': 'Trapezoidale'}
-            ],
-            value=''
-        ),
-
-        # Input per il nome del termine
-        html.Label("Nome del Termine Fuzzy:"),
-        dcc.Input(id='term-name', type='text', value='', pattern="^[a-zA-Z0-9]*$", debounce=True, required=True),
-
-        # Contenitore per i parametri della funzione fuzzy
-        html.Label("Parametri Funzione Fuzzy:"),
-        html.Div(id='params-container'),
-
-        # Bottone per creare il termine fuzzy
-        html.Button('Crea Termine', id='create-term-btn', n_clicks=0),
-
-        # Area per visualizzare il grafico del termine fuzzy
-        dcc.Graph(id='graph'),
-
-        # Messaggio di conferma
-        html.Div(id='message', style={'marginTop': '20px'}),
-
-        # Componente Store per mantenere i parametri
-        dcc.Store(id='params-store'),
-
-        # Lista dei termini (aggiunto per esempio)
-        html.Div(id='terms-list'),
-
-            html.Button("Avanti", id="next-button", style={"position": "absolute", "bottom": "10px", "right": "10px"}) #bottone avanti di var
+                        html.Div(id='params-container', className="params-container"),
+                        
+                        dbc.ButtonGroup([
+                            dbc.Button(
+                                [html.I(className="fas fa-plus mr-2"), "Crea Termine"],
+                                id='create-term-btn',
+                                color="success",
+                                className="action-btn"
+                            ),
+                            dbc.Button(
+                                "Resetta Campi",
+                                id="reset-fields",
+                                color="secondary",
+                                className="action-btn"
+                            )
+                        ], className="mb-4"),
+                        
+                        dcc.Graph(id='graph', className="custom-graph"),
+                        html.Div(id='message', className="alert-message")
+                    ])
+                ]),
+                
+                dbc.CardFooter([
+                    dbc.ButtonGroup([
+                        dbc.Button(
+                            [html.I(className="fas fa-arrow-left mr-2"), "Indietro"],
+                            id="back-button",
+                            color="light",
+                            className="nav-btn"
+                        ),
+                        dbc.Button(
+                            [html.I(className="fas fa-arrow-right mr-2"), "Avanti"],
+                            id="next-button",
+                            color="primary",
+                            className="nav-btn"
+                        )
+                    ], className="float-right")
+                ], className="card-footer-gradient")
+            ], className="main-card")
         ]),
-        # Un div per mostrare messaggi finali o di conferma
-        html.Div(id="output-message")
+
+        # Riepilogo finale
+        html.Div(id="summary-section", className="summary-section", children=[
+            dbc.Card([
+                dbc.CardHeader("Riepilogo Finale", className="summary-header"),
+                dbc.CardBody(id="summary-content", className="summary-body"),
+                dbc.CardFooter(
+                    dbc.Button(
+                        [html.I(className="fas fa-save mr-2"), "Salva Configurazione"],
+                        id="save-config",
+                        color="success",
+                        className="save-btn"
+                    )
+                )
+            ])
+        ])
     ])

@@ -1,4 +1,4 @@
-/* Azzeramento dei margini e padding di default */
+/* ==================== BASE ==================== */
 * {
   margin: 0;
   padding: 0;
@@ -6,83 +6,282 @@
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Poppins', Arial, sans-serif;
   min-height: 100vh;
   position: relative;
+  background-color: #f8f9fa;
+  line-height: 1.6;
 }
 
-/* Sidebar laterale */
+/* ==================== SIDEBAR (Centrata) ==================== */
 .sidebar {
   position: fixed;
   width: 220px;
   height: 100vh;
-  background-color: #52b2cf;
-  padding: 1rem;
+  background: linear-gradient(180deg, #52b2cf 0%, #3a8ba3 100%);
+  padding: 2rem 1rem;
   color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+  z-index: 1000;
+  transition: transform 0.3s ease;
 }
 
-/* Sezione logo */
-.sidebar img {
-  max-width: 100px;
-  margin-bottom: 1.5rem;
-}
-
-/* Menu di navigazione */
-.sidebar-nav {
-  width: 100%;
-  margin-top: 2rem;
-}
-
-.sidebar-nav a {
-  display: block;
-  width: 100%;
-  padding: 12px 0;
+/* Container del logo: posizionato in alto */
+.sidebar-logo {
+  margin-bottom: 2rem;
   text-align: center;
-  color: #fff;
-  text-decoration: none;
-  border-bottom: 1px solid;
-  border-image: linear-gradient(to left, #3a8ba3, #7fd9ff) 1;
-  transition: all 0.3s ease;
 }
 
-/* Effetto hover */
-.sidebar-nav a:hover {
-  background: linear-gradient(to left, #3a8ba3, #7fd9ff);
+.sidebar-logo img {
+  max-width: 130px;
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
+  transition: transform 0.3s ease;
+}
+
+.sidebar-logo img:hover {
   transform: scale(1.05);
 }
 
-/* Contenuto principale */
-.content {
-  margin-left: 220px; /* Larghezza sidebar */
-  min-height: calc(100vh - 60px); /* Altezza totale meno footer */
-  padding: 2rem;
+/* Container della navigazione: centrato verticalmente */
+.sidebar-nav {
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* Footer */
-.footer {
-  position: fixed;
-  bottom: 0;
-  left: 220px; /* Larghezza sidebar */
-  right: 0;
-  height: 60px;
-  background-color: #52b2cf;
-  color: white;
+.sidebar-nav a {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-top: 1px solid #3a8ba3;
+  justify-content: center; 
+  gap: 0.8rem;
+  width: 90%; 
+  padding: 0.8rem 1rem; 
+  margin: 0.3rem auto; 
+  color: rgba(255,255,255,0.9);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Aggiunge gradiente al bordo superiore del footer */
-.footer::before {
+.sidebar-nav a::before {
   content: '';
   position: absolute;
-  top: -1px;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: 0.5s;
+}
+
+.sidebar-nav a:hover {
+  background: rgba(255,255,255,0.05);
+  transform: translateX(10px);
+  color: #fff !important;
+}
+
+.sidebar-nav a:hover::before {
+  left: 100%;
+}
+
+
+/* ==================== MAIN CONTENT (Allineato) ==================== */
+.content {
+  margin-left: 120px;
+  min-height: 100vh;
+  padding: 0.5rem;
+  background-color: #fff;
+  transition: margin 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-inner {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  flex-grow: 1;
+}
+
+/* ==================== MODAL ==================== */
+.custom-modal .modal-content {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 0 30px rgba(0,0,0,0.2);
+  overflow: hidden;
+  transform: scale(0.98);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-modal.show .modal-content {
+  transform: scale(1);
+}
+
+.gradient-header {
+  background: linear-gradient(135deg, #52b2cf, #3a8ba3);
+  color: white;
+  padding: 1.5rem;
+  border: none;
+  position: relative;
+}
+
+.gradient-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(to right, #3a8ba3, #7fd9ff);
+  background: linear-gradient(90deg, #7fd9ff, #52b2cf, #3a8ba3);
+}
+
+.modal-content-wrapper {
+  padding: 2rem;
+  text-align: center;
+}
+
+.modal-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 0.8rem 1.2rem;
+  border: 2px solid #52b2cf;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.modal-input:focus {
+  border-color: #3a8ba3;
+  box-shadow: 0 0 12px rgba(82, 178, 207, 0.3);
+}
+
+/* ==================== FORM ELEMENTS ==================== */
+.input-field {
+  width: 100%;
+  padding: 0.8rem 1.2rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1rem;
+  background: #fff;
+}
+
+.input-field:focus {
+  border-color: #52b2cf;
+  box-shadow: 0 0 8px rgba(82, 178, 207, 0.2);
+  background: #f8fcff;
+}
+
+.custom-dropdown .Select-control {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.custom-dropdown .Select-control:hover {
+  box-shadow: 0 2px 6px rgba(82, 178, 207, 0.1);
+}
+
+/* ==================== CARDS ==================== */
+.main-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.12);
+}
+
+.card-header-gradient {
+  background: linear-gradient(135deg, #52b2cf, #7fd9ff);
+  color: white;
+  padding: 1.5rem;
+  border-bottom: none;
+  position: relative;
+}
+
+.card-header-gradient::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #7fd9ff, #52b2cf, #3a8ba3);
+}
+
+/* ==================== BUTTONS ==================== */
+.nav-btn {
+  padding: 0.8rem 2rem;
+  border-radius: 25px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.nav-btn i {
+  font-size: 1.1em;
+}
+
+/* ==================== PROGRESS BAR ==================== */
+.custom-progress {
+  height: 20px;
+  border-radius: 10px;
+  background-color: #e9ecef;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.custom-progress .progress-bar {
+  background: linear-gradient(135deg, #52b2cf, #7fd9ff);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-220px);
+    box-shadow: none;
+  }
+  
+  .sidebar.mobile-visible {
+    transform: translateX(0);
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+  }
+  
+  .content {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .main-card {
+    border-radius: 12px;
+  }
+  
+  .nav-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
 }

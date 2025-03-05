@@ -37,3 +37,4 @@ __pycache__/
 .DS_Store
 Thumbs.db
 /flaskr/__pycache__
+/flaskr/dash_application/__pycache__
