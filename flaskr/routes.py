@@ -1,12 +1,7 @@
 from flask import Blueprint, request, jsonify, send_file
 import os
-from flaskr.file_handler import (
-    save_complete_config,
-    load_complete_config,
-    save_term,
-    delete_term as file_delete_term,
-    get_variable_terms
-)
+from flaskr.file_handler import *
+from flaskr.file_handler import get_user_file
 import logging
 import skfuzzy as fuzz
 import numpy as np
@@ -14,148 +9,254 @@ import json
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
-# Salva l'intera configurazione
-@bp.route("/variables", methods=["POST"])
-def save_variables():
-    try:
-        data = request.json
-        save_complete_config(data)
-        return jsonify({"status": "success"}), 200
-    except Exception as e:
-        logging.error(f"Save variables error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+# Salva i dati dell'utente
+@bp.route("/save", methods=["POST"])
+def save():
+    data = request.json
+    save_data(data)
+    return jsonify({"status": "success"})
 
-# Carica l'intera configurazione
-@bp.route("/variables", methods=["GET"])
-def load_variables():
-    try:
-        config = load_complete_config()
-        return jsonify(config), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# Carica i dati dell'utente
+@bp.route("/load", methods=["GET"])
+def load():
+    data = load_data()
+    return jsonify(data)
 
-# Gestione termini fuzzy
-@bp.route("/terms/<int:variable_index>", methods=["POST", "GET"])
-def handle_terms(variable_index):
-    try:
-        if request.method == "POST":
-            term_data = request.json
-            if not term_data.get('term_name') or not term_data.get('function_type'):
-                return jsonify({"error": "Dati incompleti"}), 400
-                
-            save_term(variable_index, term_data)
-            return jsonify({"status": "success"}), 200
-            
-        elif request.method == "GET":
-            terms = get_variable_terms(variable_index)
-            return jsonify({"terms": terms}), 200
-            
-    except Exception as e:
-        logging.error(f"Terms error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-@bp.route("/terms/<int:variable_index>/<term_name>", methods=["DELETE"])
-def delete_term(variable_index, term_name):
-    try:
-        file_delete_term(variable_index, term_name)
-        return jsonify({"status": "success"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Calcola le funzioni di appartenenza
-@bp.route("/calculate_membership/<int:variable_index>", methods=["GET"])
-def calculate_membership(variable_index):
-    try:
-        config = load_complete_config()
-        variable = config['variables'].get(str(variable_index), {})
-        
-        if not variable:
-            return jsonify({"error": "Variabile non trovata"}), 404
-            
-        domain_min = variable.get('domain', [0, 0])[0]
-        domain_max = variable.get('domain', [0, 0])[1]
-        x = np.linspace(domain_min, domain_max, 100)
-        results = []
-
-        for term in variable.get('terms', []):
-            params = term.get('params', {})
-            y = np.zeros(100)
-            
-            if term['function_type'] == 'Triangolare':
-                y = fuzz.trimf(x, [params['a'], params['b'], params['c']])
-            elif term['function_type'] == 'Gaussian':
-                y = fuzz.gaussmf(x, params['mean'], params['sigma'])
-            elif term['function_type'] == 'Trapezoidale':
-                y = fuzz.trapmf(x, [params['a'], params['b'], params['c'], params['d']])
-                
-            results.append({
-                "term_name": term['term_name'],
-                "x": x.tolist(),
-                "y": y.tolist()
-            })
-
-        return jsonify({"terms": results}), 200
-
-    except Exception as e:
-        logging.error(f"Membership error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-# Modifica un termine esistente
-@bp.route("/terms/<int:variable_index>/<term_name>", methods=["PUT"])
-def modify_term(variable_index, term_name):
-    try:
-        data = request.json
-        config = load_complete_config()
-        variable_key = str(variable_index)
-        
-        if variable_key not in config['variables']:
-            return jsonify({"error": "Variabile non trovata"}), 404
-            
-        terms = config['variables'][variable_key]['terms']
-        term_index = next((i for i, t in enumerate(terms) if t['term_name'] == term_name), None)
-        
-        if term_index is None:
-            return jsonify({"error": "Termine non trovato"}), 404
-            
-        # Validazione parametri
-        params = data.get('params', {})
-        if data['function_type'] == 'Triangolare':
-            if not all(key in params for key in ['a', 'b', 'c']):
-                return jsonify({"error": "Parametri mancanti per triangolare"}), 400
-            if not (params['a'] <= params['b'] <= params['c']):
-                return jsonify({"error": "Parametri non validi (a <= b <= c richiesto)"}), 400
-                
-        elif data['function_type'] == 'Trapezoidale':
-            if not all(key in params for key in ['a', 'b', 'c', 'd']):
-                return jsonify({"error": "Parametri mancanti per trapezoidale"}), 400
-            if not (params['a'] <= params['b'] <= params['c'] <= params['d']):
-                return jsonify({"error": "Parametri non validi (a <= b <= c <= d richiesto)"}), 400
-                
-        elif data['function_type'] == 'Gaussian':
-            if not all(key in params for key in ['mean', 'sigma']):
-                return jsonify({"error": "Parametri mancanti per gaussiana"}), 400
-            if params['sigma'] <= 0:
-                return jsonify({"error": "Sigma deve essere positivo"}), 400
-                
-        # Aggiorna il termine
-        terms[term_index] = {
-            'term_name': term_name,
-            'function_type': data['function_type'],
-            'params': params
-        }
-        
-        save_complete_config(config['variables'])
-        return jsonify({"status": "success"}), 200
-
-    except Exception as e:
-        logging.error(f"Modify term error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-# Esporta i dati (mantenuto dalla versione originale)
+# Esporta i dati in un file JSON
 @bp.route("/export", methods=["GET"])
 def export():
+    user_file = get_user_file()
+    if os.path.exists(user_file):
+        return send_file(user_file, as_attachment=True, download_name="data.json")
+    return jsonify({"error": "No data found"}), 404
+
+#PROVA
+
+# Crea un nuovo termine
+@bp.route('/create_term', methods=['POST'])
+def create_term():
     try:
-        config = load_complete_config()
-        return jsonify(config), 200
+        # Log the incoming data for debugging
+        logging.debug(f"Received data: {request.get_data(as_text=True)}")
+
+        data = request.get_json()
+        if not isinstance(data, dict):
+            return jsonify({"error": "Formato dati non valido. Deve essere un oggetto JSON."}), 400
+
+        term_name = data.get('term_name')
+        variable_name = data.get('variable_name')
+        domain_min = data.get('domain_min')
+        domain_max = data.get('domain_max')
+        function_type = data.get('function_type')
+        params = data.get('params')
+
+        missing_fields = []
+        if not term_name: missing_fields.append("term_name")
+        if not variable_name: missing_fields.append("variable_name")
+        if domain_min is None: missing_fields.append("domain_min")
+        if domain_max is None: missing_fields.append("domain_max")
+        if not function_type: missing_fields.append("function_type")
+        if not params: missing_fields.append("params")
+
+        if missing_fields:
+            return jsonify({"error": f"Dati incompleti: {', '.join(missing_fields)}"}), 400
+
+        # Carica i dati esistenti
+        terms_data = load_terms()
+
+        # Controlla se la variabile esiste già
+        if variable_name not in terms_data:
+            terms_data[variable_name] = {
+                "domain": [domain_min, domain_max],
+                "terms": []
+            }
+        
+        variable_data = terms_data[variable_name]
+
+        # Controlla che il dominio sia coerente
+        if variable_data['domain'] != [domain_min, domain_max]:
+            return jsonify({"error": "Dominio incoerente per la variabile esistente"}), 400
+
+        # Controlla se il termine esiste già
+        existing_term = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
+        if existing_term:
+            return jsonify({"error": "Il termine esiste già per questa variabile"}), 400
+
+        # Aggiungi il nuovo termine
+        new_term = {
+            "term_name": term_name,
+            "function_type": function_type,
+            "params": params
+        }
+        variable_data['terms'].append(new_term)
+
+        # Salva i dati aggiornati
+        save_terms(terms_data)
+
+        # Log the new term for debugging
+        logging.debug(f"Created new term: {new_term}")
+
+        return jsonify(new_term), 201
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+
+
+
+# Ottieni tutti i termini
+@bp.route('/get_terms', methods=['GET'])
+def get_terms():
+    try:
+        terms_data = load_terms()
+        if not terms_data:
+            return jsonify({}), 404
+
+        # Calcola x e y per ogni termine
+        computed_terms = {}
+        for variable_name, variable_data in terms_data.items():
+            domain_min, domain_max = variable_data['domain']
+            x = np.linspace(domain_min, domain_max, 100)
+            computed_terms[variable_name] = {
+                "domain": [domain_min, domain_max],
+                "terms": []
+            }
+
+            for term in variable_data['terms']:
+                term_name = term['term_name']
+                function_type = term['function_type']
+                params = term['params']
+
+                if function_type == 'Triangolare':
+                    y = fuzz.trimf(x, [params['a'], params['b'], params['c']])
+                elif function_type == 'Gaussian':
+                    y = fuzz.gaussmf(x, params['mean'], params['sigma'])
+                elif function_type == 'Trapezoidale':
+                    y = fuzz.trapmf(x, [params['a'], params['b'], params['c'], params['d']])
+                else:
+                    continue
+
+                computed_terms[variable_name]['terms'].append({
+                    "term_name": term_name,
+                    "x": x.tolist(),
+                    "y": y.tolist()
+                })
+
+        return jsonify(computed_terms), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+
+
+
+# Ottieni un termine specifico
+@bp.route('/get_term/<variable_name>/<term_name>', methods=['GET'])
+def get_term(variable_name, term_name):
+    try:
+        terms_data = load_terms()
+
+        # Trova la variabile specifica
+        if variable_name not in terms_data:
+            return jsonify({"error": "Variabile non trovata."}), 404
+        
+        variable_data = terms_data[variable_name]
+
+        # Trova il termine specifico
+        term_to_get = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
+        if term_to_get:
+            return jsonify(term_to_get), 200
+
+        return jsonify({"error": "Termine non trovato."}), 404
+
+    except Exception as e:
+        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+
+
+
+# Elimina un termine
+@bp.route('/delete_term/<term_name>', methods=['POST'])
+def delete_term(term_name):
+    try:
+        terms_data = load_terms()
+        
+        # Trova la variabile e il termine da eliminare
+        for variable_name, variable_data in terms_data.items():
+            term_to_delete = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
+            if term_to_delete:
+                variable_data['terms'].remove(term_to_delete)
+                save_terms(terms_data)
+                return jsonify({"message": "Termine eliminato con successo!"}), 200
+
+        return jsonify({"error": "Termine non trovato."}), 404
+
+    except Exception as e:
+        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+
+
+
+# Modifica un termine
+@bp.route('/modify_term/<term_name>', methods=['PUT'])
+def modify_term(term_name):
+    try:
+        data = request.get_json()
+        if not isinstance(data, dict):
+            return jsonify({"error": "Formato dati non valido. Deve essere un oggetto JSON."}), 400
+
+        variable_name = data.get('variable_name')
+        domain_min = data.get('domain_min')
+        domain_max = data.get('domain_max')
+        function_type = data.get('function_type')
+        params = data.get('params')
+
+        missing_fields = []
+        if not variable_name: missing_fields.append("variable_name")
+        if domain_min is None: missing_fields.append("domain_min")
+        if domain_max is None: missing_fields.append("domain_max")
+        if not function_type: missing_fields.append("function_type")
+        if not params: missing_fields.append("params")
+
+        if missing_fields:
+            return jsonify({"error": f"Dati incompleti: {', '.join(missing_fields)}"}), 400
+
+        # Validazioni dei parametri
+        if params.get('a') is not None and params.get('b') is not None:
+            if params['a'] > params['b']:
+                return jsonify({"error": "'a' non può essere maggiore di 'b'."}), 400
+
+        if params.get('b') is not None and params.get('c') is not None:
+            if params['b'] > params['c']:
+                return jsonify({"error": "'b' non può essere maggiore di 'c'."}), 400
+
+        if params.get('c') is not None and params.get('d') is not None:
+            if params['c'] > params['d']:
+                return jsonify({"error": "'c' non può essere maggiore di 'd'."}), 400
+
+        # Carica i dati esistenti
+        terms_data = load_terms()
+
+        # Controlla se la variabile esiste
+        if variable_name not in terms_data:
+            return jsonify({"error": "Variabile non trovata."}), 404
+
+        variable_data = terms_data[variable_name]
+
+        # Controlla che il dominio sia coerente
+        if variable_data['domain'] != [domain_min, domain_max]:
+            return jsonify({"error": "Dominio incoerente per la variabile esistente"}), 400
+
+        # Trova il termine da modificare
+        term_to_modify = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
+        if not term_to_modify:
+            return jsonify({"error": "Termine non trovato."}), 404
+
+        # Aggiorna i dettagli del termine
+        term_to_modify['function_type'] = function_type
+        term_to_modify['params'] = params
+
+        # Salva i dati aggiornati
+        save_terms(terms_data)
+
+        return jsonify({"message": "Termine modificato con successo!", "term": term_to_modify}), 201
+
+    except Exception as e:
+        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500

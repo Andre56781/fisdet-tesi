@@ -40,7 +40,7 @@ def load_data():
     return {}  # Ritorna un dizionario vuoto in caso di errore
 
 #Prova
-file_paths = 'terms_data.json'
+file_paths = 'instance/user_files/terms_data.json'
 
 def load_terms():
     """Carica i dati dal file JSON, se esiste."""

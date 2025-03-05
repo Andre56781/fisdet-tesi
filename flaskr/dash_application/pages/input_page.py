@@ -50,14 +50,14 @@ def layout():
                         dbc.Row([
                             dbc.Col([
                                 dbc.Label("Nome Variabile", html_for="variable-name"),
-                                dbc.Input(id='variable-name', type='text', className="mb-3 input-field")
+                                dbc.Input(id='variable-name', type='text', value='', pattern="^[a-zA-Z0-9]*$", className="mb-3 input-field", debounce=True, required=True)
                             ], md=6),
                             
                             dbc.Col([
                                 dbc.Label("Dominio", className="form-label"),
                                 dbc.InputGroup([
-                                    dbc.Input(id='domain-min', type='number', className="input-field"),
-                                    dbc.Input(id='domain-max', type='number', className="input-field")
+                                    dbc.Input(id='domain-min', type='number', className="input-field", value='0', debounce=True, required=True, ),
+                                    dbc.Input(id='domain-max', type='number', className="input-field", value='', debounce=True, required=True, )
                                 ], className="domain-input-group")
                             ], md=6)
                         ], className="mb-4"),
@@ -78,7 +78,7 @@ def layout():
                             
                             dbc.Col([
                                 dbc.Label("Nome Termine Fuzzy"),
-                                dbc.Input(id='term-name', type='text', className="input-field")
+                                dbc.Input(id='term-name', type='text', value='', pattern="^[a-zA-Z0-9]*$", className="input-field", debounce=True, required=True)
                             ], md=6)
                         ], className="mb-4"),
 
@@ -86,7 +86,7 @@ def layout():
                         
                         dbc.ButtonGroup([
                             dbc.Button(
-                                [html.I(className="fas fa-plus mr-2"), "Crea Termine"],
+                                [html.I(className="fas fa-plus mr-2"), " Crea Termine"],
                                 id='create-term-btn',
                                 color="success",
                                 className="action-btn"

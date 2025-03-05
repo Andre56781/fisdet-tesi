@@ -6,6 +6,7 @@ from dash import callback_context
 import plotly.graph_objects as go
 import requests
 import dash_bootstrap_components as dbc
+import json
 
 def register_callbacks(dash_app):
     # Callback per la gestione della sottomissione del modal e la visualizzazione del contenuto principale
@@ -18,20 +19,17 @@ def register_callbacks(dash_app):
     )
     def handle_modal_submit(n_clicks, num_variables):
         if not n_clicks:
-            return [True, {"display": "none"}, None, ""]
+            return [True, {"display": "none"}, None]
+
         try:
             num_vars = int(num_variables)
             if num_vars < 1:
                 raise ValueError
-            # Salva il numero di variabili su un file (opzionale)
-            try:
-                file_handler.save_data({"num_variables": num_vars})
-            except Exception as e:
-                return [True, {"display": "none"}, None, f"Errore nel salvataggio dei dati: {str(e)}"]
-            # Mostra il contenuto principale con il pulsante "Next"
+
+            file_handler.save_terms({"num_variables": num_vars})
             return [False, {"display": "block", "position": "relative"}, num_vars]
         except:
-            return [True, {"display": "none"}, None, "Inserisci un numero valido (≥ 1)"]
+            return [True, {"display": "none"}, None]
 
     # Callback per aggiornare il titolo della variabile (es. "Variabile X di Y")
     @dash_app.callback(
@@ -46,7 +44,7 @@ def register_callbacks(dash_app):
             current_index = int(current_index)
         except (ValueError, TypeError):
             return "Errore: Indice della variabile non valido."
-        
+
         return f"Variabile {current_index + 1} di {num_vars}"
 
     # Callback per la gestione della logica del pulsante "Next"
@@ -67,6 +65,7 @@ def register_callbacks(dash_app):
 
         if variables_data is None:
             variables_data = {}
+
         # Salva il valore della variabile corrente
         variables_data[str(current_index)] = input_value
 
@@ -75,7 +74,7 @@ def register_callbacks(dash_app):
             # Passa alla variabile successiva e svuota il campo di input
             return new_index, "", "", variables_data
         else:
-            # Se tutte le variabili sono state inserite, salva i dati finali e mostra il messaggio di completamento
+            # Se tutte le variabili sono state inserite, salva i dati finali usando file_handler.save_data
             file_handler.save_data({"variables": variables_data})
             return current_index, input_value, "Hai inserito tutte le variabili!", variables_data
 
@@ -132,13 +131,13 @@ def register_callbacks(dash_app):
             Output('terms-list', 'children', allow_duplicate=True),
             Output('message', 'children'),
             Output('graph', 'figure', allow_duplicate=True),
-            Output('term-name', 'value', allow_duplicate=True),  
-            Output('param-a', 'value', allow_duplicate=True),     
-            Output('param-b', 'value', allow_duplicate=True),     
-            Output('param-c', 'value', allow_duplicate=True),     
-            Output('param-d', 'value', allow_duplicate=True),     
-            Output('param-mean', 'value', allow_duplicate=True),  
-            Output('param-sigma', 'value', allow_duplicate=True), 
+            Output('term-name', 'value', allow_duplicate=True),
+            Output('param-a', 'value', allow_duplicate=True),
+            Output('param-b', 'value', allow_duplicate=True),
+            Output('param-c', 'value', allow_duplicate=True),
+            Output('param-d', 'value', allow_duplicate=True),
+            Output('param-mean', 'value', allow_duplicate=True),
+            Output('param-sigma', 'value', allow_duplicate=True),
             Output('create-term-btn', 'children')
         ],
         [
@@ -172,8 +171,7 @@ def register_callbacks(dash_app):
 
         if triggered_id == 'create-term-btn.n_clicks':
             if button_label == 'Salva Modifica':
-                terms_list, message = modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
-                terms_list, figure = update_terms_list_and_figure(variable_name)
+                terms_list, message, figure = modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
                 return terms_list, message, figure, '', '', '', '', '', '', '', 'Crea Termine'
             else:
                 terms_list, message, figure = create_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
@@ -188,13 +186,13 @@ def register_callbacks(dash_app):
         elif 'modify-btn' in triggered_id:
             term_name_to_modify = eval(triggered_id.split('.')[0])['index']
             response = requests.get(f'http://127.0.0.1:5000/get_term/{variable_name}/{term_name_to_modify}')
-        
+
             if response.status_code == 200:
                 term_data = response.json()
                 term_params = term_data.get('params', {})
 
                 return (
-                    dash.no_update, 
+                    dash.no_update,
                     "Dati del termine caricati, puoi modificarli.",
                     dash.no_update,
                     term_data.get('term_name', ''),
@@ -207,7 +205,6 @@ def register_callbacks(dash_app):
                     'Salva Modifica'
                 )
             else:
-                # Ensure all 11 values are returned
                 return (
                     dash.no_update,
                     "Errore nel caricamento dei dati del termine.",
@@ -224,7 +221,6 @@ def register_callbacks(dash_app):
 
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
 
-
     def create_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
         if domain_min > domain_max:
             return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo.", dash.no_update
@@ -237,42 +233,46 @@ def register_callbacks(dash_app):
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
 
+        # Creazione del payload nel formato richiesto
         payload = {
-            'term_name': term_name,
-            'variable_name': variable_name,
-            'domain_min': domain_min,
-            'domain_max': domain_max,
-            'function_type': function_type,
-            'params': params
+            variable_name: {
+                "domain": [domain_min, domain_max],
+                "terms": [
+                    {
+                        "term_name": term_name,
+                        "function_type": function_type,
+                        "params": params
+                    }
+                ]
+            }
         }
+
         try:
-            response = requests.post('http://127.0.0.1:5000/create_term', json=payload)
-
-            if response.status_code == 200 or response.status_code == 201:
-                try:
-                    response_data = response.json()  # Attempt to parse JSON
-                    terms_list, figure = update_terms_list_and_figure(variable_name)
-                    return terms_list, "Termine creato con successo!", figure
-                except requests.exceptions.JSONDecodeError:
-                    print(f"Error: Response is not JSON. Server response: {response.text}")
-                    return dash.no_update, "Errore: La risposta del server non è valida.", dash.no_update
-            else:
-                return dash.no_update, f"Errore: {response.text}", dash.no_update
-
-        except requests.exceptions.RequestException as e:
-            print(f"Request failed: {str(e)}")
-            return dash.no_update, "Errore nella comunicazione con il server.", dash.no_update
-
-
+            file_handler.save_terms(payload)
+            terms_list, figure = update_terms_list_and_figure(variable_name)
+            return terms_list, "Termine creato con successo!", figure
+        except Exception as e:
+            print(f"Errore durante il salvataggio dei dati: {str(e)}")
+            return dash.no_update, "Errore durante il salvataggio dei dati.", dash.no_update
 
     def delete_term(variable_name, term_name):
-        response = requests.post(f'http://127.0.0.1:5000/delete_term/{term_name}')
-
-        if response.status_code == 200:
-            terms_list, figure = update_terms_list_and_figure(variable_name)
-            return terms_list, f"Termine '{term_name}' eliminato con successo!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-        else:
-            return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        # Ottieni i dati attuali
+        try:
+            current_data = file_handler.load_data() 
+            if variable_name in current_data:
+                # Rimuovi il termine specifico
+                current_data[variable_name]["terms"] = [
+                    term for term in current_data[variable_name]["terms"] if term["term_name"] != term_name
+                ]
+                # Salva i dati aggiornati
+                file_handler.save_terms(current_data)
+                terms_list, figure = update_terms_list_and_figure(variable_name)
+                return terms_list, f"Termine '{term_name}' eliminato con successo!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            else:
+                return dash.no_update, f"Errore: Variabile '{variable_name}' non trovata.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        except Exception as e:
+            print(f"Errore durante l'eliminazione del termine: {str(e)}")
+            return dash.no_update, "Errore durante l'eliminazione del termine.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     def modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
         if domain_min > domain_max:
@@ -286,29 +286,38 @@ def register_callbacks(dash_app):
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
 
+        # Creazione del payload nel formato richiesto
         payload = {
-            'term_name': term_name,
-            'variable_name': variable_name,
-            'domain_min': domain_min,
-            'domain_max': domain_max,
-            'function_type': function_type,
-            'params': params
+            variable_name: {
+                "domain": [domain_min, domain_max],
+                "terms": [
+                    {
+                        "term_name": term_name,
+                        "function_type": function_type,
+                        "params": params
+                    }
+                ]
+            }
         }
-        response = requests.put(f'http://127.0.0.1:5000/modify_term', json=payload)
 
-        if response.status_code == 200:
+        try:
+            file_handler.save_terms(payload)
             terms_list, figure = update_terms_list_and_figure(variable_name)
             return terms_list, "Termine modificato con successo!", figure
-        else:
-            error_message = response.json().get('error', 'Errore sconosciuto')
-            return dash.no_update, f"Errore: {error_message}", dash.no_update
+        except Exception as e:
+            print(f"Errore durante il salvataggio dei dati: {str(e)}")
+            return dash.no_update, "Errore durante il salvataggio dei dati.", dash.no_update
 
     def update_terms_list_and_figure(variable_name):
-        response = requests.get(f'http://127.0.0.1:5000/get_terms/{variable_name}')
-        if response.status_code == 200:
-            terms = response.json().get('terms', [])
-            terms_list = [html.Div(term) for term in terms]
-            # Create your plotly figure here
-            figure = go.Figure()
-            return terms_list, figure
-        return [], go.Figure()
+        # Ottieni i dati salvati
+        try:
+            current_data = file_handler.load_data()
+            if variable_name in current_data:
+                terms = current_data[variable_name]["terms"]
+                terms_list = [html.Div(term['term_name']) for term in terms]
+                figure = go.Figure()
+                return terms_list, figure
+            return [], go.Figure()
+        except Exception as e:
+            print(f"Errore durante il caricamento dei dati: {str(e)}")
+            return [], go.Figure()
