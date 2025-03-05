@@ -54,10 +54,10 @@ def layout():
                             ], md=6),
                             
                             dbc.Col([
-                                dbc.Label("Dominio", className="form-label"),
+                                dbc.Label("Dominio da 0 a 100", className="form-label"),
                                 dbc.InputGroup([
-                                    dbc.Input(id='domain-min', type='number', className="input-field", value='0', debounce=True, required=True, ),
-                                    dbc.Input(id='domain-max', type='number', className="input-field", value='', debounce=True, required=True, )
+                                    dbc.Input(id='domain-min', type='number', className="input-field", value='0', min='0', max='100', debounce=True, required=True, ),
+                                    dbc.Input(id='domain-max', type='number', className="input-field", value='', min='0', max='100', debounce=True, required=True, )
                                 ], className="domain-input-group")
                             ], md=6)
                         ], className="mb-4"),
