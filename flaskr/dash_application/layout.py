@@ -2,9 +2,9 @@ import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
-def serve_layout():
+def serve_layout() -> html.Div:
     return html.Div([
-        dcc.Location(id="url", refresh=False),
+        dcc.Location(id='url', refresh=False), 
         
         # Font Awesome
         html.Link(
@@ -30,21 +30,16 @@ def serve_layout():
                 ),
                 className="sidebar-logo"
             ),
-            # Navigazione: centrata verticalmente
+            # Navigazione:
             html.Nav([
                 dcc.Link(
-                    [html.I(className="fas fa-edit mr-2"), "Input"],
+                    [html.I(className="fas fa-edit mr-2"), "Crea FIS"],
                     href="/input",
                     className="nav-link"
                 ),
                 dcc.Link(
-                    [html.I(className="fas fa-chart-bar mr-2"), "Output"],
-                    href="/output",
-                    className="nav-link"
-                ),
-                dcc.Link(
-                    [html.I(className="fas fa-code-branch mr-2"), "Rules"],
-                    href="/rules",
+                    [html.I(className="fas fa-file-import mr-2"), "Importa FIS"],
+                    href="/import",
                     className="nav-link"
                 ),
             ], className="sidebar-nav"),

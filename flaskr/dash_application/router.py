@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Callable
 from dash import Output, Input, html, dcc
-from .pages import home, input_page, output, rules
+from .pages import home_page, input_page, output_page, rules_page, import_page
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -33,17 +33,14 @@ def error_404_layout() -> html.Div:
 def register_routing(dash_app: Any) -> None:
     """
     Registra tutte le route dell'applicazione Dash
-    
-    Args:
-        dash_app (dash.Dash): Istanza dell'applicazione Dash
     """
     
-    # Mappa delle route con controllo di tipo
     routes: Dict[str, Callable[[], html.Div]] = {
-        "/": home.layout,
+        "/": home_page.layout,
         "/input": input_page.layout,
-        "/output": output.layout,
-        "/rules": rules.layout
+        "/output": output_page.layout,
+        "/rules": rules_page.layout,
+        "/import": import_page.layout
     }
     
     # Verifica avanzata delle dipendenze
@@ -53,33 +50,30 @@ def register_routing(dash_app: Any) -> None:
         logger.error(error_msg)
         raise RuntimeError(error_msg)
 
+
+    # Callback per il rendering del contenuto
     @dash_app.callback(
         Output("page-content", "children"),
         Input("url", "pathname"),
-        prevent_initial_callbacks=False  # Modificato per permettere il primo rendering
+        prevent_initial_callbacks=False
     )
     def render_page_content(pathname: str) -> html.Div:
-        """
-        Gestisce il rendering dinamico del contenuto in base al percorso
-        
-        Args:
-            pathname (str): Percorso corrente dell'URL
-            
-        Returns:
-            html.Div: Layout della pagina richiesta
-        """
         logger.info(f"Richiesta route: {pathname}")
         
         try:
-            normalized_path = pathname.rstrip('/') if pathname != '/' else pathname
-            layout_func = routes.get(normalized_path, lambda: error_404_layout())
+            # Normalizzazione avanzata dei path
+            normalized_path = pathname.strip().rstrip('/')
+            if not normalized_path:
+                normalized_path = '/'
+                
+            layout_func = routes.get(normalized_path, error_404_layout)
             return layout_func()
         except Exception as e:
             logger.error(f"Errore critico durante il rendering: {str(e)}", exc_info=True)
             return error_404_layout()
 
-    # Aggiungi qui eventuali callback aggiuntivi
+    # Funzione per eventuali callback aggiuntivi
     def register_additional_callbacks():
-        pass
+        pass  # Aggiungere qui eventuali altri callback
 
     register_additional_callbacks()

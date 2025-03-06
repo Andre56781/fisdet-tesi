@@ -2,7 +2,7 @@ from dash import dcc, html, Input, Output, State
 from dash_bootstrap_components import Modal, themes, ModalHeader, ModalBody
 import dash_bootstrap_components as dbc
 
-def layout():
+def layout() -> html.Div:
     return html.Div([
         dcc.Store(id='num-variables-store'),
         dcc.Store(id='current-index', data=0),
@@ -12,29 +12,62 @@ def layout():
         # Modal per numero variabili
         Modal(
             id="variable-modal",
-            is_open=True,
             className="custom-modal",
             backdrop="static",
+            size="md",
             children=[
-                ModalHeader("Configurazione Iniziale", className="gradient-header"),
+                ModalHeader(
+                    children=[
+                        html.H5("Creazione Variabili di Input", className="mb-0"),
+                        html.A(
+                            dbc.Button(
+                                html.I(className="fas fa-times"),
+                                id="modal-close-button",
+                                className="ml-auto",
+                                color="link",
+                                style={
+                                    "color": "white", 
+                                    "border": "none", 
+                                    "background": "none",
+                                    "padding": "0.3rem"
+                                }
+                            ),
+                            href="/"  # Imposta il redirect alla homepage
+                        )
+    ],
+    className="gradient-header py-2 d-flex justify-content-between align-items-center",
+    close_button=False
+                ),
                 ModalBody(
                     html.Div([
-                        html.H4("Seleziona il numero di variabili", style={"textAlign": "center"}),
+                        html.Div(
+                            "Seleziona il numero di variabili",
+                            className="h6 text-muted mb-2"
+                        ),
                         dcc.Input(
                             id="num-variables-input",
                             type="number",
                             min=1,
                             value=1,
-                            className="modal-input"
+                            className="modal-input mx-auto",
+                            style={"width": "120px"}
                         ),
-                        dbc.Button("Conferma", id="modal-submit-button", color="primary", className="mt-3")
-                    ], className="modal-content-wrapper")
+                        html.Div(
+                            dbc.Button(
+                                "Conferma", 
+                                id="modal-submit-button", 
+                                color="primary",
+                                className="mt-2 btn-sm"
+                            ),
+                            className="text-center"
+                        )
+                    ], className="modal-content-wrapper px-3")
                 ),
             ]
         ),
         
         # Contenuto principale
-        html.Div(id="main-content", className="content", children=[
+        html.Div(id="main-content", className="content", style={"display" : "none", "position": "relative"},children=[
             dbc.Progress(id="progress-bar", className="my-2 custom-progress"),
             
             dbc.Card([
@@ -118,7 +151,7 @@ def layout():
 
                         html.Div(id='params-container', className="params-container"),
                         
-                        # BOTTONI "CREA TERMINE" / "RESETTA CAMPI"
+                        # BOTTONI "CREA TERMINE"
                         html.Div([
                             dbc.ButtonGroup([
                                 dbc.Button(

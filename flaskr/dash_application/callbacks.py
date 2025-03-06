@@ -10,13 +10,14 @@ import json
 
 def register_callbacks(dash_app):
     # Callback per la gestione della sottomissione del modal e la visualizzazione del contenuto principale
+
     @dash_app.callback(
-        [Output("variable-modal", "is_open"),
-         Output("main-content", "style"),
-         Output("num-variables-store", "data")],
-        [Input("modal-submit-button", "n_clicks")],
-        [State("num-variables-input", "value")]
-    )
+            [Output("variable-modal", "is_open"),
+            Output("main-content", "style"),
+            Output("num-variables-store", "data")],
+            [Input("modal-submit-button", "n_clicks")],
+            [State("num-variables-input", "value")]
+        )
     def handle_modal_submit(n_clicks, num_variables):
         if not n_clicks:
             return [True, {"display": "none"}, None]
@@ -45,7 +46,7 @@ def register_callbacks(dash_app):
         except (ValueError, TypeError):
             return "Errore: Indice della variabile non valido."
 
-        return f"Variabile {current_index + 1} di {num_vars}"
+        return f"Creazione Variabile di Input {current_index + 1} di {num_vars}"
 
     # Callback per la gestione della logica del pulsante "Next"
     @dash_app.callback(
