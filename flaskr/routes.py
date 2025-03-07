@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify, send_file
 import os
 from flaskr.file_handler import *
-from flaskr.file_handler import get_user_file
-from dash_application.callbacks import *
 import logging
 import skfuzzy as fuzz
 import numpy as np
@@ -23,23 +21,12 @@ def load():
     data = load_data()
     return jsonify(data)
 
-# Esporta i dati in un file JSON
-@bp.route("/export", methods=["GET"])
-def export():
-    user_file = get_user_file()
-    if os.path.exists(user_file):
-        return send_file(user_file, as_attachment=True, download_name="data.json")
-    return jsonify({"error": "No data found"}), 404
 
 #PROVA
 
-# Crea un nuovo termine
 @bp.route('/create_term', methods=['POST'])
 def create_term():
     try:
-        # Log the incoming data for debugging
-        logging.debug(f"Received data: {request.get_data(as_text=True)}")
-
         data = request.get_json()
         if not isinstance(data, dict):
             return jsonify({"error": "Formato dati non valido. Deve essere un oggetto JSON."}), 400
@@ -94,18 +81,11 @@ def create_term():
         # Salva i dati aggiornati
         save_terms(terms_data)
 
-        # Log the new term for debugging
-        logging.debug(f"Created new term: {new_term}")
-
         return jsonify(new_term), 201
 
     except Exception as e:
-        logging.error(f"Error occurred: {str(e)}")
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
 
-
-
-# Ottieni tutti i termini
 @bp.route('/get_terms', methods=['GET'])
 def get_terms():
     try:
@@ -147,10 +127,19 @@ def get_terms():
 
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+    
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+@bp.route('/prova', methods=['POST'])
+def prova():
+    logger.info("POST su /api/prova ricevuto")
+    return jsonify({"message": "Ciao"}), 200
 
 
 
-# Ottieni un termine specifico
 @bp.route('/get_term/<variable_name>/<term_name>', methods=['GET'])
 def get_term(variable_name, term_name):
     try:
@@ -173,8 +162,6 @@ def get_term(variable_name, term_name):
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
 
 
-
-# Elimina un termine
 @bp.route('/delete_term/<term_name>', methods=['POST'])
 def delete_term(term_name):
     try:
@@ -194,8 +181,6 @@ def delete_term(term_name):
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
 
 
-
-# Modifica un termine
 @bp.route('/modify_term/<term_name>', methods=['PUT'])
 def modify_term(term_name):
     try:

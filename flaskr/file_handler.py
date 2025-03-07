@@ -44,10 +44,13 @@ def load_data():
 def load_terms():
     """Carica i dati dell'utente dalla sessione, se esistono."""
     file_path = get_session_file()
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as f:
-            return json.load(f)
-    return {}
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Errore durante il caricamento dei dati: {e}")
+    return {}  # Ritorna un dizionario vuoto in caso di errore
 
 def save_terms(new_data):
     """Salva i dati nel file JSON senza sovrascrivere i dati esistenti."""
