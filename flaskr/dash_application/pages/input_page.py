@@ -32,7 +32,7 @@ def layout() -> html.Div:
                                     "padding": "0.3rem"
                                 }
                             ),
-                            href="/"  # Imposta il redirect alla homepage
+                            href="/"
                         )
     ],
     className="gradient-header py-2 d-flex justify-content-between align-items-center",
@@ -68,7 +68,8 @@ def layout() -> html.Div:
         
         # Contenuto principale
         html.Div(id="main-content", className="content", style={"display" : "none", "position": "relative"},children=[
-            dbc.Progress(id="progress-bar", className="my-2 custom-progress"),
+            dcc.Interval(id="progress-interval", n_intervals=0, interval=100),
+            dbc.Progress(id="progress", className="mb-2"),
             
             dbc.Card([
                 dbc.CardHeader(
@@ -97,13 +98,14 @@ def layout() -> html.Div:
                             ], md=6),
                             
                             dbc.Col([
-                                dbc.Label("Dominio da 0 a 100", className="form-label"),
+                                dbc.Label("Dominio", className="form-label"),
                                 dbc.InputGroup([
                                     dbc.Input(
                                         id='domain-min',
                                         type='number',
                                         className="input-field",
                                         value='0', min='0', max='100',
+                                        placeholder="0",
                                         debounce=True,
                                         required=True
                                     ),
@@ -112,12 +114,13 @@ def layout() -> html.Div:
                                         type='number',
                                         className="input-field",
                                         value='', min='0', max='100',
+                                        placeholder="100",
                                         debounce=True,
                                         required=True
                                     )
                                 ], className="domain-input-group")
                             ], md=6)
-                        ], className="mb-2"),
+                        ], className="mb-1"),
 
                         # SECONDO GRUPPO DI CAMPI
                         dbc.Row([
@@ -131,7 +134,8 @@ def layout() -> html.Div:
                                         {'label': 'Trapezoidale', 'value': 'Trapezoidale'}
                                     ],
                                     placeholder="Seleziona...",
-                                    className="custom-dropdown"
+                                    className="custom-dropdown",
+                                    clearable=False
                                 )
                             ], md=6),
                             
@@ -151,17 +155,16 @@ def layout() -> html.Div:
 
                         html.Div(id='params-container', className="params-container"),
                         
-                        # BOTTONI "CREA TERMINE"
-                        html.Div([
-                            dbc.ButtonGroup([
+                        # BOTTONE "CREA TERMINE"
+                        html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-plus mr-2"), " Crea Termine"],
                                     id='create-term-btn',
                                     color="success",
                                     className="action-btn"
+                                    ),
+                                className="d-flex justify-content-end pt-1",
                                 ),
-                            ])
-                        ], className="d-flex justify-content-end mb-4"),
                         
                         # GRAFICO E MESSAGGI
                         dcc.Graph(id='graph', className="custom-graph"),

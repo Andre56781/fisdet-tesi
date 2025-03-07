@@ -297,11 +297,10 @@ body {
 .card-header-gradient {
   background: linear-gradient(135deg, #52b2cf, #7fd9ff);
   color: white;
-  /* Riduci il padding per un header più compatto */
-  padding: 0.75rem; /* prima era 1.5rem */
+  padding: 0.75rem; 
   position: relative;
   border-bottom: none;
-  font-size: 1rem; /* se vuoi ridurre anche la dimensione del testo */
+  font-size: 1rem;
 }
 
 .card-header-gradient::after {
@@ -314,20 +313,6 @@ body {
   background: linear-gradient(90deg, #7fd9ff, #52b2cf, #3a8ba3);
 }
 
-/* ==================== BUTTONS ==================== */
-.nav-btn {
-  padding: 0.4rem 1rem; 
-  border-radius: 25px;
-  font-size: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
 .action-btn {
   padding: 0.4rem 1rem;
   border-radius: 20px;
@@ -335,15 +320,6 @@ body {
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.nav-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.nav-btn i {
-  font-size: 1.1em;
 }
 
 .custom-dropdown .Select-control {
@@ -367,24 +343,28 @@ body {
   color: #999;
 }
 
-
-/* ==================== PROGRESS BAR ==================== */
-.custom-progress {
-  height: 20px;
-  border-radius: 10px;
-  background-color: #e9ecef;
-  overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+/* ==================== BUTTONS ==================== */
+.nav-btn {
+  padding: 0.4rem 1rem; 
+  border-radius: 25px;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items:start;
+  gap: 0.5rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.custom-progress .progress-bar {
-  background: linear-gradient(135deg, #52b2cf, #7fd9ff);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  justify-content: center;
-  align-items: center;
+.nav-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-
+.nav-btn i {
+  font-size: 1.1em;
+}
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
