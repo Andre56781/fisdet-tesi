@@ -6,6 +6,7 @@ import skfuzzy as fuzz
 import numpy as np
 import json
 
+logging.basicConfig(level=logging.DEBUG)
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 # Salva i dati dell'utente
@@ -28,9 +29,7 @@ def load():
 def create_term():
     try:
         data = request.get_json()
-        if not isinstance(data, dict):
-            return jsonify({"error": "Formato dati non valido. Deve essere un oggetto JSON."}), 400
-
+        var_type = data.get('var_type')
         term_name = data.get('term_name')
         variable_name = data.get('variable_name')
         domain_min = data.get('domain_min')
@@ -38,18 +37,9 @@ def create_term():
         function_type = data.get('function_type')
         params = data.get('params')
 
-        missing_fields = []
-        if not term_name: missing_fields.append("term_name")
-        if not variable_name: missing_fields.append("variable_name")
-        if domain_min is None: missing_fields.append("domain_min")
-        if domain_max is None: missing_fields.append("domain_max")
-        if not function_type: missing_fields.append("function_type")
-        if not params: missing_fields.append("params")
+        if var_type not in ["input", "output"]:
+            return jsonify({"error": "var_type deve essere 'input' o 'output'"}), 400
 
-        if missing_fields:
-            return jsonify({"error": f"Dati incompleti: {', '.join(missing_fields)}"}), 400
-
-        # Carica i dati esistenti
         terms_data = load_terms()
 
         # Controlla se la variabile esiste già
@@ -65,20 +55,13 @@ def create_term():
         if variable_data['domain'] != [domain_min, domain_max]:
             return jsonify({"error": "Dominio incoerente per la variabile esistente"}), 400
 
-        # Controlla se il termine esiste già
         existing_term = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
         if existing_term:
             return jsonify({"error": "Il termine esiste già per questa variabile"}), 400
 
-        # Aggiungi il nuovo termine
-        new_term = {
-            "term_name": term_name,
-            "function_type": function_type,
-            "params": params
-        }
+        new_term = {"":var_type, "term_name": term_name, "function_type": function_type, "params": params}
         variable_data['terms'].append(new_term)
 
-        # Salva i dati aggiornati
         save_terms(terms_data)
 
         return jsonify(new_term), 201
@@ -86,16 +69,28 @@ def create_term():
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
 
+
+import logging
+
+# Configura il logger
+
 @bp.route('/get_terms', methods=['GET'])
 def get_terms():
     try:
+        logging.debug("Inizio del caricamento dei termini.")
         terms_data = load_terms()
+
         if not terms_data:
+            logging.debug("Nessun termine trovato, restituito 404.")
             return jsonify({}), 404
 
-        # Calcola x e y per ogni termine
         computed_terms = {}
         for variable_name, variable_data in terms_data.items():
+            # Verifica che 'domain' sia presente prima di procedere
+            if 'domain' not in variable_data:
+                logging.error(f"Variabile '{variable_name}' non contiene il campo 'domain'. Non sarà elaborata.")
+                continue  # Salta questa variabile
+
             domain_min, domain_max = variable_data['domain']
             x = np.linspace(domain_min, domain_max, 100)
             computed_terms[variable_name] = {
@@ -123,22 +118,15 @@ def get_terms():
                     "y": y.tolist()
                 })
 
+        logging.debug("Termini calcolati correttamente, restituito 200.")
         return jsonify(computed_terms), 200
 
     except Exception as e:
+        logging.error(f"Errore durante il processo: {str(e)}")
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+
+
     
-
-import logging
-
-logger = logging.getLogger(__name__)
-
-@bp.route('/prova', methods=['POST'])
-def prova():
-    logger.info("POST su /api/prova ricevuto")
-    return jsonify({"message": "Ciao"}), 200
-
-
 
 @bp.route('/get_term/<variable_name>/<term_name>', methods=['GET'])
 def get_term(variable_name, term_name):

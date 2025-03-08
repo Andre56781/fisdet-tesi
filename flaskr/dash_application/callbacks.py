@@ -73,7 +73,6 @@ def register_callbacks(dash_app):
             # Passa alla variabile successiva e svuota il campo di input
             return new_index, "", "", variables_data
         else:
-            # Se tutte le variabili sono state inserite, salva i dati finali usando file_handler.save_data
             file_handler.save_data({"variables": variables_data})
             return current_index, input_value, "Hai inserito tutte le variabili!", variables_data
 
@@ -126,100 +125,136 @@ def register_callbacks(dash_app):
             return []
 
     @dash_app.callback(
-        [
-            Output('terms-list', 'children', allow_duplicate=True),
-            Output('message', 'children'),
-            Output('graph', 'figure', allow_duplicate=True),
-            Output('term-name', 'value', allow_duplicate=True),  
-            Output('param-a', 'value', allow_duplicate=True),     
-            Output('param-b', 'value', allow_duplicate=True),     
-            Output('param-c', 'value', allow_duplicate=True),     
-            Output('param-d', 'value', allow_duplicate=True),     
-            Output('param-mean', 'value', allow_duplicate=True),  
-            Output('param-sigma', 'value', allow_duplicate=True), 
-            Output('create-term-btn', 'children')
-        ],
-        [
-            Input('create-term-btn', 'n_clicks'),
-            Input({'type': 'delete-btn', 'index': ALL}, 'n_clicks'),
-            Input({'type': 'modify-btn', 'index': ALL}, 'n_clicks')
-        ],
-        [
-            State('variable-name', 'value'),
-            State('domain-min', 'value'),
-            State('domain-max', 'value'),
-            State('function-type', 'value'),
-            State('term-name', 'value'),
-            State('param-a', 'value'),
-            State('param-b', 'value'),
-            State('param-c', 'value'),
-            State('param-d', 'value'),
-            State('param-mean', 'value'),
-            State('param-sigma', 'value'),
-            State('create-term-btn', 'children')
-        ],
-        prevent_initial_call=True
+    [
+        Output('terms-list', 'children', allow_duplicate=True),
+        Output('message', 'children'),
+        Output('graph', 'figure', allow_duplicate=True),
+        Output('term-name', 'value', allow_duplicate=True),  
+        Output('param-a', 'value', allow_duplicate=True),     
+        Output('param-b', 'value', allow_duplicate=True),     
+        Output('param-c', 'value', allow_duplicate=True),     
+        Output('param-d', 'value', allow_duplicate=True),     
+        Output('param-mean', 'value', allow_duplicate=True),  
+        Output('param-sigma', 'value', allow_duplicate=True), 
+        Output('create-term-btn', 'children')
+    ],
+    [
+        Input('create-term-btn', 'n_clicks'),
+        Input({'type': 'delete-btn', 'index': ALL}, 'n_clicks'),
+        Input({'type': 'modify-btn', 'index': ALL}, 'n_clicks')
+    ],
+    [
+        State('var-type-store', 'data'),
+        State('variable-name', 'value'),
+        State('domain-min', 'value'),
+        State('domain-max', 'value'),
+        State('function-type', 'value'),
+        State('term-name', 'value'),
+        State('param-a', 'value'),
+        State('param-b', 'value'),
+        State('param-c', 'value'),
+        State('param-d', 'value'),
+        State('param-mean', 'value'),
+        State('param-sigma', 'value'),
+        State('create-term-btn', 'children')
+    ],
+    prevent_initial_call=True
     )
-    def handle_terms(create_clicks, delete_clicks, modify_clicks, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
+    def handle_terms(create_clicks, delete_clicks, modify_clicks, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
         ctx = dash.ctx
 
         if not ctx.triggered:
-            return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+            return [dash.no_update] * 11
 
         triggered_id = ctx.triggered[0]['prop_id']
+        
+        # Controlla se var_type è valido
+        if var_type not in ['input', 'output']:
+            return [dash.no_update, "Errore: var_type deve essere 'input' o 'output'", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine']
 
         if triggered_id == 'create-term-btn.n_clicks':
             if button_label == 'Salva Modifica':
-                # Usa il nome del termine corrente come identificatore per la modifica
                 terms_list, message = modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
-                # Aggiorna la lista dei termini e il grafico dopo la modifica
                 terms_list, figure = update_terms_list_and_figure(variable_name)
                 return terms_list, message, figure, '', '', '', '', '', '', '', 'Crea Termine'
             else:
-                # Creazione del termine
-                terms_list, message, figure = create_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
+                terms_list, message, figure = create_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
                 if message == "Termine creato con successo!":
                     return terms_list, message, figure, '', '', '', '', '', '', '', 'Crea Termine'
-                return terms_list, message, figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+                return terms_list, message, figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
 
         elif 'delete-btn' in triggered_id:
-            # Estrai l'indice del termine da eliminare in modo più sicuro
             term_name_to_delete = eval(triggered_id.split('.')[0])['index']
             return delete_term(variable_name, term_name_to_delete) + ('Crea Termine',)
 
         elif 'modify-btn' in triggered_id:
             term_name_to_modify = eval(triggered_id.split('.')[0])['index']
-            
-            # Recupera i dati del termine da modificare utilizzando l'endpoint del backend
+            headers = {'Content-Type': 'application/json'}
             response = requests.get(f'http://127.0.0.1:5000/get_term/{variable_name}/{term_name_to_modify}')
         
             if response.status_code == 200:
                 term_data = response.json()
-                
-                # Popola i campi con i dati ricevuti
                 term_params = term_data.get('params', {})
-
                 return (
                     dash.no_update, 
                     "Dati del termine caricati, puoi modificarli.",
-                    dash.no_update,  # Se necessario, inserisci la logica per aggiornare il grafico
-                    term_data.get('term_name', ''),  # Nome del termine
-                    term_params.get('a', ''),    # Parametro A
-                    term_params.get('b', ''),    # Parametro B
-                    term_params.get('c', ''),    # Parametro C
-                    term_params.get('d', ''),    # Parametro D
-                    term_params.get('mean', ''),    # Parametro Mean
-                    term_params.get('sigma', ''),   # Parametro Sigma
+                    dash.no_update,
+                    term_data.get('term_name', ''),
+                    term_params.get('a', ''),
+                    term_params.get('b', ''),
+                    term_params.get('c', ''),
+                    term_params.get('d', ''),
+                    term_params.get('mean', ''),
+                    term_params.get('sigma', ''),
                     'Salva Modifica'
                 )
             else:
-                return dash.no_update, "Errore nel caricamento dei dati del termine.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+                return [dash.no_update, "Errore nel caricamento dei dati del termine.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine']
 
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+        return [dash.no_update] * 11
+
+    def validate_params(params, domain_min, domain_max, function_type):
+        """
+        Valida che i parametri siano compresi tra domain_min e domain_max.
+        """
+        if function_type == 'Triangolare':
+            a, b, c = params.get('a'), params.get('b'), params.get('c')
+            
+            # Controllo che i parametri siano compresi tra domain_min e domain_max
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
+                return False, "Errore: I parametri a, b, c devono essere compresi tra il dominio minimo e massimo."
+            
+            # Controllo che a <= b <= c
+            if not (a <= b <= c):
+                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
+            
+        elif function_type == 'Gaussian':
+            mean, sigma = params.get('mean'), params.get('sigma')
+            
+            # Controllo che mean sia compreso tra domain_min e domain_max
+            if not (domain_min <= mean <= domain_max):
+                return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
+            
+            # Controllo che sigma sia positivo (opzionale, se necessario)
+            if sigma <= 0:
+                return False, "Errore: Il parametro sigma deve essere maggiore di zero."
+            
+        elif function_type == 'Trapezoidale':
+            a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
+            
+            # Controllo che i parametri siano compresi tra domain_min e domain_max
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
+                return False, "Errore: I parametri a, b, c, d devono essere compresi tra il dominio minimo e massimo."
+            
+            # Controllo che a <= b <= c <= d
+            if not (a <= b <= c <= d):
+                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
+            
+        return True, ""
 
 
     # Funzione per la creazione di un termine fuzzy
-    def create_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
+    def create_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -237,7 +272,12 @@ def register_callbacks(dash_app):
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
 
+        is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
+        if not is_valid:
+            return dash.no_update, error_message, dash.no_update
+        
         payload = {
+            'var_type': var_type,
             'term_name': term_name,
             'variable_name': variable_name,
             'domain_min': domain_min,
@@ -247,7 +287,6 @@ def register_callbacks(dash_app):
         }
         headers = {'Content-Type': 'application/json'}
         response = requests.post('http://127.0.0.1:5000/api/create_term', json=payload)
-
 
         if response.status_code == 201:
             terms_list, figure = update_terms_list_and_figure(variable_name)
@@ -282,7 +321,10 @@ def register_callbacks(dash_app):
             params = {'mean': param_mean, 'sigma': param_sigma}
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-
+            
+        is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
+        if not is_valid:
+            return dash.no_update, error_message, dash.no_update
         payload = {
             'term_name': term_name,
             'variable_name': variable_name,

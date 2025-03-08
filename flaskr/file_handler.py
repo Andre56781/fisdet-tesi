@@ -42,43 +42,16 @@ def load_data():
 #Prova
 
 def load_terms():
-    """Carica i dati dell'utente dalla sessione, se esistono."""
+    """Carica i dati dal file JSON, se esiste."""
     file_path = get_session_file()
-    try:
-        if os.path.exists(file_path):
-            with open(file_path, "r") as f:
-                return json.load(f)
-    except Exception as e:
-        print(f"Errore durante il caricamento dei dati: {e}")
-    return {}  # Ritorna un dizionario vuoto in caso di errore
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    return {}
 
-def save_terms(new_data):
-    """Salva i dati nel file JSON senza sovrascrivere i dati esistenti."""
+def save_terms(data):
+    """Salva i dati nel file JSON."""
+    os.makedirs(BASE_DIR, exist_ok=True)  # Crea la cartella se non esiste
     file_path = get_session_file()
-    
-    # Carica i dati esistenti
-    existing_data = load_terms()
-    
-    # Aggiorna i dati esistenti con i nuovi dati
-    variable_name = new_data.get('variable_name')
-    term_name = new_data.get('term_name')
-    
-    if variable_name not in existing_data:
-        existing_data[variable_name] = {"terms": []}
-    
-    # Cerca se il termine esiste già
-    term_exists = False
-    for term in existing_data[variable_name]["terms"]:
-        if term['term_name'] == term_name:
-            # Aggiorna il termine esistente
-            term.update(new_data)
-            term_exists = True
-            break
-    
-    if not term_exists:
-        # Aggiungi il nuovo termine
-        existing_data[variable_name]["terms"].append(new_data)
-    
-    # Salva i dati aggiornati
     with open(file_path, 'w') as f:
-        json.dump(existing_data, f, indent=4)
+        json.dump(data, f, indent=4)
