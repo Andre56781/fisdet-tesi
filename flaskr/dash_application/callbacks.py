@@ -46,36 +46,43 @@ def register_callbacks(dash_app):
 
         return f"Creazione Variabile di Input {current_index + 1} di {num_vars}"
 
-    # Callback per la gestione della logica del pulsante "Next"
     @dash_app.callback(
-        [Output("current-index", "data"),
-         Output("variable-input", "value"),
-         Output("output-message", "children"),
-         Output("variables-data", "data")],
-        [Input("next-button", "n_clicks")],
-        [State("variable-input", "value"),
-         State("current-index", "data"),
-         State("num-variables-store", "data"),
-         State("variables-data", "data")]
-    )
-    def handle_next(n_clicks, input_value, current_index, num_vars, variables_data):
-        if not n_clicks:
-            raise dash.exceptions.PreventUpdate
+    [Output("current-index", "data"),
+     Output("back-button", "style"),
+     Output("next-button", "style")],
+    [Input("next-button", "n_clicks"),
+     Input("back-button", "n_clicks"),
+     Input("num-variables-store", "data")],  # Aggiungi questo input per monitorare il cambiamento del numero di variabili
+    [State("current-index", "data")],
+    prevent_initial_call=False  
+)
+    def navigate_variables(next_clicks, back_clicks, num_variables, current_index):
+        ctx = dash.callback_context
 
-        if variables_data is None:
-            variables_data = {}
-
-        # Salva il valore della variabile corrente
-        variables_data[str(current_index)] = input_value
-
-        new_index = current_index + 1
-        if new_index < num_vars:
-            # Passa alla variabile successiva e svuota il campo di input
-            return new_index, "", "", variables_data
+        if not ctx.triggered:
+            # Se il callback è stato eseguito all'avvio, imposta current_index a 0
+            current_index = 0 if current_index is None else current_index
         else:
-            file_handler.save_data({"variables": variables_data})
-            return current_index, input_value, "Hai inserito tutte le variabili!", variables_data
+            # Altrimenti, gestisci i click sui pulsanti
+            triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
+            if triggered_id == "next-button" and current_index < num_variables - 1:
+                current_index += 1
+            elif triggered_id == "back-button" and current_index > 0:
+                current_index -= 1
+
+        # Gestione della visibilità dei pulsanti
+        if num_variables == 1:
+            back_button_style = {'display': 'none'}
+            next_button_style = {'display': 'none'}
+        else:
+            back_button_style = {'display': 'none'} if current_index == 0 else {'display': 'inline-block'}
+            next_button_style = {'display': 'none'} if current_index == num_variables - 1 else {'display': 'inline-block'}
+
+        return current_index, back_button_style, next_button_style
+
+
+#Inizio Logica Fuzzy
     # Funzione per generare i parametri in base al tipo di funzione fuzzy
     @dash_app.callback(
         Output('params-container', 'children'),

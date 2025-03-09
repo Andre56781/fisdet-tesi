@@ -181,13 +181,16 @@ def layout() -> html.Div:
                                 [html.I(className="fas fa-arrow-left mr-2"), "Indietro"],
                                 id="back-button",
                                 color="light",
-                                className="nav-btn"
+                                className="nav-btn",
+                                style={"display": "inline-block"}
+
                             ),
                             dbc.Button(
                                 [html.I(className="fas fa-arrow-right mr-2"), "Avanti"],
                                 id="next-button",
                                 color="primary",
-                                className="nav-btn"
+                                className="nav-btn",
+                                style={"display": "inline-block"}
                             )
                         ])
                     ], className="d-flex justify-content-end"),
