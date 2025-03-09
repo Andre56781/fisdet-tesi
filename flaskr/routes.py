@@ -45,6 +45,7 @@ def create_term():
         # Controlla se la variabile esiste già
         if variable_name not in terms_data:
             terms_data[variable_name] = {
+                "var_type": var_type,
                 "domain": [domain_min, domain_max],
                 "terms": []
             }
@@ -59,7 +60,7 @@ def create_term():
         if existing_term:
             return jsonify({"error": "Il termine esiste già per questa variabile"}), 400
 
-        new_term = {"":var_type, "term_name": term_name, "function_type": function_type, "params": params}
+        new_term = {"term_name": term_name, "function_type": function_type, "params": params}
         variable_data['terms'].append(new_term)
 
         save_terms(terms_data)
@@ -82,8 +83,8 @@ def get_terms():
 
         if not terms_data:
             logging.debug("Nessun termine trovato, restituito 404.")
-            return jsonify({}), 404
-
+            return jsonify({"message": "Nessun termine trovato"}), 404
+    
         computed_terms = {}
         for variable_name, variable_data in terms_data.items():
             # Verifica che 'domain' sia presente prima di procedere
@@ -126,29 +127,29 @@ def get_terms():
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
 
 
-    
-
 @bp.route('/get_term/<variable_name>/<term_name>', methods=['GET'])
 def get_term(variable_name, term_name):
     try:
-        terms_data = load_terms()
-
-        # Trova la variabile specifica
-        if variable_name not in terms_data:
-            return jsonify({"error": "Variabile non trovata."}), 404
+        #print(f"Richiesta per variabile: {variable_name}, termine: {term_name}")  # Debug
+        terms_data = load_terms()  # Carica i termini dal file
         
+        if variable_name not in terms_data:
+            #print("Variabile non trovata")  # Debug
+            return jsonify({"error": "Variabile non trovata."}), 404
+
         variable_data = terms_data[variable_name]
-
-        # Trova il termine specifico
         term_to_get = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
-        if term_to_get:
-            return jsonify(term_to_get), 200
 
-        return jsonify({"error": "Termine non trovato."}), 404
+        if term_to_get:
+            #print("Termine trovato:", term_to_get)  # Debug
+            return jsonify(term_to_get), 200  # Restituisce i dati del termine
+        else:
+            #print("Termine non trovato")  # Debug
+            return jsonify({"error": "Termine non trovato."}), 404
 
     except Exception as e:
+        print("Errore:", str(e))  # Debug
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
-
 
 @bp.route('/delete_term/<term_name>', methods=['POST'])
 def delete_term(term_name):
@@ -172,10 +173,11 @@ def delete_term(term_name):
 @bp.route('/modify_term/<term_name>', methods=['PUT'])
 def modify_term(term_name):
     try:
+        print(request.data)
         data = request.get_json()
         if not isinstance(data, dict):
             return jsonify({"error": "Formato dati non valido. Deve essere un oggetto JSON."}), 400
-
+        
         variable_name = data.get('variable_name')
         domain_min = data.get('domain_min')
         domain_max = data.get('domain_max')

@@ -158,7 +158,7 @@ def register_callbacks(dash_app):
         State('param-sigma', 'value'),
         State('create-term-btn', 'children')
     ],
-    prevent_initial_call=True
+        prevent_initial_call=True
     )
     def handle_terms(create_clicks, delete_clicks, modify_clicks, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
         ctx = dash.ctx
@@ -174,7 +174,7 @@ def register_callbacks(dash_app):
 
         if triggered_id == 'create-term-btn.n_clicks':
             if button_label == 'Salva Modifica':
-                terms_list, message = modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
+                terms_list, message, figure = modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
                 terms_list, figure = update_terms_list_and_figure(variable_name)
                 return terms_list, message, figure, '', '', '', '', '', '', '', 'Crea Termine'
             else:
@@ -189,29 +189,36 @@ def register_callbacks(dash_app):
 
         elif 'modify-btn' in triggered_id:
             term_name_to_modify = eval(triggered_id.split('.')[0])['index']
+            
+            url = f'http://127.0.0.1:5000/api/get_term/{variable_name}/{term_name_to_modify}'
+            
             headers = {'Content-Type': 'application/json'}
-            response = requests.get(f'http://127.0.0.1:5000/get_term/{variable_name}/{term_name_to_modify}')
-        
+            response = requests.get(url)
+            
+            #print(f"Stato della risposta: {response.status_code}")  # Debug
+            #print(f"Contenuto della risposta: {response.text}")  # Debug
+            
             if response.status_code == 200:
                 term_data = response.json()
+                
+                # Popola i campi con i dati ricevuti
                 term_params = term_data.get('params', {})
+
                 return (
                     dash.no_update, 
-                    "Dati del termine caricati, puoi modificarli.",
-                    dash.no_update,
-                    term_data.get('term_name', ''),
-                    term_params.get('a', ''),
-                    term_params.get('b', ''),
-                    term_params.get('c', ''),
-                    term_params.get('d', ''),
-                    term_params.get('mean', ''),
-                    term_params.get('sigma', ''),
+                    dash.no_update, 
+                    dash.no_update,  
+                    term_data.get('term_name', ''),  
+                    term_params.get('a', ''),   
+                    term_params.get('b', ''),   
+                    term_params.get('c', ''),    
+                    term_params.get('d', ''),   
+                    term_params.get('mean', ''),    
+                    term_params.get('sigma', ''),  
                     'Salva Modifica'
                 )
             else:
-                return [dash.no_update, "Errore nel caricamento dei dati del termine.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine']
-
-        return [dash.no_update] * 11
+                return dash.no_update, "Errore nel caricamento dei dati del termine.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
 
     def validate_params(params, domain_min, domain_max, function_type):
         """
@@ -310,9 +317,14 @@ def register_callbacks(dash_app):
 
     # Funzione per la modifica di un termine fuzzy
     def modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
-        # Aggiungi controllo sul dominio minimo e massimo
+        try:
+            domain_min = int(domain_min)
+            domain_max = int(domain_max)
+        except (ValueError, TypeError):
+            return dash.no_update, "Errore: I valori del dominio devono essere numeri.", dash.no_update
+
         if domain_min > domain_max:
-            return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo."
+            return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo.", dash.no_update
 
         params = {}
         if function_type == 'Triangolare':
@@ -321,10 +333,11 @@ def register_callbacks(dash_app):
             params = {'mean': param_mean, 'sigma': param_sigma}
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-            
+
         is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
         if not is_valid:
             return dash.no_update, error_message, dash.no_update
+        
         payload = {
             'term_name': term_name,
             'variable_name': variable_name,
@@ -337,11 +350,12 @@ def register_callbacks(dash_app):
         response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{term_name}', json=payload)
 
         if response.status_code == 201:
-            terms_list = update_terms_list_and_figure(variable_name)
-            return terms_list, f"Termine '{term_name}' Modificato con successo!"
+            terms_list, figure = update_terms_list_and_figure(variable_name)
+            return terms_list, "Termine modificato con successo!", figure
         else:
-            # Restituisci un errore se la Modifica fallisce, con dash.no_update per i valori non modificati
-            return dash.no_update, f"Errore nella Modifica del termine: {response.json().get('error', 'Errore sconosciuto')}"
+            error_message = response.json().get('error', 'Errore sconosciuto')
+            return dash.no_update, f"Errore: {error_message}", dash.no_update
+
 
     # Funzione per aggiornare la lista dei termini e il grafico
     def update_terms_list_and_figure(variable_name):
