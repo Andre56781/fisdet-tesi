@@ -8,7 +8,6 @@ from flaskr import file_handler
 
 def register_callbacks(dash_app):
     # Callback per la gestione della sottomissione del modal e la visualizzazione del contenuto principale
-
     @dash_app.callback(
             [Output("variable-modal", "is_open"),
             Output("main-content", "style"),
@@ -46,6 +45,7 @@ def register_callbacks(dash_app):
 
         return f"Creazione Variabile di Input {current_index + 1} di {num_vars}"
 
+    # Callback per la navigazione tra le variabili
     @dash_app.callback(
     [Output("current-index", "data"),
      Output("back-button", "style"),
@@ -86,50 +86,70 @@ def register_callbacks(dash_app):
     # Funzione per generare i parametri in base al tipo di funzione fuzzy
     @dash_app.callback(
         Output('params-container', 'children'),
-        Input('function-type', 'value')
+        [Input('function-type', 'value'),
+        Input('num-variables-store', 'data'),
+        Input('current-index', 'data')]
     )
-    def update_params(function_type):
-        if function_type == 'Triangolare':
-            return [
-                dbc.Label("Parametro a:"),
-                dbc.Input(id='param-a', type='number', value='', required=True),
-                dbc.Label("Parametro b:"),
-                dbc.Input(id='param-b', type='number', value='', required=True),
-                dbc.Label("Parametro c:"),
-                dbc.Input(id='param-c', type='number', value='', required=True),
-                # Parametri invisibili
-                dbc.Input(id='param-d', style={'display': 'none'}),
-                dbc.Input(id='param-mean', style={'display': 'none'}),
-                dbc.Input(id='param-sigma', style={'display': 'none'})
-            ]
-        elif function_type == 'Gaussian':
-            return [
-                dbc.Label("Parametro Mean:"),
-                dbc.Input(id='param-mean', type='number', value='', required=True),
-                dbc.Label("Parametro Sigma:"),
-                dbc.Input(id='param-sigma', type='number', value='', required=True),
-                # Parametri invisibili
-                dbc.Input(id='param-b', style={'display': 'none'}),
-                dbc.Input(id='param-a', style={'display': 'none'}),
-                dbc.Input(id='param-c', style={'display': 'none'}),
-                dbc.Input(id='param-d', style={'display': 'none'}),
-            ]
-        elif function_type == 'Trapezoidale':
-            return [
-                dbc.Label("Parametro a:"),
-                dbc.Input(id='param-a', type='number', value='', required=True),
-                dbc.Label("Parametro b:"),
-                dbc.Input(id='param-b', type='number', value='', required=True),
-                dbc.Label("Parametro c:"),
-                dbc.Input(id='param-c', type='number', value='', required=True),
-                dbc.Label("Parametro d:"),
-                dbc.Input(id='param-d', type='number', value='', required=True),
-                # Parametri invisibili
-                dbc.Input(id='param-mean', style={'display': 'none'}),
-                dbc.Input(id='param-sigma', style={'display': 'none'})
-            ]
-        else:
+    def update_params(function_type, num_variables, current_index):
+        params = []
+        
+        if num_variables is None or current_index is None:
             return []
+        
+        # Checkbox che appare solo per la prima e l'ultima variabile
+        if current_index == 0 or current_index == num_variables - 1:
+            params.append(dbc.Checklist(
+                options=[
+                    {'label': 'Funzione chiusa', 'value': 'closed'}
+                ],
+                id='function-closed-checkbox',
+                inline=True
+            ))
+
+        # Se il tipo di funzione è "Triangolare"
+        if function_type == 'Triangolare':
+            params.append(dbc.Label("Parametro a:"))
+            params.append(dbc.Input(id='param-a', type='number', value='', required=True))
+            params.append(dbc.Label("Parametro b:"))
+            params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+            params.append(dbc.Label("Parametro c:"))
+            params.append(dbc.Input(id='param-c', type='number', value='', required=True))
+            
+            # Parametri invisibili
+            params.append(dbc.Input(id='param-d', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
+            
+        # Se il tipo di funzione è "Gaussian"
+        elif function_type == 'Gaussian':
+            params.append(dbc.Label("Parametro Mean:"))
+            params.append(dbc.Input(id='param-mean', type='number', value='', required=True))
+            params.append(dbc.Label("Parametro Sigma:"))
+            params.append(dbc.Input(id='param-sigma', type='number', value='', required=True))
+
+            # Parametri invisibili
+            params.append(dbc.Input(id='param-b', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-a', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-c', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-d', style={'display': 'none'}))
+            
+        # Se il tipo di funzione è "Trapezoidale"
+        elif function_type == 'Trapezoidale':
+            params.append(dbc.Label("Parametro a:"))
+            params.append(dbc.Input(id='param-a', type='number', value='', required=True))
+            params.append(dbc.Label("Parametro b:"))
+            params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+            params.append(dbc.Label("Parametro c:"))
+            params.append(dbc.Input(id='param-c', type='number', value='', required=True))
+            params.append(dbc.Label("Parametro d:"))
+            params.append(dbc.Input(id='param-d', type='number', value='', required=True))
+
+            # Parametri invisibili
+            params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
+        
+        # Aggiungi tutti i parametri condizionati al layout
+        return params
 
     @dash_app.callback(
     [
@@ -148,7 +168,8 @@ def register_callbacks(dash_app):
     [
         Input('create-term-btn', 'n_clicks'),
         Input({'type': 'delete-btn', 'index': ALL}, 'n_clicks'),
-        Input({'type': 'modify-btn', 'index': ALL}, 'n_clicks')
+        Input({'type': 'modify-btn', 'index': ALL}, 'n_clicks'),
+        Input('function-closed-checkbox', 'value')
     ],
     [
         State('var-type-store', 'data'),
@@ -167,13 +188,20 @@ def register_callbacks(dash_app):
     ],
         prevent_initial_call=True
     )
-    def handle_terms(create_clicks, delete_clicks, modify_clicks, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
+    def handle_terms(create_clicks, delete_clicks, modify_clicks, closed_checkbox, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
         ctx = dash.ctx
 
         if not ctx.triggered:
             return [dash.no_update] * 11
 
         triggered_id = ctx.triggered[0]['prop_id']
+        
+        if closed_checkbox is None:
+            closed_checkbox = []
+
+        # Controlla se il checkbox "Funzione chiusa" è selezionato
+        if closed_checkbox and 'closed' in closed_checkbox:
+            function_type = f"{function_type}-chiusa"
         
         # Controlla se var_type è valido
         if var_type not in ['input', 'output']:
@@ -265,7 +293,6 @@ def register_callbacks(dash_app):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
             
         return True, ""
-
 
     # Funzione per la creazione di un termine fuzzy
     def create_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
@@ -362,7 +389,6 @@ def register_callbacks(dash_app):
         else:
             error_message = response.json().get('error', 'Errore sconosciuto')
             return dash.no_update, f"Errore: {error_message}", dash.no_update
-
 
     # Funzione per aggiornare la lista dei termini e il grafico
     def update_terms_list_and_figure(variable_name):
