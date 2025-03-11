@@ -5,7 +5,7 @@ def layout() -> html.Div:
     return html.Div([
         # Store per i dati delle regole, se necessario
         dcc.Store(id='rules-data', data=[]),
-        
+
         html.Div(
             id="main-content",
             className="content",
@@ -28,25 +28,47 @@ def layout() -> html.Div:
                             # Row per i campi IF e THEN
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("IF", html_for="if-dropdown", className="w-100 text-center"),
+                                    dbc.Label("IF", html_for="if-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
                                         id="if-dropdown",
                                         options=[],
                                         placeholder="Seleziona Variabile di Input",
+                                        className="custom-dropdown mb-2",
+                                        style={
+                                            "width": "300px"
+                                        }  
+                                    ),
+                                    dbc.Label("Termine", html_for="terms-list-dropdown", className="w-100 text-center mb-0"),
+                                    dcc.Dropdown(
+                                        id="terms-list-dropdown",
+                                        options=[],
+                                        placeholder="Seleziona Termine",
                                         className="custom-dropdown",
-                                        style={"width": "300px"}  
-                                    )
+                                        style={
+                                            "width": "300px"
+                                        }  
+                                    ),
                                 ], md=6, className="d-flex flex-column align-items-center pe-2"),  
                                 
                                 dbc.Col([
-                                    dbc.Label("THEN", html_for="then-dropdown", className="w-100 text-center"),
+                                    dbc.Label("THEN", html_for="then-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
                                         id="then-dropdown",
                                         options=[],
                                         placeholder="Seleziona Variabile di Output",
-                                        className="custom-dropdown",
+                                        className="custom-dropdown mb-2",
                                         style={"width": "300px"}  
-                                    )
+                                    ),
+                                    dbc.Label("Termine", html_for="terms-list-dropdown", className="w-100 text-center mb-0"),
+                                    dcc.Dropdown(
+                                        id="terms-list-dropdown",
+                                        options=[],
+                                        placeholder="Seleziona Termine",
+                                        className="custom-dropdown",
+                                        style={
+                                            "width": "300px"
+                                        }  
+                                    ),
                                 ], md=6, className="d-flex flex-column align-items-center ps-2"),  
                             ], className="mb-3 g-3"),  
                             
@@ -66,7 +88,7 @@ def layout() -> html.Div:
                                 id="rules-list",
                                 children=[
                                     html.P(
-                                        "IF (Input Is variabile_input) THEN (Output IS variabile_output)",
+                                        "IF (Variabile Input Is Termine) THEN (Variabile Output IS termine)",
                                         className="rule-item text-muted fst-italic",
                                         style={"fontSize": "0.9em"}
                                     )
