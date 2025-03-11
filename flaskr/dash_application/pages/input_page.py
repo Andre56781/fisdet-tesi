@@ -164,7 +164,7 @@ def layout() -> html.Div:
                                     color="success",
                                     className="action-btn"
                                     ),
-                                className="d-flex justify-content-center pt-2",
+                                className="d-flex justify-content-end pt-1",
                                 ),
                         
                         # GRAFICO E MESSAGGI

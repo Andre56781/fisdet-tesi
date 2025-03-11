@@ -78,7 +78,9 @@ def register_callbacks(dash_app):
             next_button_style = {'display': 'none'}
         else:
             back_button_style = {'display': 'none'} if current_index == 0 else {'display': 'inline-block'}
-            next_button_style = {'display': 'none'} if current_index == num_variables - 1 else {'display': 'inline-block'}
+            num_variables = num_variables or 0
+            next_button_style = {'display': 'none'} if current_index == num_variables-1 else {'display': 'inline-block'}
+
 
         return current_index, back_button_style, next_button_style
 
@@ -99,7 +101,7 @@ def register_callbacks(dash_app):
             return []
         
         # Checkbox che appare solo per la prima e l'ultima variabile
-        if var_type == 'input' and current_index == 0 or var_type == 'input' and current_index == num_variables - 1:
+        if (var_type == 'input' and (current_index == 0 or current_index == num_variables - 1)):
             params.append(dbc.Checklist(
                 options=[
                     {'label': 'Funzione chiusa', 'value': 'closed'}
@@ -115,6 +117,7 @@ def register_callbacks(dash_app):
                 id='function-closed-checkbox',
                 inline=True
             ))
+
         # Se il tipo di funzione è "Triangolare"
         if function_type == 'Triangolare':
             params.append(dbc.Label("Parametro a:"))
@@ -208,11 +211,11 @@ def register_callbacks(dash_app):
         if closed_checkbox is None:
             closed_checkbox = []
 
-        # Controlla se il checkbox "Funzione chiusa" è selezionato
-        if closed_checkbox and 'closed' in closed_checkbox:
+        if closed_checkbox and isinstance(closed_checkbox, list) and 'closed' in closed_checkbox:
             function_type = f"{function_type}-chiusa"
+
         
-        # Controlla se var_type è valido
+        # Controlla se var_type è valido #DEBUG
         if var_type not in ['input', 'output']:
             return [dash.no_update, "Errore: var_type deve essere 'input' o 'output'", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine']
 
