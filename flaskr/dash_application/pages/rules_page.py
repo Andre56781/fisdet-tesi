@@ -5,8 +5,7 @@ def layout() -> html.Div:
     return html.Div([
         # Store per i dati delle regole, se necessario
         dcc.Store(id='rules-data', data=[]),
-
-        # Contenuto principale (simile a input_page)
+        
         html.Div(
             id="main-content",
             className="content",

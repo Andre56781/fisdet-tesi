@@ -38,10 +38,21 @@ def serve_layout() -> html.Div:
                     className="nav-link"
                 ),
                 dcc.Link(
+                    [html.I(className="fas fa-edit mr-2"), "Output"],
+                    href="/output",
+                    className="nav-link"
+                ),
+                dcc.Link(
+                    [html.I(className="fas fa-edit mr-2"), "Regole"],
+                    href="/rules",
+                    className="nav-link"
+                ),
+                dcc.Link(
                     [html.I(className="fas fa-file-import mr-2"), "Importa FIS"],
                     href="/import",
                     className="nav-link"
                 ),
+
             ], className="sidebar-nav"),
         ], className="sidebar"),
         
