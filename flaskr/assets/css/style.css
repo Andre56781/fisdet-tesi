@@ -93,41 +93,53 @@ body {
 }
 
 /* ==================== HOME PAGE ==================== */
+
 #home-page {
-  height: 100vh;
   position: relative;
+  min-height: 100vh;
+  margin-left: 125px; /* Larghezza sidebar */
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   overflow: hidden;
 }
 
-#home-page .home-header {
+#home-page::before {
+  content: '';
   position: absolute;
-  top: 20%;
-  width: 100%;
-  text-align: center;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  z-index: 0;
 }
 
-#home-page .home-header h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+#home-page > .container {
+  position: relative;
+  z-index: 1;
 }
 
-#home-page .home-header p {
-  font-size: 1.5rem;
-  margin-bottom: 2rem;
+.animate__animated {
+  animation-duration: 1s;
 }
 
-#home-page .home-buttons {
-  position: absolute;
-  bottom: 20%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+@keyframes fadeIn {
+  from { 
+      opacity: 0;
+      transform: translateY(20px);
+  }
+  to { 
+      opacity: 1;
+      transform: translateY(0);
+  }
 }
 
-#home-page .home-buttons a:not(:last-child) {
-  margin-bottom: 1.5rem;
+.animate__fadeIn {
+  animation-name: fadeIn;
+}
+
+#home-page .btn-primary:hover, 
+#home-page .btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(0,0,0,0.1);
 }
 
 /* ==================== MAIN CONTENT ==================== */
