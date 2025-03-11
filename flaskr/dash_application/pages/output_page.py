@@ -4,9 +4,10 @@ import dash_bootstrap_components as dbc
 
 def layout() -> html.Div:
     return html.Div([
-        dcc.Store(id='num-variables-store'),    #secondo ma da cambiare tutti i nomi
+        dcc.Store(id='num-variables-store'),
         dcc.Store(id='current-index', data=0),
         dcc.Store(id='variables-data', data={}),
+        dcc.Store(id='var-type-store', data="output"),
         html.Div(id='terms-list', children=[]),
 
         # Modal per numero variabili
