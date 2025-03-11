@@ -18,6 +18,7 @@ def create_dash_application(flask_app):
         assets_folder=assets_path,
         assets_url_path="/assets",
         serve_locally=True,
+        title="FISDeT Dashboard",
         external_stylesheets=[
             dbc.themes.BOOTSTRAP,
             dbc.icons.FONT_AWESOME,
@@ -25,7 +26,8 @@ def create_dash_application(flask_app):
         ],
         meta_tags=[
             {'name': 'viewport', 
-             'content': 'width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5'}
+             'content': 'width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5'},
+             {'name': 'icon', 'content': '/assets/favicon.ico'}
         ]
     )
 

@@ -1,6 +1,6 @@
 from flask import Flask
 from flaskr.dash_application import create_dash_application
-from flaskr import routes  # Importa le route per il Blueprint delle API
+from flaskr import routes
 
 # Crea l'app Flask
 print("Creazione dell'app Flask...")
