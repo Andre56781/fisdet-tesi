@@ -32,7 +32,7 @@ def layout() -> html.Div:
                                     "padding": "0.3rem"
                                 }
                             ),
-                            href="/input"
+                            href="/"
                         )
     ],
     className="gradient-header py-2 d-flex justify-content-between align-items-center",
