@@ -420,3 +420,22 @@ def register_callbacks(dash_app):
         else:
             return [html.Div("Errore nel recupero dei termini.")]
 
+    # Callback per rules_page
+    @dash_app.callback(
+    Output("rules-container", "children"),
+    Input("create-rule", "n_clicks"),
+    State("if-dropdown", "value"),
+    State("then-dropdown", "value"),
+    State("rules-container", "children"),
+    prevent_initial_call=True
+    )
+    def update_rules(n_clicks, if_var, then_var, existing_rules):
+        """Crea una nuova regola fuzzy e la aggiunge alla lista."""
+        if not if_var or not then_var:
+            return existing_rules  # Se non sono selezionate variabili, non fare nulla
+
+        new_rule = html.Div(f"IF ({if_var} IS ...) THEN ({then_var} IS ...)", className="rule-item")
+        return existing_rules + [new_rule]
+        
+
+

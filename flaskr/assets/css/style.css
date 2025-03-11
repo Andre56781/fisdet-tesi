@@ -269,6 +269,10 @@ body {
   background: #f8fcff;
 }
 
+.custom-dropdown .Select-menu-outer {
+  width: 100% !important;
+}
+
 .custom-dropdown .Select-control {
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -289,10 +293,12 @@ body {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Hover effect
 .main-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 30px rgba(0,0,0,0.12);
 }
+*/
 
 .card-header-gradient {
   background: linear-gradient(135deg, #52b2cf, #7fd9ff);
@@ -365,6 +371,7 @@ body {
 .nav-btn i {
   font-size: 1.1em;
 }
+
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
