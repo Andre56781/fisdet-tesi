@@ -413,8 +413,8 @@ def register_callbacks(dash_app):
                             terms_list.append(
                                 html.Div([
                                     html.Span(f"Termine: {term['term_name']} ({variable_name})"),
-                                    html.Button('Modifica', id={'type': 'modify-btn', 'index': term['term_name']}),
-                                    html.Button('Elimina', id={'type': 'delete-btn', 'index': term['term_name']}),
+                                    html.Button('Modifica', id={'type': 'modify-btn', 'index': term['term_name']}), #TASTO MODIFICA
+                                    html.Button('Elimina', id={'type': 'delete-btn', 'index': term['term_name']}),  #TASTO ELIMINA
                                 ])
                             )
                             if 'x' in term and 'y' in term:
