@@ -154,35 +154,35 @@ def layout() -> html.Div:
                                             ], md=6)
                                         ], className="mb-3"), 
 
-                                        html.Div(id='params-container', className="params-container"),
-                                        
-                                        # BOTTONE "CREA TERMINE"
-                                        html.Div(
-                                                dbc.Button(
-                                                    [html.I(className="fas fa-plus mr-2"), " Crea Termine"],
-                                                    id='create-term-btn',
-                                                    color="success",
-                                                    className="action-btn"
-                                                    ),
-                                                className="d-flex justify-content-center pt-2",
-                                                ),
-                                        
-                                        # GRAFICO E MESSAGGI
-                                        dcc.Graph(id='graph', className="custom-graph"),
-                                        html.Div(id='message', className="alert-message")
-                                    ])
-                                ]),
-                                
-                                # FOOTER CON I PULSANTI ALLINEATI A DESTRA
-                                dbc.CardFooter(
-                                    html.Div([
-                                        dbc.ButtonGroup([
-                                            dbc.Button(
-                                                [html.I(className="fas fa-arrow-left mr-2"), "Indietro"],
-                                                id="back-button",
-                                                color="light",
-                                                className="nav-btn",
-                                                style={"display": "inline-block"}
+                        html.Div(id='params-container', className="params-container"),
+                        
+                        # BOTTONE "CREA TERMINE"
+                        html.Div(
+                                dbc.Button(
+                                    [html.I(className="fas fa-plus mr-2"), " Crea Termine"],
+                                    id='create-term-btn',
+                                    color="success",
+                                    className="action-btn"
+                                    ),
+                                className="d-flex justify-content-center pt-2",
+                                ),
+                        
+                        # GRAFICO E MESSAGGI
+                        dcc.Graph(id='graph', className="custom-graph"),
+                        html.Div(id='message', className="alert-message")
+                    ])
+                ]),
+                
+                # FOOTER CON I PULSANTI ALLINEATI A DESTRA
+                dbc.CardFooter(
+                    html.Div([
+                        dbc.ButtonGroup([
+                            dbc.Button(
+                                [html.I(className="fas fa-arrow-left mr-2"), "Indietro"],
+                                id="back-button",
+                                color="light",
+                                className="nav-btn",
+                                style={"display": "inline-block"}
 
                                             ),
                                             dbc.Button(
