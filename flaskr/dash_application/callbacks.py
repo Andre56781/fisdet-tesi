@@ -32,10 +32,11 @@ def register_callbacks(dash_app):
     # Callback per aggiornare il titolo della variabile (es. "Variabile X di Y")
     @dash_app.callback(
         Output("variable-title", "children"),
+         Input("var-type-store", "data"),
         [Input("current-index", "data"),
          Input("num-variables-store", "data")]
     )
-    def update_title(current_index, num_vars):
+    def update_title(var_type, current_index, num_vars):
         if num_vars is None or current_index is None:
             return ""
         try:
@@ -43,7 +44,7 @@ def register_callbacks(dash_app):
         except (ValueError, TypeError):
             return "Errore: Indice della variabile non valido."
 
-        return f"Creazione Variabile di Input {current_index + 1} di {num_vars}"
+        return f"Creazione Variabile di {var_type} {current_index + 1} di {num_vars}"
 
     # Callback per la navigazione tra le variabili
     @dash_app.callback(
@@ -86,18 +87,19 @@ def register_callbacks(dash_app):
     # Funzione per generare i parametri in base al tipo di funzione fuzzy
     @dash_app.callback(
         Output('params-container', 'children'),
+         Input('var-type-store', 'data'),
         [Input('function-type', 'value'),
         Input('num-variables-store', 'data'),
         Input('current-index', 'data')]
     )
-    def update_params(function_type, num_variables, current_index):
+    def update_params(var_type, function_type, num_variables, current_index):
         params = []
         
         if num_variables is None or current_index is None:
             return []
         
         # Checkbox che appare solo per la prima e l'ultima variabile
-        if current_index == 0 or current_index == num_variables - 1:
+        if var_type == 'input' and current_index == 0 or var_type == 'input' and current_index == num_variables - 1:
             params.append(dbc.Checklist(
                 options=[
                     {'label': 'Funzione chiusa', 'value': 'closed'}
@@ -105,7 +107,14 @@ def register_callbacks(dash_app):
                 id='function-closed-checkbox',
                 inline=True
             ))
-
+        elif var_type == 'output':
+            params.append(dbc.Checklist(
+                options=[
+                    {'label': 'Classificazione', 'value': 'closed'}
+                ],
+                id='function-closed-checkbox',
+                inline=True
+            ))
         # Se il tipo di funzione è "Triangolare"
         if function_type == 'Triangolare':
             params.append(dbc.Label("Parametro a:"))
