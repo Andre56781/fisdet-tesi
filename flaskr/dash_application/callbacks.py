@@ -181,9 +181,9 @@ def register_callbacks(dash_app):
         Input('create-term-btn', 'n_clicks'),
         Input({'type': 'delete-btn', 'index': ALL}, 'n_clicks'),
         Input({'type': 'modify-btn', 'index': ALL}, 'n_clicks'),
-        Input('function-closed-checkbox', 'value')
     ],
     [
+        State('function-closed-checkbox', 'value'),
         State('var-type-store', 'data'),
         State('variable-name', 'value'),
         State('domain-min', 'value'),
@@ -200,7 +200,7 @@ def register_callbacks(dash_app):
     ],
         prevent_initial_call=True
     )
-    def handle_terms(create_clicks, delete_clicks, modify_clicks, closed_checkbox, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
+    def handle_terms(create_clicks, delete_clicks, modify_clicks,closed_checkbox, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
         ctx = dash.ctx
 
         if not ctx.triggered:
@@ -214,7 +214,6 @@ def register_callbacks(dash_app):
         if closed_checkbox and isinstance(closed_checkbox, list) and 'closed' in closed_checkbox:
             function_type = f"{function_type}-chiusa"
 
-        
         # Controlla se var_type è valido #DEBUG
         if var_type not in ['input', 'output']:
             return [dash.no_update, "Errore: var_type deve essere 'input' o 'output'", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine']
@@ -324,6 +323,12 @@ def register_callbacks(dash_app):
             params = {'mean': param_mean, 'sigma': param_sigma}
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
+        elif function_type == 'Triangolare-chiusa':
+            params = {'a': param_a, 'b': param_b, 'c': param_c}
+        elif function_type == 'Trapezoidale-chiusa':
+            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
+        elif function_type == 'Gaussian-chiusa':
+            params = {'mean': param_mean, 'sigma': param_sigma}
 
         is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
         if not is_valid:
