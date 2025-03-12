@@ -30,7 +30,7 @@ def load():
 def create_term():
     try:
         data = request.get_json()
-        print("Dati ricevuti:", data)  # Debug: stampa i dati ricevuti
+        #print("Dati ricevuti:", data)  # Debug
 
         var_type = data.get('var_type')
         term_name = data.get('term_name')
