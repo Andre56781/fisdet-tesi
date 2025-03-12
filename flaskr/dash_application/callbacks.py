@@ -426,6 +426,7 @@ def register_callbacks(dash_app):
                                 ])
                             )
                             if 'x' in term and 'y' in term:
+                                #print(f"Term: {term['term_name']}, x: {term['x']}, y: {term['y']}")  # Debug
                                 data.append(go.Scatter(x=term['x'], y=term['y'], mode='lines', name=f"{term['term_name']} ({variable_name})"))
                 figure = {
                         'data': data,
