@@ -44,7 +44,7 @@ def create_term():
             return jsonify({"error": "var_type deve essere 'input' o 'output'"}), 400
 
         terms_data = load_terms()
-        print("Termini caricati:", terms_data)  # Debug: stampa i termini caricati
+        #print("Termini caricati:", terms_data)  # Debug
 
         # Inizializza il tipo di variabile se non esiste
         if var_type not in terms_data:
@@ -71,18 +71,14 @@ def create_term():
         variable_data['terms'].append(new_term)
 
         save_terms(terms_data)
-        print("Termini salvati:", terms_data)  # Debug: stampa i termini salvati
+        #print("Termini salvati:", terms_data)  # Debug
 
         return jsonify(new_term), 201
 
     except Exception as e:
-        print("Errore durante la creazione del termine:", str(e))  # Debug: stampa l'errore
+        #print("Errore durante la creazione del termine:", str(e))  # Debug
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
 
-
-
-
-# Configura il logger
 
 @bp.route('/get_terms', methods=['GET'])
 def get_terms():
@@ -99,7 +95,7 @@ def get_terms():
             for variable_name, variable_data in variables.items():
                 # Verifica che 'domain' sia presente prima di procedere
                 if 'domain' not in variable_data:
-                    logging.error(f"Variabile '{variable_name}' non contiene il campo 'domain'. Non sarà elaborata.")
+                    #logging.error(f"Variabile '{variable_name}' non contiene il campo 'domain'. Non sarà elaborata.") # Debug
                     continue  # Salta questa variabile
 
                 domain_min, domain_max = variable_data['domain']
@@ -135,12 +131,11 @@ def get_terms():
                         "x": x.tolist(),
                         "y": y.tolist()
                     })
-
-        logging.debug("Termini calcolati correttamente, restituito 200.")
+        #logging.debug("Termini calcolati correttamente, restituito 200.") # Debug
         return jsonify(computed_terms), 200
 
     except Exception as e:
-        logging.error(f"Errore durante il processo: {str(e)}")
+        #logging.error(f"Errore durante il processo: {str(e)}")# Debug
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
 def closed_trimf(x, a, b, c):

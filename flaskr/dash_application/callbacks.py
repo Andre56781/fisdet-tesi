@@ -5,6 +5,7 @@ import requests
 import dash_bootstrap_components as dbc
 import json
 from flaskr import file_handler  
+import re
 
 def register_callbacks(dash_app):
     # Callback per la gestione della sottomissione del modal e la visualizzazione del contenuto principale
@@ -313,6 +314,9 @@ def register_callbacks(dash_app):
         except (ValueError, TypeError):
             return dash.no_update, "Errore: I valori del dominio devono essere numeri.", dash.no_update
 
+        if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
+            return dash.no_update, "Errore: Il nome del termine è vuoto o contiene caratteri non validi. Usa solo lettere, numeri, trattini e sottolineature.", dash.no_update
+
         if domain_min > domain_max:
             return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo.", dash.no_update
 
@@ -410,33 +414,66 @@ def register_callbacks(dash_app):
     # Funzione per aggiornare la lista dei termini e il grafico
     def update_terms_list_and_figure(variable_name):
         if variable_name:
-            terms_response = requests.get('http://127.0.0.1:5000/api/get_terms')
-            if terms_response.status_code == 200:
-                terms_data = terms_response.json()
-                terms_list = []
-                data = []
-                if variable_name in terms_data:
-                        variable_data = terms_data[variable_name]
+            try:
+                # Effettua la richiesta all'API per ottenere i termini relativi alla variabile
+                headers = {'Content-Type': 'application/json'}
+                response = requests.get('http://127.0.0.1:5000/api/get_terms')
+                if response.status_code == 200:
+                    terms_data = response.json()
+                    
+                    # Usa il metodo get() per ottenere i termini separati in modo sicuro
+                    terms_list = []
+                    input_data = []
+                    output_data = []
+                    
+                    # Estrai i dati solo se esistono nella risposta
+                    input_variables = terms_data.get('input', {})
+                    output_variables = terms_data.get('output', {})
+
+                    # Gestisci i termini di input
+                    if variable_name in input_variables:
+                        variable_data = input_variables[variable_name]
                         for term in variable_data['terms']:
-                            terms_list.append(
-                                html.Div([
-                                    html.Span(f"Termine: {term['term_name']} ({variable_name})"),
-                                    html.Button('Modifica', id={'type': 'modify-btn', 'index': term['term_name']}), #TASTO MODIFICA
-                                    html.Button('Elimina', id={'type': 'delete-btn', 'index': term['term_name']}),  #TASTO ELIMINA
-                                ])
-                            )
-                            if 'x' in term and 'y' in term:
-                                #print(f"Term: {term['term_name']}, x: {term['x']}, y: {term['y']}")  # Debug
-                                data.append(go.Scatter(x=term['x'], y=term['y'], mode='lines', name=f"{term['term_name']} ({variable_name})"))
-                figure = {
-                        'data': data,
-                        'layout': go.Layout(title=f"Termini Fuzzy - {variable_name}", xaxis={'title': 'X'}, yaxis={'title': 'Y'}, showlegend=True)
+                            term_name = term['term_name']
+                            x = term['x']
+                            y = term['y']
+                            #terms_list.append(html.Li(f"Termine (Input): {term_name}")) # Debug
+                            input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+
+                    # Gestisci i termini di output
+                    if variable_name in output_variables:
+                        variable_data = output_variables[variable_name]
+                        for term in variable_data['terms']:
+                            term_name = term['term_name']
+                            x = term['x']
+                            y = term['y']
+                            #terms_list.append(html.Li(f"Termine (Output): {term_name}")) # Debug
+                            output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+                        
+                    # Creazione del grafico combinato
+                    combined_figure = {
+                        'data': input_data + output_data,
+                        'layout': go.Layout(
+                            title=f'Funzioni Fuzzy per {variable_name}',
+                            xaxis={'title': 'Dominio'},
+                            yaxis={'title': 'Grado di appartenenza'}
+                        )
                     }
-                return terms_list, figure
-            else:
-                return [html.Div(f"Nessun termine trovato per la variabile: {variable_name}.")], go.Figure()
+
+                    # Restituzione della lista dei termini e della figura combinata
+                    return terms_list, combined_figure
+                    
+                else:
+                    # Se la richiesta all'API fallisce
+                    return [html.Li("Errore nel recupero dei termini.")], dash.no_update
+            
+            except Exception as e:
+                # Gestione dell'errore nella richiesta o nel processamento
+                return [html.Li(f"Errore durante il recupero dei dati: {str(e)}")], dash.no_update
         else:
-            return [html.Div("Errore nel recupero dei termini.")]
+            return [], dash.no_update
+
+
 
     # Callback per rules_page
     @dash_app.callback(
