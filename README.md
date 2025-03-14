@@ -1,2 +1,2 @@
-From terminal, enter this command to run the app:
-          flask --app flaskr run 
+Open the terminal and enter the following command to run the application:
+          python -u “.\run.py”
