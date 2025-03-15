@@ -164,108 +164,139 @@ def register_callbacks(dash_app):
         # Aggiungi tutti i parametri condizionati al layout
         return params
 
+    # Callback principale per gestire creazione, eliminazione e modifica dei termini
     @dash_app.callback(
-    [
-        Output('terms-list', 'children', allow_duplicate=True),
-        Output('message', 'children'),
-        Output('graph', 'figure', allow_duplicate=True),
-        Output('term-name', 'value', allow_duplicate=True),  
-        Output('param-a', 'value', allow_duplicate=True),     
-        Output('param-b', 'value', allow_duplicate=True),     
-        Output('param-c', 'value', allow_duplicate=True),     
-        Output('param-d', 'value', allow_duplicate=True),     
-        Output('param-mean', 'value', allow_duplicate=True),  
-        Output('param-sigma', 'value', allow_duplicate=True), 
-        Output('create-term-btn', 'children')
-    ],
-    [
-        Input('create-term-btn', 'n_clicks'),
-        Input({'type': 'delete-btn', 'index': ALL}, 'n_clicks'),
-        Input({'type': 'modify-btn', 'index': ALL}, 'n_clicks'),
-    ],
-    [
-        State('function-closed-checkbox', 'value'),
-        State('var-type-store', 'data'),
-        State('variable-name', 'value'),
-        State('domain-min', 'value'),
-        State('domain-max', 'value'),
-        State('function-type', 'value'),
-        State('term-name', 'value'),
-        State('param-a', 'value'),
-        State('param-b', 'value'),
-        State('param-c', 'value'),
-        State('param-d', 'value'),
-        State('param-mean', 'value'),
-        State('param-sigma', 'value'),
-        State('create-term-btn', 'children')
-    ],
+        [
+            Output('terms-list', 'children', allow_duplicate=True),
+            Output('message', 'children'),
+            Output('graph', 'figure', allow_duplicate=True),
+            Output('term-name', 'value', allow_duplicate=True),  
+            Output('param-a', 'value', allow_duplicate=True),     
+            Output('param-b', 'value', allow_duplicate=True),     
+            Output('param-c', 'value', allow_duplicate=True),     
+            Output('param-d', 'value', allow_duplicate=True),     
+            Output('param-mean', 'value', allow_duplicate=True),  
+            Output('param-sigma', 'value', allow_duplicate=True), 
+            Output('create-term-btn', 'children')
+        ],
+        [
+            Input('create-term-btn', 'n_clicks'),
+            Input('delete-term-btn', 'n_clicks'),
+            Input('modify-term-btn', 'n_clicks'),
+        ],
+        [
+            State('function-closed-checkbox', 'value'),
+            State('var-type-store', 'data'),
+            State('variable-name', 'value'),
+            State('domain-min', 'value'),
+            State('domain-max', 'value'),
+            State('function-type', 'value'),
+            State('term-name', 'value'),
+            State('param-a', 'value'),
+            State('param-b', 'value'),
+            State('param-c', 'value'),
+            State('param-d', 'value'),
+            State('param-mean', 'value'),
+            State('param-sigma', 'value'),
+            State('create-term-btn', 'children'),
+            State('selected-term', 'data')
+        ],
         prevent_initial_call=True
     )
-    def handle_terms(create_clicks, delete_clicks, modify_clicks,closed_checkbox, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, button_label):
+    def handle_terms(create_clicks, delete_clicks, modify_clicks, closed_checkbox,
+                    var_type, variable_name, domain_min, domain_max, function_type,
+                    term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
+                    button_label, selected_term):
         ctx = dash.ctx
 
         if not ctx.triggered:
             return [dash.no_update] * 11
 
         triggered_id = ctx.triggered[0]['prop_id']
-        
+
+        # Gestione della checkbox per le funzioni "chiuse"
         if closed_checkbox is None:
             closed_checkbox = []
-
         if closed_checkbox and isinstance(closed_checkbox, list) and 'closed' in closed_checkbox:
             function_type = f"{function_type}-chiusa"
 
-        # Controlla se var_type è valido #DEBUG
+        # Verifica che var_type sia valido
         if var_type not in ['input', 'output']:
-            return [dash.no_update, "Errore: var_type deve essere 'input' o 'output'", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine']
+            return [dash.no_update,
+                    "Errore: var_type deve essere 'input' o 'output'",
+                    dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                    'Crea Termine']
 
+        # --- Creazione del Termine ---
         if triggered_id == 'create-term-btn.n_clicks':
             if button_label == 'Salva Modifica':
-                terms_list, message, figure = modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
+                # Esegui la modifica e poi ricarica la lista aggiornata
+                terms_list, message, figure = modify_term(variable_name, domain_min, domain_max,
+                                                        function_type, term_name, param_a, param_b,
+                                                        param_c, param_d, param_mean, param_sigma)
                 terms_list, figure = update_terms_list_and_figure(variable_name)
-                return terms_list, message, figure, '', '', '', '', '', '', '', 'Crea Termine'
+                return (terms_list, message, figure,
+                        '', '', '', '', '', '', '', 'Crea Termine')
             else:
-                terms_list, message, figure = create_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma)
+                # Creazione di un nuovo termine
+                terms_list, message, figure = create_term(var_type, variable_name, domain_min, domain_max,
+                                                        function_type, term_name, param_a, param_b,
+                                                        param_c, param_d, param_mean, param_sigma)
                 if message == "Termine creato con successo!":
-                    return terms_list, message, figure, '', '', '', '', '', '', '', 'Crea Termine'
-                return terms_list, message, figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+                    return (terms_list, message, figure,
+                            '', '', '', '', '', '', '', 'Crea Termine')
+                return (terms_list, message, figure,
+                        dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update, 'Crea Termine')
 
-        elif 'delete-btn' in triggered_id:
-            term_name_to_delete = eval(triggered_id.split('.')[0])['index']
-            return delete_term(variable_name, term_name_to_delete) + ('Crea Termine',)
+        # --- Eliminazione del Termine (usando il termine selezionato) ---
+        elif triggered_id == 'delete-term-btn.n_clicks':
+            if not selected_term:
+                return (dash.no_update,
+                        "Nessun termine selezionato",
+                        dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, 'Crea Termine')
+            return delete_term(variable_name, selected_term) + ('Crea Termine',)
 
-        elif 'modify-btn' in triggered_id:
-            term_name_to_modify = eval(triggered_id.split('.')[0])['index']
-            
-            url = f'http://127.0.0.1:5000/api/get_term/{variable_name}/{term_name_to_modify}'
-            
+        # --- Modifica del Termine (usando il termine selezionato) ---
+        elif triggered_id == 'modify-term-btn.n_clicks':
+            if not selected_term:
+                return (dash.no_update,
+                        "Nessun termine selezionato",
+                        dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, 'Crea Termine')
+            url = f'http://127.0.0.1:5000/api/get_term/{variable_name}/{selected_term}'
             headers = {'Content-Type': 'application/json'}
             response = requests.get(url)
-            
-            #print(f"Stato della risposta: {response.status_code}")  # Debug
-            #print(f"Contenuto della risposta: {response.text}")  # Debug
-            
             if response.status_code == 200:
                 term_data = response.json()
-                
-                # Popola i campi con i dati ricevuti
                 term_params = term_data.get('params', {})
-
-                return (
-                    dash.no_update, 
-                    dash.no_update, 
-                    dash.no_update,  
-                    term_data.get('term_name', ''),  
-                    term_params.get('a', ''),   
-                    term_params.get('b', ''),   
-                    term_params.get('c', ''),    
-                    term_params.get('d', ''),   
-                    term_params.get('mean', ''),    
-                    term_params.get('sigma', ''),  
-                    'Salva Modifica'
-                )
+                return (dash.no_update,
+                        dash.no_update,
+                        dash.no_update,
+                        term_data.get('term_name', ''),
+                        term_params.get('a', ''),
+                        term_params.get('b', ''),
+                        term_params.get('c', ''),
+                        term_params.get('d', ''),
+                        term_params.get('mean', ''),
+                        term_params.get('sigma', ''),
+                        'Salva Modifica')
             else:
-                return dash.no_update, "Errore nel caricamento dei dati del termine.", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'Crea Termine'
+                return (dash.no_update,
+                        "Errore nel caricamento dei dati del termine.",
+                        dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, 'Crea Termine')
+
+        return [dash.no_update] * 11
+
 
     def validate_params(params, domain_min, domain_max, function_type):
         """
@@ -357,6 +388,53 @@ def register_callbacks(dash_app):
             error_message = response.json().get('error', 'Errore sconosciuto')
             return dash.no_update, f"Errore: {error_message}", dash.no_update
 
+
+    @dash_app.callback(
+        [
+            Output('selected-term', 'data'),
+            Output({'type': 'term-item', 'index': dash.ALL}, 'style')
+        ],
+        Input({'type': 'term-item', 'index': dash.ALL}, 'n_clicks'),
+        State({'type': 'term-item', 'index': dash.ALL}, 'id')
+    )
+    def update_selected_term_and_styles(n_clicks_list, ids):
+        default_style = {'cursor': 'pointer'}
+        if not n_clicks_list or all(nc is None for nc in n_clicks_list):
+            return dash.no_update, [default_style for _ in ids]
+
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return dash.no_update, [default_style for _ in ids]
+
+        triggered_prop = ctx.triggered[0]['prop_id']
+        triggered_id_str = triggered_prop.split('.')[0]
+        try:
+            triggered_id = json.loads(triggered_id_str)
+        except Exception:
+            return dash.no_update, [default_style for _ in ids]
+
+        selected_term = triggered_id.get('index')
+        styles = []
+        for item in ids:
+            if item.get('index') == selected_term:
+                styles.append({'cursor': 'pointer', 'backgroundColor': '#cce5ff'})
+            else:
+                styles.append(default_style)
+        return selected_term, styles
+
+    @dash_app.callback(
+        [
+            Output('modify-term-btn', 'disabled'),
+            Output('delete-term-btn', 'disabled')
+        ],
+        Input('selected-term', 'data')
+    )
+    def update_buttons(selected_term):
+        if selected_term:
+            return False, False
+        return True, True
+
+
     # Funzione per l'eliminazione di un termine fuzzy
     def delete_term(variable_name, term_name):
         response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{term_name}')
@@ -410,12 +488,13 @@ def register_callbacks(dash_app):
         else:
             error_message = response.json().get('error', 'Errore sconosciuto')
             return dash.no_update, f"Errore: {error_message}", dash.no_update
-
+    
+    
     # Funzione per aggiornare la lista dei termini e il grafico
     def update_terms_list_and_figure(variable_name):
         if variable_name:
             try:
-                # Effettua la richiesta all'API per ottenere i termini relativi alla variabile
+            # Effettua la richiesta all'API per ottenere i termini relativi alla variabile
                 headers = {'Content-Type': 'application/json'}
                 response = requests.get('http://127.0.0.1:5000/api/get_terms')
                 if response.status_code == 200:
@@ -437,7 +516,16 @@ def register_callbacks(dash_app):
                             term_name = term['term_name']
                             x = term['x']
                             y = term['y']
-                            #terms_list.append(html.Li(f"Termine (Input): {term_name}")) # Debug
+                            terms_list.append(
+                                dbc.ListGroupItem(
+                                    term_name,
+                                    id={'type': 'term-item', 'index': term_name},
+                                    n_clicks=0,
+                                    style={
+                                        'cursor': 'pointer',
+                                    }
+                                )
+                            )
                             input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
 
                     # Gestisci i termini di output
@@ -447,7 +535,7 @@ def register_callbacks(dash_app):
                             term_name = term['term_name']
                             x = term['x']
                             y = term['y']
-                            #terms_list.append(html.Li(f"Termine (Output): {term_name}")) # Debug
+                            terms_list.append(html.Li(f"{term_name}"))
                             output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
                         
                     # Creazione del grafico combinato
@@ -472,8 +560,6 @@ def register_callbacks(dash_app):
                 return [html.Li(f"Errore durante il recupero dei dati: {str(e)}")], dash.no_update
         else:
             return [], dash.no_update
-
-
 
     # Callback per rules_page
     @dash_app.callback(
