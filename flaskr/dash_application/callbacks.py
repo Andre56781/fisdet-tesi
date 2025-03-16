@@ -50,11 +50,11 @@ def register_callbacks(dash_app):
     # Callback per la navigazione tra le variabili
     @dash_app.callback(
     [Output("current-index", "data"),
-     Output("back-button", "style"),
-     Output("next-button", "style")],
+    Output("back-button", "style"),
+    Output("next-button", "style")],
     [Input("next-button", "n_clicks"),
-     Input("back-button", "n_clicks"),
-     Input("num-variables-store", "data")],  # Aggiungi questo input per monitorare il cambiamento del numero di variabili
+    Input("back-button", "n_clicks"),
+    Input("num-variables-store", "data")],  # Aggiungi questo input per monitorare il cambiamento del numero di variabili
     [State("current-index", "data")],
     prevent_initial_call=False  
 )
@@ -90,7 +90,7 @@ def register_callbacks(dash_app):
     # Funzione per generare i parametri in base al tipo di funzione fuzzy
     @dash_app.callback(
         Output('params-container', 'children'),
-         Input('var-type-store', 'data'),
+        Input('var-type-store', 'data'),
         [Input('function-type', 'value'),
         Input('num-variables-store', 'data'),
         Input('current-index', 'data')]
@@ -535,8 +535,17 @@ def register_callbacks(dash_app):
                             term_name = term['term_name']
                             x = term['x']
                             y = term['y']
-                            terms_list.append(html.Li(f"{term_name}"))
-                            output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+                            terms_list.append(
+                                dbc.ListGroupItem(
+                                    term_name,
+                                    id={'type': 'term-item', 'index': term_name},
+                                    n_clicks=0,
+                                    style={
+                                        'cursor': 'pointer',
+                                    }
+                                )
+                            )
+                            input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
                         
                     # Creazione del grafico combinato
                     combined_figure = {
