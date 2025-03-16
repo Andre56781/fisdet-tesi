@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Callable
 from dash import Output, Input, html, dcc
-from .pages import home_page, input_page, output_page, rules_page, import_page
+from .pages import home_page, input_page, output_page, rules_page, report_page
 
 # Configurazione del logging
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +40,7 @@ def register_routing(dash_app: Any) -> None:
         "/input": input_page.layout,
         "/output": output_page.layout,
         "/rules": rules_page.layout,
-        "/import": import_page.layout
+        "/report": report_page.layout
     }
     
     # Verifica avanzata delle dipendenze

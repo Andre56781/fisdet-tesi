@@ -1,1 +1,1 @@
-__all__ = ["home_page", "input_page", "output_page", "rules_page", "import_page"]
+__all__ = ["home_page", "input_page", "output_page", "rules_page", "report_page"]

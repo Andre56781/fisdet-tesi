@@ -384,6 +384,34 @@ body {
   font-size: 1.1em;
 }
 
+/* ==================== REPORTPAGE ==================== */
+.variable-card {
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  background: #f8fcff;
+}
+
+.variable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(82, 178, 207, 0.1);
+}
+
+.rule-item {
+  border-left: 3px solid #52b2cf;
+  background-color: #f8fcff;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.rule-item:hover {
+  background-color: #e3f6ff;
+  transform: translateX(5px);
+}
+
+#surface-plot .modebar {
+  background-color: transparent !important;
+}
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
