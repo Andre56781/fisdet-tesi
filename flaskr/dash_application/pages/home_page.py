@@ -46,10 +46,11 @@ def layout() -> html.Div:
                                 className="mb-5"  
                             ),
                             
-                            # Pulsanti
+                            # Contenitore pulsanti verticale
                             html.Div(
-                                className="d-flex flex-column flex-md-row justify-content-center gap-4",
+                                className="d-flex flex-column justify-content-center gap-4",
                                 children=[
+                                    # Pulsante Crea
                                     dcc.Link(
                                         dbc.Button(
                                             [
@@ -74,35 +75,63 @@ def layout() -> html.Div:
                                         href="/input",
                                         id="home-to-input-link"
                                     ),
-                                    dcc.Link(
-                                        dbc.Button(
-                                            [
-                                                html.I(className="fas fa-file-import me-2"),
-                                                html.Span(
-                                                    "Importa FIS",
+
+                                    # Gruppo Importa + testo (CORRETTO QUI)
+                                    html.Div(
+                                        className="d-flex flex-column align-items-center gap-2",
+                                        children=[
+                                            # Pulsante Importa
+                                            dcc.Upload(
+                                                id='upload-fis',
+                                                children=dbc.Button(
+                                                    [
+                                                        html.I(className="fas fa-file-import me-2"),
+                                                        html.Span(
+                                                            "Importa FIS",
+                                                            style={
+                                                                "fontSize": "1.2rem",
+                                                                "letterSpacing": "0.03em"
+                                                            }
+                                                        )
+                                                    ],
+                                                    color="secondary",
+                                                    className="fw-bold py-3 px-5 rounded-pill",
                                                     style={
-                                                        "fontSize": "1.2rem",
-                                                        "letterSpacing": "0.03em"
+                                                        "transition": "all 0.3s ease",
+                                                        "background": "linear-gradient(45deg, #00b894, #55efc4)",
+                                                        "border": "none",
+                                                        "boxShadow": "0 4px 6px rgba(0,0,0,0.1)"
                                                     }
-                                                )
-                                            ],
-                                            color="secondary",
-                                            className="fw-bold py-3 px-5 rounded-pill",
-                                            style={
-                                                "transition": "all 0.3s ease",
-                                                "background": "linear-gradient(45deg, #00b894, #55efc4)",
-                                                "border": "none",
-                                                "boxShadow": "0 4px 6px rgba(0,0,0,0.1)"
-                                            }
-                                        ),
-                                        href="/import",
-                                        id="home-to-import-link"
-                                    ),
+                                                ),
+                                                accept='.json',
+                                                multiple=False
+                                            ), 
+                                            
+                                            # Testo trascinamento file
+                                            html.Span(
+                                                "Trascina i file qui o clicca per importare",
+                                                style={
+                                                    "color": "#6c757d",
+                                                    "fontSize": "0.9rem",
+                                                    "fontStyle": "italic",
+                                                    "maxWidth": "300px"
+                                                }
+                                            ),
+                                            html.Span(
+                                                "(Formati supportati: .json)",
+                                                style={
+                                                    "color": "#6c757d",
+                                                    "fontSize": "0.8rem",
+                                                    "fontStyle": "italic"
+                                                }
+                                            )
+                                        ]
+                                    )
                                 ]
                             )
                         ]
                     )
                 ]
-            ),
-        ]
+            )
+        ] 
     )
