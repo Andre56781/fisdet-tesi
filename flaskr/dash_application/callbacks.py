@@ -616,6 +616,5 @@ def register_callbacks(dash_app):
 
         new_rule = html.Div(f"IF ({if_var} IS ...) THEN ({then_var} IS ...)", className="rule-item")
         return existing_rules + [new_rule]
-        
-        
+                
 
