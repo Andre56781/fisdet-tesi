@@ -1,10 +1,10 @@
 import dash
-from dash import dcc, html, Input, Output, State,ctx, ALL
+from dash import dcc, html, Input, Output, State, ctx, ALL
 import plotly.graph_objects as go
 import requests
 import dash_bootstrap_components as dbc
 import json
-from flaskr import file_handler  
+from flaskr import file_handler
 import re
 
 def register_callbacks(dash_app):
@@ -44,9 +44,9 @@ def register_callbacks(dash_app):
     # Callback per aggiornare il titolo della variabile (es. "Variabile X di Y")
     @dash_app.callback(
         Output("variable-title", "children"),
-         Input("var-type-store", "data"),
+        Input("var-type-store", "data"),
         [Input("current-index", "data"),
-         Input("num-variables-store", "data")]
+        Input("num-variables-store", "data")]
     )
     def update_title(var_type, current_index, num_vars):
         if num_vars is None or current_index is None:
@@ -65,7 +65,7 @@ def register_callbacks(dash_app):
     Output("next-button", "style")],
     [Input("next-button", "n_clicks"),
     Input("back-button", "n_clicks"),
-    Input("num-variables-store", "data")],  # Aggiungi questo input per monitorare il cambiamento del numero di variabili
+    Input("num-variables-store", "data")], 
     [State("current-index", "data")],
     prevent_initial_call=False  
 )
@@ -96,9 +96,6 @@ def register_callbacks(dash_app):
 
         return current_index, back_button_style, next_button_style
 
-
-#Inizio Logica Fuzzy
-    # Funzione per generare i parametri in base al tipo di funzione fuzzy
     @dash_app.callback(
         Output('params-container', 'children'),
         Input('var-type-store', 'data'),
@@ -108,10 +105,8 @@ def register_callbacks(dash_app):
     )
     def update_params(var_type, function_type, num_variables, current_index):
         params = []
-        
         if num_variables is None or current_index is None:
             return []
-        
         # Checkbox che appare solo per la prima e l'ultima variabile
         if (var_type == 'input' and (current_index == 0 or current_index == num_variables - 1)):
             params.append(dbc.Checklist(
@@ -138,12 +133,10 @@ def register_callbacks(dash_app):
             params.append(dbc.Input(id='param-b', type='number', value='', required=True))
             params.append(dbc.Label("Parametro c:"))
             params.append(dbc.Input(id='param-c', type='number', value='', required=True))
-            
             # Parametri invisibili
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
             params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
             params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
-            
         # Se il tipo di funzione è "Gaussian"
         elif function_type == 'Gaussian':
             params.append(dbc.Label("Parametro Mean:"))
@@ -156,7 +149,6 @@ def register_callbacks(dash_app):
             params.append(dbc.Input(id='param-a', style={'display': 'none'}))
             params.append(dbc.Input(id='param-c', style={'display': 'none'}))
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
-            
         # Se il tipo di funzione è "Trapezoidale"
         elif function_type == 'Trapezoidale':
             params.append(dbc.Label("Parametro a:"))
@@ -171,11 +163,19 @@ def register_callbacks(dash_app):
             # Parametri invisibili
             params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
             params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
-        
         # Aggiungi tutti i parametri condizionati al layout
         return params
 
-    # Callback principale per gestire creazione, eliminazione e modifica dei termini
+    @dash_app.callback(
+    Output('defuzzy-type', 'invalid'),
+    Input('defuzzy-type', 'value'),
+    prevent_initial_call=True
+)
+    def validate_defuzzy_type(selected_value):
+        if selected_value is None:
+            return True  
+        return False  
+
     @dash_app.callback(
         [
             Output('terms-list', 'children', allow_duplicate=True),
@@ -197,7 +197,7 @@ def register_callbacks(dash_app):
         ],
         [
             State('function-closed-checkbox', 'value'),
-            State('var-type-store', 'data'),
+            State('var-type-store', 'data'), 
             State('variable-name', 'value'),
             State('domain-min', 'value'),
             State('domain-max', 'value'),
@@ -209,21 +209,26 @@ def register_callbacks(dash_app):
             State('param-d', 'value'),
             State('param-mean', 'value'),
             State('param-sigma', 'value'),
+            State('defuzzy-type', 'value'), 
             State('create-term-btn', 'children'),
             State('selected-term', 'data')
         ],
         prevent_initial_call=True
     )
     def handle_terms(create_clicks, delete_clicks, modify_clicks, closed_checkbox,
-                    var_type, variable_name, domain_min, domain_max, function_type,
-                    term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
-                    button_label, selected_term):
+                var_type, variable_name, domain_min, domain_max, function_type,
+                term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
+                defuzzy_type, button_label, selected_term):
         ctx = dash.ctx
 
         if not ctx.triggered:
             return [dash.no_update] * 11
 
         triggered_id = ctx.triggered[0]['prop_id']
+
+        # Se siamo nella pagina di input, imposta defuzzy_type a None
+        if var_type == "input":
+            defuzzy_type = None
 
         # Gestione della checkbox per le funzioni "chiuse"
         if closed_checkbox is None:
@@ -240,10 +245,10 @@ def register_callbacks(dash_app):
                     'Crea Termine']
 
         # --- Creazione del Termine ---
-        if triggered_id == 'create-term-btn.n_clicks':
+        if triggered_id == 'create-term-btn.n_clicks':             
             if button_label == 'Salva Modifica':
                 # Esegui la modifica e poi ricarica la lista aggiornata
-                terms_list, message, figure = modify_term(variable_name, domain_min, domain_max,
+                terms_list, message, figure = modify_term(var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma)
                 terms_list, figure = update_terms_list_and_figure(variable_name)
@@ -253,7 +258,8 @@ def register_callbacks(dash_app):
                 # Creazione di un nuovo termine
                 terms_list, message, figure = create_term(var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
-                                                        param_c, param_d, param_mean, param_sigma)
+                                                        param_c, param_d, param_mean, param_sigma,
+                                                        defuzzy_type) 
                 if message == "Termine creato con successo!":
                     return (terms_list, message, figure,
                             '', '', '', '', '', '', '', 'Crea Termine')
@@ -348,8 +354,7 @@ def register_callbacks(dash_app):
             
         return True, ""
 
-    # Funzione per la creazione di un termine fuzzy
-    def create_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
+    def create_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -379,7 +384,7 @@ def register_callbacks(dash_app):
         is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
         if not is_valid:
             return dash.no_update, error_message, dash.no_update
-        
+
         payload = {
             'var_type': var_type,
             'term_name': term_name,
@@ -389,16 +394,20 @@ def register_callbacks(dash_app):
             'function_type': function_type,
             'params': params
         }
+
+        # Aggiungi defuzzy_type solo se siamo nella pagina di output
+        if var_type == "output" and defuzzy_type:
+            payload['defuzzy_type'] = defuzzy_type
+
         headers = {'Content-Type': 'application/json'}
         response = requests.post('http://127.0.0.1:5000/api/create_term', json=payload)
 
         if response.status_code == 201:
-            terms_list, figure = update_terms_list_and_figure(variable_name)
+            terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
             return terms_list, "Termine creato con successo!", figure
         else:
             error_message = response.json().get('error', 'Errore sconosciuto')
             return dash.no_update, f"Errore: {error_message}", dash.no_update
-
 
     @dash_app.callback(
         [
@@ -459,8 +468,7 @@ def register_callbacks(dash_app):
             # Restituisci un errore se l'eliminazione fallisce, con dash.no_update per i valori non modificati
             return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    # Funzione per la modifica di un termine fuzzy
-    def modify_term(variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
+    def modify_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -481,7 +489,6 @@ def register_callbacks(dash_app):
         is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
         if not is_valid:
             return dash.no_update, error_message, dash.no_update
-        
         payload = {
             'term_name': term_name,
             'variable_name': variable_name,
@@ -494,34 +501,29 @@ def register_callbacks(dash_app):
         response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{term_name}', json=payload)
 
         if response.status_code == 201:
-            terms_list, figure = update_terms_list_and_figure(variable_name)
+            terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
             return terms_list, "Termine modificato con successo!", figure
         else:
             error_message = response.json().get('error', 'Errore sconosciuto')
             return dash.no_update, f"Errore: {error_message}", dash.no_update
-    
-    
-    # Funzione per aggiornare la lista dei termini e il grafico
-    def update_terms_list_and_figure(variable_name):
-        if variable_name:
+        
+    def update_terms_list_and_figure(variable_name, var_type):
+        if variable_name and var_type:
             try:
-            # Effettua la richiesta all'API per ottenere i termini relativi alla variabile
                 headers = {'Content-Type': 'application/json'}
                 response = requests.get('http://127.0.0.1:5000/api/get_terms')
                 if response.status_code == 200:
                     terms_data = response.json()
-                    
-                    # Usa il metodo get() per ottenere i termini separati in modo sicuro
                     terms_list = []
                     input_data = []
                     output_data = []
-                    
+
                     # Estrai i dati solo se esistono nella risposta
                     input_variables = terms_data.get('input', {})
                     output_variables = terms_data.get('output', {})
 
                     # Gestisci i termini di input
-                    if variable_name in input_variables:
+                    if var_type == 'input' and variable_name in input_variables:
                         variable_data = input_variables[variable_name]
                         for term in variable_data['terms']:
                             term_name = term['term_name']
@@ -540,7 +542,7 @@ def register_callbacks(dash_app):
                             input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
 
                     # Gestisci i termini di output
-                    if variable_name in output_variables:
+                    elif var_type == 'output' and variable_name in output_variables:
                         variable_data = output_variables[variable_name]
                         for term in variable_data['terms']:
                             term_name = term['term_name']
@@ -556,25 +558,42 @@ def register_callbacks(dash_app):
                                     }
                                 )
                             )
-                            input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
-                        
-                    # Creazione del grafico combinato
-                    combined_figure = {
-                        'data': input_data + output_data,
-                        'layout': go.Layout(
-                            title=f'Funzioni Fuzzy per {variable_name}',
-                            xaxis={'title': 'Dominio'},
-                            yaxis={'title': 'Grado di appartenenza'}
-                        )
-                    }
+                            output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+
+                    # Creazione del grafico in base al tipo di variabile
+                    if var_type == 'input':
+                        combined_figure = {
+                            'data': input_data,
+                            'layout': go.Layout(
+                                title=f'Funzioni Fuzzy per {variable_name} (Input)',
+                                xaxis={'title': 'Dominio'},
+                                yaxis={'title': 'Grado di appartenenza'}
+                            )
+                        }
+                    elif var_type == 'output':
+                        combined_figure = {
+                            'data': output_data,
+                            'layout': go.Layout(
+                                title=f'Funzioni Fuzzy per {variable_name} (Output)',
+                                xaxis={'title': 'Dominio'},
+                                yaxis={'title': 'Grado di appartenenza'}
+                            )
+                        }
+                    else:
+                        combined_figure = {
+                            'data': [],
+                            'layout': go.Layout(
+                                title=f'Nessun dato disponibile per {variable_name}',
+                                xaxis={'title': 'Dominio'},
+                                yaxis={'title': 'Grado di appartenenza'}
+                            )
+                        }
 
                     # Restituzione della lista dei termini e della figura combinata
                     return terms_list, combined_figure
-                    
                 else:
                     # Se la richiesta all'API fallisce
                     return [html.Li("Errore nel recupero dei termini.")], dash.no_update
-            
             except Exception as e:
                 # Gestione dell'errore nella richiesta o nel processamento
                 return [html.Li(f"Errore durante il recupero dei dati: {str(e)}")], dash.no_update
@@ -598,3 +617,7 @@ def register_callbacks(dash_app):
         new_rule = html.Div(f"IF ({if_var} IS ...) THEN ({then_var} IS ...)", className="rule-item")
         return existing_rules + [new_rule]
         
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes

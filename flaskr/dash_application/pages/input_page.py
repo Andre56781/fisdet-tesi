@@ -9,6 +9,7 @@ def layout() -> html.Div:
         dcc.Store(id='variables-data', data={}),
         dcc.Store(id='var-type-store', data="input"),
         dcc.Store(id='selected-term'),
+        dcc.Store(id='defuzzy-type', data="default_value"),
         
         # Modal per numero variabili
         Modal(

@@ -24,7 +24,7 @@ def load():
     return jsonify(data)
 
 
-#PROVA
+#Backend 
 
 @bp.route('/create_term', methods=['POST'])
 def create_term():
@@ -39,6 +39,7 @@ def create_term():
         domain_max = data.get('domain_max')
         function_type = data.get('function_type')
         params = data.get('params')
+        defuzzy_type = data.get('defuzzy_type') 
 
         if var_type not in ["input", "output"]:
             return jsonify({"error": "var_type deve essere 'input' o 'output'"}), 400
@@ -68,6 +69,11 @@ def create_term():
             return jsonify({"error": "Il termine esiste già per questa variabile"}), 400
 
         new_term = {"term_name": term_name, "function_type": function_type, "params": params}
+        
+        # Aggiungi defuzzy_type solo se var_type è 'output'
+        if var_type == 'output' and defuzzy_type:
+            new_term['defuzzy_type'] = defuzzy_type
+
         variable_data['terms'].append(new_term)
 
         save_terms(terms_data)
@@ -202,6 +208,7 @@ def modify_term(term_name):
         domain_max = data.get('domain_max')
         function_type = data.get('function_type')
         params = data.get('params')
+        defuzzy_type = data.get('defuzzy_type') 
 
         missing_fields = []
         if not variable_name: missing_fields.append("variable_name")
@@ -238,6 +245,10 @@ def modify_term(term_name):
                     # Aggiorna i dettagli del termine
                     term_to_modify['function_type'] = function_type
                     term_to_modify['params'] = params
+
+                    # Aggiungi defuzzy_type solo se var_type è 'output'
+                    if var_type == 'output' and defuzzy_type:
+                        term_to_modify['defuzzy_type'] = defuzzy_type
 
                     # Salva i dati aggiornati
                     save_terms(terms_data)
