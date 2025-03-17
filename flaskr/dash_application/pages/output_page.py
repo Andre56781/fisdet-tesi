@@ -174,7 +174,7 @@ def layout() -> html.Div:
                                             {'label': 'lom', 'value': 'lom'}
                                         ],
                                         placeholder="Seleziona...",
-                                        className="custom-dropdown mb-3",
+                                        className="custom-dropdown mb-3 pt-2",
                                         clearable=False,
                                         value= None
                                     )
