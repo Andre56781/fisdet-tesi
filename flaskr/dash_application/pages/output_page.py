@@ -74,8 +74,6 @@ def layout() -> html.Div:
             className="content",
             style={"display": "none", "position": "relative"},
             children=[
-                dcc.Interval(id="progress-interval", n_intervals=0, interval=100),
-                dbc.Progress(id="progress", className="mb-2"),
                 
                 dbc.Card([
                     dbc.CardHeader(
