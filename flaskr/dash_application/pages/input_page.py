@@ -108,7 +108,7 @@ def layout() -> html.Div:
                                             id='domain-min',
                                             type='number',
                                             className="input-field",
-                                            value='',
+                                            value='0',
                                             placeholder="0",
                                             debounce=True,
                                             required=True

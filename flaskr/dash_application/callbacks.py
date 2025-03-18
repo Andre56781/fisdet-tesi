@@ -251,7 +251,7 @@ def register_callbacks(dash_app):
                 terms_list, message, figure = modify_term(var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma)
-                terms_list, figure = update_terms_list_and_figure(variable_name)
+                terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
                 return (terms_list, message, figure,
                         '', '', '', '', '', '', '', 'Crea Termine')
             else:
@@ -276,7 +276,7 @@ def register_callbacks(dash_app):
                         dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, 'Crea Termine')
-            return delete_term(variable_name, selected_term) + ('Crea Termine',)
+            return delete_term(variable_name, selected_term, var_type) + ('Crea Termine',)
 
         # --- Modifica del Termine (usando il termine selezionato) ---
         elif triggered_id == 'modify-term-btn.n_clicks':
@@ -456,12 +456,12 @@ def register_callbacks(dash_app):
 
 
     # Funzione per l'eliminazione di un termine fuzzy
-    def delete_term(variable_name, term_name):
+    def delete_term(variable_name, term_name, var_type):
         response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{term_name}')
 
         if response.status_code == 200:
             # Dopo aver eliminato il termine, aggiorna la lista e il grafico
-            terms_list, figure = update_terms_list_and_figure(variable_name)
+            terms_list, figure = update_terms_list_and_figure(variable_name,var_type)
             # Restituisci 10 valori, includendo terms_list e figure aggiornati
             return terms_list, f"Termine '{term_name}' eliminato con successo!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         else:
