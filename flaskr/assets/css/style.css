@@ -413,6 +413,49 @@ body {
   background-color: transparent !important;
 }
 
+/* ==================== TESTPAGE ==================== */
+
+.rule-membership-container, .membership-values-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.rule-membership-item {
+  padding: 0.8rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+  border-left: 3px solid #52b2cf;
+}
+
+.membership-value-item {
+  padding: 0.8rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.rule-text {
+  font-size: 0.95rem;
+  color: #4a4a4a;
+}
+
+.membership-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #3a8ba3;
+  min-width: 70px;
+  text-align: right;
+}
+
+.membership-section {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
   .sidebar {
