@@ -48,7 +48,6 @@ def layout():
                                                     )
                                                 ]
                                             ),
-                                            # Aggiungi altre variabili...
                                         ])
                                     ], className="shadow-sm")
                                 ], md=6),
@@ -107,30 +106,14 @@ def layout():
                                     ], className="shadow-sm")
                                 ]),
                             ], className="mb-4"),
-                            
-                            # Sezione Grafico
-                            dbc.Row([
-                                dbc.Col([
-                                    dbc.Card([
-                                        dbc.CardHeader("Surface Plot", className="gradient-header"),
-                                        dbc.CardBody(
-                                            dcc.Graph(
-                                                id='surface-plot',
-                                                figure={},
-                                                className="custom-graph"
-                                            )
-                                        )
-                                    ], className="shadow-sm")
-                                ])
-                            ])
                         ]),
                         
                         # Footer
                         dbc.CardFooter(
                             html.Div([
                                 dbc.ButtonGroup([
-                                                                        dbc.Button(
-                                        [html.I(className="fas fa-arrow-left mr-2"), "Torna all'Input"],
+                                    dbc.Button(
+                                        [html.I(className="fas fa-home mr-2"), "Torna alla Home Page"],
                                         color="light",
                                         className="nav-btn",
                                         href="/input-page"

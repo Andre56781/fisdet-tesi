@@ -1,12 +1,14 @@
 from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import requests
+from dash import callback_context
 
 def layout() -> html.Div:
     return html.Div([
         dcc.Location(id='url_rules', refresh=False),  
         dcc.Store(id='rules-store', data=[]),  
-        dcc.Store(id='variables-data', data={}),  
+        dcc.Store(id='variables-data', data={}),
+        dcc.Store(id='if-counter', data=0),
         html.Div(id='rules-list'),
 
         html.Div(
@@ -22,26 +24,44 @@ def layout() -> html.Div:
                     
                     dbc.CardBody([
                         dbc.Form([
+                            html.Div(id="if-conditions-container", children=[
+                                dbc.Row([  # Condizione IF iniziale
+                                    dbc.Col([
+                                        dbc.Label("IF", className="w-100 text-center mb-0"),
+                                        dcc.Dropdown(
+                                            id={"type": "if-dropdown", "index": 0},
+                                            options=[],
+                                            placeholder="Seleziona Variabile di Input",
+                                            className="custom-dropdown mb-2",
+                                            style={"width": "300px"}
+                                        ),
+                                        dbc.Label("Termine", className="w-100 text-center mb-0"),
+                                        dcc.Dropdown(
+                                            id={"type": "if-term-dropdown", "index": 0},
+                                            options=[],
+                                            placeholder="Seleziona Termine",
+                                            className="custom-dropdown",
+                                            style={"width": "300px"}
+                                        ),
+                                    ], md=10, className="d-flex flex-column align-items-center pe-2"),
+                                ], className="mb-3 g-3")
+                            ]),
+                            
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("IF", html_for="if-dropdown", className="w-100 text-center mb-0"),
-                                    dcc.Dropdown(
-                                        id="if-dropdown",
-                                        options=[],
-                                        placeholder="Seleziona Variabile di Input",
-                                        className="custom-dropdown mb-2",
-                                        style={"width": "300px"}  
+                                    html.Div(
+                                        dbc.Button(
+                                            [html.I(className="fas fa-plus mr-2"), " Aggiungi Condizione IF"],
+                                            id="add-if-condition",
+                                            color="primary",
+                                            className="action-btn"
+                                        ),
+                                        className="d-flex justify-content-center pt-1"
                                     ),
-                                    dbc.Label("Termine", html_for="if-term-dropdown", className="w-100 text-center mb-0"),
-                                    dcc.Dropdown(
-                                        id="if-term-dropdown",
-                                        options=[],
-                                        placeholder="Seleziona Termine",
-                                        className="custom-dropdown",
-                                        style={"width": "300px"}  
-                                    ),
-                                ], md=6, className="d-flex flex-column align-items-center pe-2"),  
-                                
+                                ], md=12),
+                            ]),
+                            
+                            dbc.Row([
                                 dbc.Col([
                                     dbc.Label("THEN", html_for="then-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
@@ -59,7 +79,7 @@ def layout() -> html.Div:
                                         className="custom-dropdown",
                                         style={"width": "300px"}  
                                     ),
-                                ], md=6, className="d-flex flex-column align-items-center ps-2"),  
+                                ], md=12, className="d-flex flex-column align-items-center"),  
                             ], className="mb-3 g-3"),  
                             
                             html.Div(

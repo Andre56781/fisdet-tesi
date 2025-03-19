@@ -54,7 +54,7 @@ def serve_layout() -> html.Div:
                 ),
                 dcc.Link(
                     [html.I(className="fas fa-file-import mr-2"), "Importa FIS"],
-                    href="/import",
+                    href="/report",
                     className="nav-link"
                 ),
             ], className="sidebar-nav"),
