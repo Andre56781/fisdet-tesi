@@ -1,10 +1,13 @@
-from dash import dcc, html
+from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
+import requests
 
 def layout() -> html.Div:
     return html.Div([
-        dcc.Store(id='rules-data', data=[]),
+        dcc.Location(id='url_rules', refresh=False),  
+        dcc.Store(id='rules-store', data=[]), 
         dcc.Store(id='variables-data', data={}),
+        html.Div(id='rules-list'), 
 
         html.Div(
             id="main-content",
@@ -71,13 +74,7 @@ def layout() -> html.Div:
                             
                             html.Div(
                                 id="rules-list",
-                                children=[
-                                    html.P(
-                                        "IF (Variabile Input Is Termine) THEN (Variabile Output IS Termine)",
-                                        className="rule-item text-muted fst-italic",
-                                        style={"fontSize": "0.9em"}
-                                    )
-                                ],
+                                children=[],
                                 style={
                                     "border": "1px solid #ccc",
                                     "minHeight": "100px",
@@ -102,23 +99,6 @@ def layout() -> html.Div:
                             )
                         ])
                     ]),
-                    
-                    dbc.CardFooter(
-                        html.Div([
-                            dbc.Button(
-                                [html.I(className="fas fa-arrow-left mr-2"), "Indietro"],
-                                id="back-button",
-                                color="light",
-                                className="nav-btn"
-                            ),
-                            dbc.Button(
-                                [html.I(className="fas fa-arrow-right mr-2"), "Avanti"],
-                                id="next-button",
-                                color="primary",
-                                className="nav-btn"
-                            )
-                        ], className="d-flex justify-content-end")
-                    )
                 ], className="main-card mx-auto")
             ]
         )

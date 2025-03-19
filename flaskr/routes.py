@@ -265,25 +265,36 @@ def modify_term(term_name):
 @bp.route('/get_variables_and_terms', methods=['GET'])
 def get_variables_and_terms():
     try:
-        terms_data = load_terms()
+        terms_data = load_rule()
+
         if not terms_data:
             return jsonify({"error": "No variables found"}), 404
+
+        # Verifica che terms_data sia un dizionario
+        if not isinstance(terms_data, dict):
+            return jsonify({"error": "Invalid data structure"}), 400
 
         formatted_data = {
             "input": {},
             "output": {}
         }
 
-        # Iterate through the data for "input" and "output"
-        for var_type, variables in terms_data.items():
-            for variable_name, variable_data in variables.items():
-                terms = []
+        # Itera solo sulle chiavi "input" e "output"
+        for var_type in ["input", "output"]:
+            if var_type in terms_data:
+                variables = terms_data[var_type]
 
-                # Check if "terms" exist for the variable
-                if "terms" in variable_data:
-                    terms = [{"label": term["term_name"], "value": term["term_name"]} for term in variable_data["terms"]]
-                
-                formatted_data[var_type][variable_name] = terms
+                if not isinstance(variables, dict):
+                    continue  # Salta se non è un dizionario
+
+                for variable_name, variable_data in variables.items():
+                    terms = []
+
+                    # Verifica se "terms" esiste per la variabile
+                    if isinstance(variable_data, dict) and "terms" in variable_data:
+                        terms = [{"label": term["term_name"], "value": term["term_name"]} for term in variable_data["terms"]]
+                    
+                    formatted_data[var_type][variable_name] = terms
 
         return jsonify(formatted_data), 200
 
@@ -292,3 +303,74 @@ def get_variables_and_terms():
 
 
 
+@bp.route('/api/get_rules', methods=['GET'])
+def get_rules():
+    try:
+        logging.info("Richiesta ricevuta su /api/get_rules")  # Log della richiesta
+        rules_data = load_rule()
+        logging.info(f"Loaded rules data: {rules_data}")  # Log dei dati caricati DEBUG
+
+        if not rules_data:
+            return jsonify({"error": "No rules found"}), 404
+
+        rules = []
+        for key, value in rules_data.items():
+            if key.startswith("Rule"):
+                rules.append({
+                    "id": key,
+                    "input_variable": value["input_variable"],
+                    "input_term": value["input_term"],
+                    "output_variable": value["output_variable"],
+                    "output_term": value["output_term"]
+                })
+
+        logging.info(f"Returning rules: {rules}")  # Log delle regole restituite DEBUG
+        return jsonify(rules), 200
+
+    except Exception as e:
+        logging.error(f"Error in get_rules: {str(e)}")  # Log dell'errore DEBUG
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@bp.route('/create_rule', methods=['POST'])
+def create_rule():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Nessun dato fornito"}), 400
+
+        input_variable = data.get('input_variable')
+        input_term = data.get('input_term')
+        output_variable = data.get('output_variable')
+        output_term = data.get('output_term')
+
+        if not all([input_variable, input_term, output_variable, output_term]):
+            return jsonify({"error": "Dati incompleti"}), 400
+
+        rules_data = load_rule()
+        rule_id = f"Rule{len(rules_data)}"
+        rules_data[rule_id] = {
+            "input_variable": input_variable,
+            "input_term": input_term,
+            "output_variable": output_variable,
+            "output_term": output_term
+        }
+
+        save_terms(rules_data)
+        return jsonify({"message": "Regola creata con successo!", "rule_id": rule_id}), 201
+
+    except Exception as e:
+        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+    
+@bp.route('/delete_rule/<rule_id>', methods=['DELETE'])
+def delete_rule(rule_id):
+    try:
+        rules_data = load_rule()
+        if rule_id not in rules_data:
+            return jsonify({"error": "Regola non trovata"}), 404
+
+        del rules_data[rule_id]
+        save_terms(rules_data)
+        return jsonify({"message": "Regola eliminata con successo!"}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500

@@ -656,3 +656,110 @@ def register_callbacks(dash_app):
         except Exception as e:
             print(f"Errore nella callback: {e}")
             return [], [], [], []
+
+
+
+        
+    @dash_app.callback(
+        Output('rules-list', 'children', allow_duplicate=True),
+        Input('create-rule', 'n_clicks'),
+        [State('if-dropdown', 'value'),
+        State('if-term-dropdown', 'value'),
+        State('then-dropdown', 'value'),
+        State('then-term-dropdown', 'value'),
+        State('rules-list', 'children')],
+        prevent_initial_call=True
+    )
+    def create_rule(n_clicks, input_variable, input_term, output_variable, output_term, current_rules):
+        if n_clicks is None:
+            return current_rules
+
+        if not all([input_variable, input_term, output_variable, output_term]):
+            return current_rules
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(
+            "http://127.0.0.1:5000/api/create_rule",
+            json={
+                "input_variable": input_variable,
+                "input_term": input_term,
+                "output_variable": output_variable,
+                "output_term": output_term
+            }
+        )
+
+        if response.status_code == 201:
+            rule_data = response.json()
+            new_rule = html.P(
+                f"IF ({input_variable} IS {input_term}) THEN ({output_variable} IS {output_term})",
+                className="rule-item",
+                style={"fontSize": "0.9em"}
+            )
+            current_rules.append(new_rule)
+            return current_rules
+
+        return current_rules
+
+    @dash_app.callback(
+    Output('rules-list', 'children',  allow_duplicate=True),
+    Input('delete-rule', 'n_clicks'),
+    [State('rules-list', 'children')],
+    prevent_initial_call=True
+    )
+    def delete_rule(n_clicks, current_rules):
+        if n_clicks is None or not current_rules:
+            return current_rules
+
+        # Ottieni l'ID della regola da eliminare (ad esempio, l'ultima regola)
+        rule_id = f"Rule{len(current_rules) - 1}"
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.delete(f"http://127.0.0.1:5000/api/delete_rule/{rule_id}")
+
+        if response.status_code == 200:
+            # Rimuovi la regola dalla lista visualizzata
+            return current_rules[:-1]
+
+        return current_rules
+                
+    @dash_app.callback(
+        Output('rules-list', 'children'),
+        Input('url_rules', 'pathname')
+    )
+    def load_rules_on_page_load(pathname):
+        try:
+            headers = {'Content-Type': 'application/json'}
+            response = requests.get("http://127.0.0.1:5000/api/get_rules")
+            print(f"Response status code: {response.status_code}")
+            print(f"Response content: {response.text}")
+
+            if response.status_code == 200:
+                try:
+                    rules_data = response.json()  # Prova a analizzare la risposta come JSON
+                except ValueError:  # Se la risposta non è un JSON valido
+                    print("La risposta non è un JSON valido")
+                    return []
+
+                if not rules_data:  # Se la risposta è vuota
+                    print("Nessuna regola trovata")
+                    return []
+
+                rules_list = []
+                for rule in rules_data:
+                    rule_text = f"IF ({rule['input_variable']} IS {rule['input_term']}) THEN ({rule['output_variable']} IS {rule['output_term']})"
+                    rule_item = html.P(
+                        rule_text,
+                        className="rule-item",
+                        style={"fontSize": "0.9em"}
+                    )
+                    rules_list.append(rule_item)
+
+                return rules_list
+
+            else:
+                print(f"Errore nella risposta: {response.status_code}")
+                return []
+
+        except Exception as e:
+            print(f"Errore nella callback: {e}")
+            return []
