@@ -616,5 +616,43 @@ def register_callbacks(dash_app):
 
         new_rule = html.Div(f"IF ({if_var} IS ...) THEN ({then_var} IS ...)", className="rule-item")
         return existing_rules + [new_rule]
-                
+                    
+    #Rules Page Callbacks
+    @dash_app.callback(
+    [Output("if-dropdown", "options"),
+    Output("then-dropdown", "options"),
+    Output("if-term-dropdown", "options"),
+    Output("then-term-dropdown", "options")],
+    [Input("if-dropdown", "value"),
+    Input("then-dropdown", "value")]
+    )
+    def update_dropdowns(input_variable, output_variable):
+        try:
+            # Fai una richiesta per ottenere tutte le variabili e i termini
+            response = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
+            if response.status_code == 200:
+                data = response.json()
 
+                # Estrai le opzioni delle variabili
+                input_options = [{"label": var, "value": var} for var in data.get("input", {}).keys()]
+                output_options = [{"label": var, "value": var} for var in data.get("output", {}).keys()]
+
+                # Estrai i termini per la variabile selezionata
+                if_terms = []
+                then_terms = []
+                
+                if input_variable and input_variable in data.get("input", {}):
+                    if_terms = data["input"][input_variable]
+                
+                if output_variable and output_variable in data.get("output", {}):
+                    then_terms = data["output"][output_variable]
+
+                return input_options, output_options, if_terms, then_terms
+
+            else:
+                print("Errore nella risposta:", response.status_code)
+                return [], [], [], []
+
+        except Exception as e:
+            print(f"Errore nella callback: {e}")
+            return [], [], [], []

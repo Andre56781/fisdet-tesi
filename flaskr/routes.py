@@ -259,3 +259,36 @@ def modify_term(term_name):
 
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+    
+    
+#Creazione Regole
+@bp.route('/get_variables_and_terms', methods=['GET'])
+def get_variables_and_terms():
+    try:
+        terms_data = load_terms()
+        if not terms_data:
+            return jsonify({"error": "No variables found"}), 404
+
+        formatted_data = {
+            "input": {},
+            "output": {}
+        }
+
+        # Iterate through the data for "input" and "output"
+        for var_type, variables in terms_data.items():
+            for variable_name, variable_data in variables.items():
+                terms = []
+
+                # Check if "terms" exist for the variable
+                if "terms" in variable_data:
+                    terms = [{"label": term["term_name"], "value": term["term_name"]} for term in variable_data["terms"]]
+                
+                formatted_data[var_type][variable_name] = terms
+
+        return jsonify(formatted_data), 200
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
+

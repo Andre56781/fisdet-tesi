@@ -1,31 +1,24 @@
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 
 def layout() -> html.Div:
     return html.Div([
-        # Store per i dati delle regole, se necessario
         dcc.Store(id='rules-data', data=[]),
+        dcc.Store(id='variables-data', data={}),
 
         html.Div(
             id="main-content",
             className="content",
-            style={
-                "display": "block",
-                "position": "relative"
-            },
+            style={"display": "block", "position": "relative"},
             children=[
                 dbc.Card([
-                    dbc.CardHeader(
-                        [
-                            html.H4("Creazione Regole", className="card-title"),
-                            dbc.Badge("Regole Fuzzy", color="info", className="ml-2")
-                        ],
-                        className="card-header-gradient d-flex justify-content-between align-items-center"
-                    ),
+                    dbc.CardHeader([
+                        html.H4("Creazione Regole", className="card-title"),
+                        dbc.Badge("Regole Fuzzy", color="info", className="ml-2")
+                    ], className="card-header-gradient d-flex justify-content-between align-items-center"),
                     
                     dbc.CardBody([
                         dbc.Form([
-                            # Row per i campi IF e THEN
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("IF", html_for="if-dropdown", className="w-100 text-center mb-0"),
@@ -34,19 +27,15 @@ def layout() -> html.Div:
                                         options=[],
                                         placeholder="Seleziona Variabile di Input",
                                         className="custom-dropdown mb-2",
-                                        style={
-                                            "width": "300px"
-                                        }  
+                                        style={"width": "300px"}  
                                     ),
-                                    dbc.Label("Termine", html_for="terms-list-dropdown", className="w-100 text-center mb-0"),
+                                    dbc.Label("Termine", html_for="if-term-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
-                                        id="terms-list-dropdown",
+                                        id="if-term-dropdown",
                                         options=[],
                                         placeholder="Seleziona Termine",
                                         className="custom-dropdown",
-                                        style={
-                                            "width": "300px"
-                                        }  
+                                        style={"width": "300px"}  
                                     ),
                                 ], md=6, className="d-flex flex-column align-items-center pe-2"),  
                                 
@@ -59,20 +48,17 @@ def layout() -> html.Div:
                                         className="custom-dropdown mb-2",
                                         style={"width": "300px"}  
                                     ),
-                                    dbc.Label("Termine", html_for="terms-list-dropdown", className="w-100 text-center mb-0"),
+                                    dbc.Label("Termine", html_for="then-term-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
-                                        id="terms-list-dropdown",
+                                        id="then-term-dropdown",
                                         options=[],
                                         placeholder="Seleziona Termine",
                                         className="custom-dropdown",
-                                        style={
-                                            "width": "300px"
-                                        }  
+                                        style={"width": "300px"}  
                                     ),
                                 ], md=6, className="d-flex flex-column align-items-center ps-2"),  
                             ], className="mb-3 g-3"),  
                             
-                            # Bottone "Crea Regola" centrato
                             html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-plus mr-2"), " Crea Regola"],
@@ -83,12 +69,11 @@ def layout() -> html.Div:
                                 className="d-flex justify-content-center pt-1"
                             ),
                             
-                            # Box per visualizzare le regole create (con una regola di default)
                             html.Div(
                                 id="rules-list",
                                 children=[
                                     html.P(
-                                        "IF (Variabile Input Is Termine) THEN (Variabile Output IS termine)",
+                                        "IF (Variabile Input Is Termine) THEN (Variabile Output IS Termine)",
                                         className="rule-item text-muted fst-italic",
                                         style={"fontSize": "0.9em"}
                                     )
@@ -106,7 +91,6 @@ def layout() -> html.Div:
                                 }
                             ),
                             
-                            # Bottone "Elimina Regola"
                             html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-trash mr-2"), " Elimina Regola"],
