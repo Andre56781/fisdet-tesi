@@ -5,9 +5,9 @@ import requests
 def layout() -> html.Div:
     return html.Div([
         dcc.Location(id='url_rules', refresh=False),  
-        dcc.Store(id='rules-store', data=[]), 
-        dcc.Store(id='variables-data', data={}),
-        html.Div(id='rules-list'), 
+        dcc.Store(id='rules-store', data=[]),  
+        dcc.Store(id='variables-data', data={}),  
+        html.Div(id='rules-list'),
 
         html.Div(
             id="main-content",

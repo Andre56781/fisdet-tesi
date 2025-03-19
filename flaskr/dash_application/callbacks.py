@@ -723,43 +723,30 @@ def register_callbacks(dash_app):
         return current_rules
                 
     @dash_app.callback(
-        Output('rules-list', 'children'),
-        Input('url_rules', 'pathname')
+        Output("rules-store", "data"),
+        Input("url_rules", "pathname")
     )
     def load_rules_on_page_load(pathname):
         try:
-            headers = {'Content-Type': 'application/json'}
             response = requests.get("http://127.0.0.1:5000/api/get_rules")
-            print(f"Response status code: {response.status_code}")
-            print(f"Response content: {response.text}")
-
             if response.status_code == 200:
-                try:
-                    rules_data = response.json()  # Prova a analizzare la risposta come JSON
-                except ValueError:  # Se la risposta non è un JSON valido
-                    print("La risposta non è un JSON valido")
-                    return []
-
-                if not rules_data:  # Se la risposta è vuota
-                    print("Nessuna regola trovata")
-                    return []
-
-                rules_list = []
-                for rule in rules_data:
-                    rule_text = f"IF ({rule['input_variable']} IS {rule['input_term']}) THEN ({rule['output_variable']} IS {rule['output_term']})"
-                    rule_item = html.P(
-                        rule_text,
-                        className="rule-item",
-                        style={"fontSize": "0.9em"}
-                    )
-                    rules_list.append(rule_item)
-
-                return rules_list
-
-            else:
-                print(f"Errore nella risposta: {response.status_code}")
-                return []
-
-        except Exception as e:
-            print(f"Errore nella callback: {e}")
+                return response.json()  
             return []
+        except Exception as e:
+            print(f"Errore nel caricamento delle regole: {e}")
+            return []
+        
+    @dash_app.callback(
+    Output("rules-list", "children"),
+    Input("rules-store", "data")
+    )
+    def display_existing_rules(rules_data):
+
+        return [
+            html.P(
+                f"IF ({rule['input_variable']} IS {rule['input_term']}) THEN ({rule['output_variable']} IS {rule['output_term']})",
+                className="rule-item",
+                style={"fontSize": "0.9em"}
+            ) for rule in rules_data
+        ]
+    
