@@ -19,7 +19,7 @@ body {
   width: 220px;
   height: 100vh;
   background: linear-gradient(180deg, #52b2cf 0%, #3a8ba3 100%);
-  padding: 2rem 1rem;
+  padding: 1rem;
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -33,7 +33,6 @@ body {
 .sidebar-logo {
   margin-bottom: 2rem;
   text-align: center;
-  margin-top: -2rem;
 }
 
 .sidebar-logo img {
@@ -53,12 +52,13 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  margin-top: -1.5rem;
 }
 
 .sidebar-nav a {
   display: flex;
   align-items: center;
-  justify-content: center; 
+  justify-content: flex-start; 
   gap: 0.8rem;
   width: 90%; 
   padding: 0.8rem 1rem; 
@@ -90,6 +90,11 @@ body {
 
 .sidebar-nav a:hover::before {
   left: 100%;
+}
+
+.sidebar-nav a i {
+  width: 20px;
+  text-align: center;
 }
 
 /* ==================== HOME PAGE ==================== */

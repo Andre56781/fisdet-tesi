@@ -176,7 +176,7 @@ def layout() -> html.Div:
                                         placeholder="Seleziona...",
                                         className="custom-dropdown mb-3 pt-2",
                                         clearable=False,
-                                        value= None
+                                        value='centroid'
                                     )
                                 ], md=6),
                             ]), 
