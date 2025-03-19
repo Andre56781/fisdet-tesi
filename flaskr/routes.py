@@ -323,7 +323,9 @@ def create_rule():
             return jsonify({"error": "Dati incompleti"}), 400
 
         rules_data = load_rule()
-        rule_id = f"Rule{len(rules_data)}"
+        rule_ids = [int(key.replace("Rule", "")) for key in rules_data.keys() if key.startswith("Rule")]
+        next_rule_id = max(rule_ids) + 1 if rule_ids else 0
+        rule_id = f"Rule{next_rule_id}"
         rules_data[rule_id] = {
             "input_variable": input_variable,
             "input_term": input_term,
