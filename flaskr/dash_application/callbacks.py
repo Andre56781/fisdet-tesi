@@ -251,7 +251,7 @@ def register_callbacks(dash_app):
                 terms_list, message, figure = modify_term(var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma)
-                terms_list, figure = update_terms_list_and_figure(variable_name)
+                terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
                 return (terms_list, message, figure,
                         '', '', '', '', '', '', '', 'Crea Termine')
             else:
@@ -276,7 +276,7 @@ def register_callbacks(dash_app):
                         dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, 'Crea Termine')
-            return delete_term(variable_name, selected_term) + ('Crea Termine',)
+            return delete_term(variable_name, selected_term, var_type) + ('Crea Termine',)
 
         # --- Modifica del Termine (usando il termine selezionato) ---
         elif triggered_id == 'modify-term-btn.n_clicks':
@@ -456,12 +456,12 @@ def register_callbacks(dash_app):
 
 
     # Funzione per l'eliminazione di un termine fuzzy
-    def delete_term(variable_name, term_name):
+    def delete_term(variable_name, term_name, var_type):
         response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{term_name}')
 
         if response.status_code == 200:
             # Dopo aver eliminato il termine, aggiorna la lista e il grafico
-            terms_list, figure = update_terms_list_and_figure(variable_name)
+            terms_list, figure = update_terms_list_and_figure(variable_name,var_type)
             # Restituisci 10 valori, includendo terms_list e figure aggiornati
             return terms_list, f"Termine '{term_name}' eliminato con successo!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         else:
@@ -616,5 +616,137 @@ def register_callbacks(dash_app):
 
         new_rule = html.Div(f"IF ({if_var} IS ...) THEN ({then_var} IS ...)", className="rule-item")
         return existing_rules + [new_rule]
-                
+                    
+    #Rules Page Callbacks
+    @dash_app.callback(
+    [Output("if-dropdown", "options"),
+    Output("then-dropdown", "options"),
+    Output("if-term-dropdown", "options"),
+    Output("then-term-dropdown", "options")],
+    [Input("if-dropdown", "value"),
+    Input("then-dropdown", "value")]
+    )
+    def update_dropdowns(input_variable, output_variable):
+        try:
+            # Fai una richiesta per ottenere tutte le variabili e i termini
+            response = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
+            if response.status_code == 200:
+                data = response.json()
 
+                # Estrai le opzioni delle variabili
+                input_options = [{"label": var, "value": var} for var in data.get("input", {}).keys()]
+                output_options = [{"label": var, "value": var} for var in data.get("output", {}).keys()]
+
+                # Estrai i termini per la variabile selezionata
+                if_terms = []
+                then_terms = []
+                
+                if input_variable and input_variable in data.get("input", {}):
+                    if_terms = data["input"][input_variable]
+                
+                if output_variable and output_variable in data.get("output", {}):
+                    then_terms = data["output"][output_variable]
+
+                return input_options, output_options, if_terms, then_terms
+
+            else:
+                print("Errore nella risposta:", response.status_code)
+                return [], [], [], []
+
+        except Exception as e:
+            print(f"Errore nella callback: {e}")
+            return [], [], [], []
+
+
+
+        
+    @dash_app.callback(
+        Output('rules-list', 'children', allow_duplicate=True),
+        Input('create-rule', 'n_clicks'),
+        [State('if-dropdown', 'value'),
+        State('if-term-dropdown', 'value'),
+        State('then-dropdown', 'value'),
+        State('then-term-dropdown', 'value'),
+        State('rules-list', 'children')],
+        prevent_initial_call=True
+    )
+    def create_rule(n_clicks, input_variable, input_term, output_variable, output_term, current_rules):
+        if n_clicks is None:
+            return current_rules
+
+        if not all([input_variable, input_term, output_variable, output_term]):
+            return current_rules
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(
+            "http://127.0.0.1:5000/api/create_rule",
+            json={
+                "input_variable": input_variable,
+                "input_term": input_term,
+                "output_variable": output_variable,
+                "output_term": output_term
+            }
+        )
+
+        if response.status_code == 201:
+            rule_data = response.json()
+            new_rule = html.P(
+                f"IF ({input_variable} IS {input_term}) THEN ({output_variable} IS {output_term})",
+                className="rule-item",
+                style={"fontSize": "0.9em"}
+            )
+            current_rules.append(new_rule)
+            return current_rules
+
+        return current_rules
+
+    @dash_app.callback(
+    Output('rules-list', 'children',  allow_duplicate=True),
+    Input('delete-rule', 'n_clicks'),
+    [State('rules-list', 'children')],
+    prevent_initial_call=True
+    )
+    def delete_rule(n_clicks, current_rules):
+        if n_clicks is None or not current_rules:
+            return current_rules
+
+        # Ottieni l'ID della regola da eliminare (ad esempio, l'ultima regola)
+        rule_id = f"Rule{len(current_rules) - 1}"
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.delete(f"http://127.0.0.1:5000/api/delete_rule/{rule_id}")
+
+        if response.status_code == 200:
+            # Rimuovi la regola dalla lista visualizzata
+            return current_rules[:-1]
+
+        return current_rules
+                
+    @dash_app.callback(
+        Output("rules-store", "data"),
+        Input("url_rules", "pathname")
+    )
+    def load_rules_on_page_load(pathname):
+        try:
+            response = requests.get("http://127.0.0.1:5000/api/get_rules")
+            if response.status_code == 200:
+                return response.json()  
+            return []
+        except Exception as e:
+            print(f"Errore nel caricamento delle regole: {e}")
+            return []
+        
+    @dash_app.callback(
+    Output("rules-list", "children"),
+    Input("rules-store", "data")
+    )
+    def display_existing_rules(rules_data):
+
+        return [
+            html.P(
+                f"IF ({rule['input_variable']} IS {rule['input_term']}) THEN ({rule['output_variable']} IS {rule['output_term']})",
+                className="rule-item",
+                style={"fontSize": "0.9em"}
+            ) for rule in rules_data
+        ]
+    

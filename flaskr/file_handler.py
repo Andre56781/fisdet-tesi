@@ -37,9 +37,7 @@ def load_data():
                 return json.load(f)
     except Exception as e:
         print(f"Errore durante il caricamento dei dati: {e}")
-    return {}  # Ritorna un dizionario vuoto in caso di errore
-
-#Prova
+    return {}  
 
 def load_terms():
     """Carica i dati dal file JSON, se esiste."""
@@ -55,3 +53,11 @@ def save_terms(data):
     file_path = get_session_file()
     with open(file_path, 'w') as f:
         json.dump(data, f, indent=4)
+        
+def load_rule():
+    file_path = get_session_file()
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return {"rules": [], "dropdown_options": []}
+

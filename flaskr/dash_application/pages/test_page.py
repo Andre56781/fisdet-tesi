@@ -115,7 +115,7 @@ def layout() -> html.Div:
                                                     )
                                                 ], md=6)
                                             ], className="g-3 membership-section",
-                                               style={"minHeight": "250px", "maxHeight": "400px", "overflowY": "auto"})
+                                            style={"minHeight": "250px", "maxHeight": "400px", "overflowY": "auto"})
                                         ],
                                         style={
                                             "backgroundColor": "#f8f9fa",
