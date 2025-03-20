@@ -186,10 +186,9 @@ def register_callbacks(dash_app):
         if (var_type == 'input' and (current_index == 0 or current_index == num_variables - 1)):
             params.append(dbc.Checklist(
                 options=[
-                    {'label': 'Funzione chiusa', 'value': 'closed'}
+                    {'label': 'Funzione chiusa', 'value': 'closed'},
                 ],
                 id='function-closed-checkbox',
-                inline=True
             ))
         elif var_type == 'output':
             params.append(dbc.Checklist(
@@ -199,7 +198,6 @@ def register_callbacks(dash_app):
                 id='function-closed-checkbox',
                 inline=True
             ))
-
         # Se il tipo di funzione è "Triangolare"
         if function_type == 'Triangolare':
             params.append(dbc.Label("Parametro a:"))
