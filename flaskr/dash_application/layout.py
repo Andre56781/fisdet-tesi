@@ -33,17 +33,17 @@ def serve_layout() -> html.Div:
             # Navigazione:
             html.Nav([
                 dcc.Link(
-                    [html.I(className="fas fa-edit mr-2"), "Variabili Input"],
+                    [html.I(className="fas fa-edit mr-2"), "Input Variables"],
                     href="/input",
                     className="nav-link"
                 ),
                 dcc.Link(
-                    [html.I(className="fas fa-chart-line mr-2"), "Variabili Output"],
+                    [html.I(className="fas fa-chart-line mr-2"), "Output Variables"],
                     href="/output",
                     className="nav-link"
                 ),
                 dcc.Link(
-                    [html.I(className="fas fa-code mr-2"), "Regole"],
+                    [html.I(className="fas fa-code mr-2"), "Define Rules"],
                     href="/rules",
                     className="nav-link"
                 ),

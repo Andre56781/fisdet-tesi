@@ -20,7 +20,7 @@ def layout() -> html.Div:
             children=[
                 ModalHeader(
                     children=[
-                        html.H5("Creazione Variabili di Input", className="mb-0"),
+                        html.H5("Creation of Input Variables", className="mb-0"),
                         html.A(
                             dbc.Button(
                                 html.I(className="fas fa-times"),
@@ -43,7 +43,7 @@ def layout() -> html.Div:
                 ModalBody(
                     html.Div([
                         html.Div(
-                            "Seleziona il numero di variabili",
+                            "Choose the number of variables",
                             className="h6 text-muted mb-2"
                         ),
                         dcc.Input(
@@ -56,7 +56,7 @@ def layout() -> html.Div:
                         ),
                         html.Div(
                             dbc.Button(
-                                "Conferma", 
+                                "Submit", 
                                 id="modal-submit-button", 
                                 color="primary",
                                 className="mt-2 btn-sm"
@@ -79,7 +79,7 @@ def layout() -> html.Div:
                     dbc.CardHeader(
                         [
                             html.H4(id="variable-title", className="card-title"),
-                            dbc.Badge("Variabile Corrente", color="info", className="ml-2")
+                            dbc.Badge("Current Variable", color="info", className="ml-2")
                         ],
                         className="card-header-gradient d-flex justify-content-between align-items-center"
                     ),
@@ -89,7 +89,7 @@ def layout() -> html.Div:
                             # PRIMO GRUPPO DI CAMPI
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("Nome Variabile", html_for="variable-name", className="mb-0"),
+                                    dbc.Label("Variable Name", html_for="variable-name", className="mb-0"),
                                     dbc.Input(
                                         id='variable-name',
                                         type='text',
@@ -102,7 +102,7 @@ def layout() -> html.Div:
                                 ], md=6),
                                 
                                 dbc.Col([
-                                    dbc.Label("Dominio", className="form-label mb-0"),
+                                    dbc.Label("Domain", className="form-label mb-0"),
                                     dbc.InputGroup([
                                         dbc.Input(
                                             id='domain-min',
@@ -129,22 +129,22 @@ def layout() -> html.Div:
                             # SECONDO GRUPPO DI CAMPI
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("Tipo Funzione Fuzzy", className="mb-0"),
+                                    dbc.Label("Fuzzy Function Type", className="mb-0"),
                                     dcc.Dropdown(
                                         id='function-type',
                                         options=[
-                                            {'label': 'Triangolare', 'value': 'Triangolare'},
-                                            {'label': 'Gaussiana', 'value': 'Gaussian'},
-                                            {'label': 'Trapezoidale', 'value': 'Trapezoidale'}
+                                            {'label': 'Triangular', 'value': 'Triangolare'},
+                                            {'label': 'Trapezoidal', 'value': 'Trapezoidale'},
+                                            {'label': 'Gaussian', 'value': 'Gaussian'},
                                         ],
-                                        placeholder="Seleziona...",
+                                        placeholder="Select...",
                                         className="custom-dropdown mb-3",
                                         clearable=False
                                     )
                                 ], md=6),
                                 
                                 dbc.Col([
-                                    dbc.Label("Nome Termine Fuzzy", className="mb-0"),
+                                    dbc.Label("Fuzzy Term Name", className="mb-0"),
                                     dbc.Input(
                                         id='term-name',
                                         type='text',
@@ -163,7 +163,7 @@ def layout() -> html.Div:
                             # BOTTONE "CREA TERMINE"
                             html.Div(
                                 dbc.Button(
-                                    [html.I(className="fas fa-plus mr-2"), " Crea Termine"],
+                                    [html.I(className="fas fa-plus mr-2"), " Create Term"],
                                     id='create-term-btn',
                                     color="success",
                                     className="action-btn"
@@ -182,19 +182,19 @@ def layout() -> html.Div:
                             # Lista dei termini a destra
                             dbc.Col([
                                 dbc.Card([
-                                    dbc.CardHeader("Lista dei Termini"),
+                                    dbc.CardHeader("Terms List"),
                                     dbc.CardBody(
                                         dbc.ListGroup(
                                             id='terms-list',
                                             children=[
-                                                dbc.ListGroupItem("Nessun termine presente", style={"textAlign": "center"})
+                                                dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})
                                             ]
                                         )
                                     ),
                                     dbc.CardFooter(
                                         dbc.ButtonGroup([
-                                            dbc.Button("Modifica", id="modify-term-btn", color="primary", disabled=True),
-                                            dbc.Button("Elimina", id="delete-term-btn", color="danger", disabled=True)
+                                            dbc.Button("Modify", id="modify-term-btn", color="primary", disabled=True),
+                                            dbc.Button("Delete", id="delete-term-btn", color="danger", disabled=True)
                                         ], size="sm", className="d-flex justify-content-end")
                                     )
                                 ])
@@ -210,14 +210,14 @@ def layout() -> html.Div:
                         html.Div([
                             dbc.ButtonGroup([
                                 dbc.Button(
-                                    [html.I(className="fas fa-arrow-left mr-2"), "Indietro"],
+                                    [html.I(className="fas fa-arrow-left mr-2"), "Go Back"],
                                     id="back-button",
                                     color="light",
                                     className="nav-btn",
                                     style={"display": "inline-block"}
                                 ),
                                 dbc.Button(
-                                    [html.I(className="fas fa-arrow-right mr-2"), "Avanti"],
+                                    [html.I(className="fas fa-arrow-right mr-2"), "Go Next"],
                                     id="next-button",
                                     color="primary",
                                     className="nav-btn",

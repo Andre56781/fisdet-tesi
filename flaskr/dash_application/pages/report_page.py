@@ -69,13 +69,13 @@ def layout():
                                                 children=[
                                                     html.H5("Potenza Riscaldamento", className="text-success mb-2"),
                                                     dbc.Row([
-                                                        dbc.Col("Dominio: 0-100%", width=6),
+                                                        dbc.Col("Domain: 0-100%", width=6),
                                                         dbc.Col("Tipo: Output", width=6),
                                                     ]),
                                                     html.Div(
                                                         className="mt-2",
                                                         children=[
-                                                            html.Small("Funzioni di Appartenenza:", className="text-muted"),
+                                                            html.Small("Membership Functions:", className="text-muted"),
                                                             html.Div([
                                                                 dbc.Badge("Basso", color="secondary", className="me-1"),
                                                                 dbc.Badge("Medio", className="me-1", style={"background": "#3a8ba3"}),
@@ -94,7 +94,7 @@ def layout():
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Card([
-                                        dbc.CardHeader("Regole Fuzzy", className="gradient-header"),
+                                        dbc.CardHeader("Fuzzy Rules", className="gradient-header"),
                                         dbc.CardBody([
                                             html.Ul([
                                                 html.Li(
@@ -123,7 +123,7 @@ def layout():
                                 children=[
                                     dbc.ButtonGroup([
                                         dbc.Button(
-                                            [html.I(className="fas fa-home mr-2"), "Torna alla Home Page"],
+                                            [html.I(className="fas fa-home mr-2"), "Back To Home"],
                                             color="light",
                                             className="nav-btn",
                                             href="/home"
@@ -132,7 +132,7 @@ def layout():
                                             [
                                                 html.I(className="fas fa-file-export mr-2"), 
                                                 html.Span(
-                                                    "Esporta JSON",
+                                                    "Export JSON",
                                                     id="export-text",
                                                     style={"transition": "all 0.3s ease"}
                                                 )

@@ -24,12 +24,12 @@ def layout() -> html.Div:
                                     "lineHeight": "1.2"  
                                 }
                             ),
-                            html.P(
+                            html.H4(
                                 [
-                                    "Benvenuto nel mondo dell'intelligenza fuzzy! ",
+                                    "Welcome to the World of Fuzzy Intelligence!",
                                     html.Br(),
                                     html.Span(
-                                        "Crea, importa e ottimizza i tuoi sistemi di inferenza.",
+                                        "Create, import, optimize and test your Fuzzy Inference System.",
                                         style={
                                             "color": "#6c757d", 
                                             "fontSize": "1.25rem",  
@@ -56,7 +56,7 @@ def layout() -> html.Div:
                                             [
                                                 html.I(className="fas fa-plus-circle me-2"),
                                                 html.Span(
-                                                    "Crea Nuovo FIS",
+                                                    "Create Your FIS",
                                                     style={
                                                         "fontSize": "1.2rem",  
                                                         "letterSpacing": "0.03em" 
@@ -87,7 +87,7 @@ def layout() -> html.Div:
                                                     [
                                                         html.I(className="fas fa-file-import me-2"),
                                                         html.Span(
-                                                            "Importa FIS",
+                                                            "Import your FIS",
                                                             style={
                                                                 "fontSize": "1.2rem",
                                                                 "letterSpacing": "0.03em"
@@ -109,7 +109,7 @@ def layout() -> html.Div:
                                             
                                             # Testo trascinamento file
                                             html.Span(
-                                                "Trascina i file qui o clicca per importare",
+                                                "Drag and drop your file or click here to import your FIS",
                                                 style={
                                                     "color": "#6c757d",
                                                     "fontSize": "0.9rem",
@@ -118,7 +118,7 @@ def layout() -> html.Div:
                                                 }
                                             ),
                                             html.Span(
-                                                "(Formati supportati: .json)",
+                                                "(Supported formats: .json)",
                                                 style={
                                                     "color": "#6c757d",
                                                     "fontSize": "0.8rem",

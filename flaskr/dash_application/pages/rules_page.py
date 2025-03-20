@@ -16,8 +16,8 @@ def layout() -> html.Div:
             children=[
                 dbc.Card([
                     dbc.CardHeader([
-                        html.H4("Creazione Regole", className="card-title"),
-                        dbc.Badge("Regole Fuzzy", color="info", className="ml-2")
+                        html.H4("Creation of Rules", className="card-title"),
+                        dbc.Badge("Fuzzy Rules", color="info", className="ml-2")
                     ], className="card-header-gradient d-flex justify-content-between align-items-center"),
                     
                     dbc.CardBody([
@@ -28,15 +28,15 @@ def layout() -> html.Div:
                                     dcc.Dropdown(
                                         id="if-dropdown",
                                         options=[],
-                                        placeholder="Seleziona Variabile di Input",
+                                        placeholder="Select Input Variable",
                                         className="custom-dropdown mb-2",
                                         style={"width": "300px"}  
                                     ),
-                                    dbc.Label("Termine", html_for="if-term-dropdown", className="w-100 text-center mb-0"),
+                                    dbc.Label("Term", html_for="if-term-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
                                         id="if-term-dropdown",
                                         options=[],
-                                        placeholder="Seleziona Termine",
+                                        placeholder="Select Term",
                                         className="custom-dropdown",
                                         style={"width": "300px"}  
                                     ),
@@ -47,15 +47,15 @@ def layout() -> html.Div:
                                     dcc.Dropdown(
                                         id="then-dropdown",
                                         options=[],
-                                        placeholder="Seleziona Variabile di Output",
+                                        placeholder="Select Output Variable",
                                         className="custom-dropdown mb-2",
                                         style={"width": "300px"}  
                                     ),
-                                    dbc.Label("Termine", html_for="then-term-dropdown", className="w-100 text-center mb-0"),
+                                    dbc.Label("Term", html_for="then-term-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
                                         id="then-term-dropdown",
                                         options=[],
-                                        placeholder="Seleziona Termine",
+                                        placeholder="Select Term",
                                         className="custom-dropdown",
                                         style={"width": "300px"}  
                                     ),
@@ -64,7 +64,7 @@ def layout() -> html.Div:
                             
                             html.Div(
                                 dbc.Button(
-                                    [html.I(className="fas fa-plus mr-2"), " Crea Regola"],
+                                    [html.I(className="fas fa-plus mr-2"), " Create Rule"],
                                     id="create-rule",
                                     color="success",
                                     className="action-btn"
@@ -90,7 +90,7 @@ def layout() -> html.Div:
                             
                             html.Div(
                                 dbc.Button(
-                                    [html.I(className="fas fa-trash mr-2"), " Elimina Regola"],
+                                    [html.I(className="fas fa-trash mr-2"), "Delete Rule"],
                                     id="delete-rule",
                                     color="danger",
                                     className="action-btn"
