@@ -33,12 +33,12 @@ def serve_layout() -> html.Div:
             # Navigazione:
             html.Nav([
                 dcc.Link(
-                    [html.I(className="fas fa-edit mr-2"), "Crea FIS"],
+                    [html.I(className="fas fa-edit mr-2"), "Variabili Input"],
                     href="/input",
                     className="nav-link"
                 ),
                 dcc.Link(
-                    [html.I(className="fas fa-chart-line mr-2"), "Output"],
+                    [html.I(className="fas fa-chart-line mr-2"), "Variabili Output"],
                     href="/output",
                     className="nav-link"
                 ),
@@ -50,11 +50,6 @@ def serve_layout() -> html.Div:
                 dcc.Link(
                     [html.I(className="fas fa-list-check mr-2"), "Test FIS"],
                     href="/test",
-                    className="nav-link"
-                ),
-                dcc.Link(
-                    [html.I(className="fas fa-file-import mr-2"), "Importa FIS"],
-                    href="/report",
                     className="nav-link"
                 ),
             ], className="sidebar-nav"),

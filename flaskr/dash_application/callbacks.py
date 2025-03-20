@@ -1,13 +1,88 @@
 import dash
+import base64
 from dash import dcc, html, Input, Output, State, ctx, ALL
 import plotly.graph_objects as go
 import requests
 import dash_bootstrap_components as dbc
 import json
 from flaskr import file_handler
+from flaskr.file_handler import load_data, export_session
+from datetime import datetime
 import re
 
 def register_callbacks(dash_app):
+
+    #IMPORT/EXPORT JSON
+    @dash_app.callback(
+        Output("download-json", "data"),
+        Output("export-loading", "children"),
+        Input("btn-json-export", "n_clicks"),
+        prevent_initial_call=True
+    )
+    def handle_json_export(n_clicks):
+        if n_clicks:
+            try:
+                session_data = file_handler.load_data()
+                
+                # Validazione struttura dati
+                required_keys = {"variables", "terms", "rules"}
+                if not required_keys.issubset(session_data.keys()):
+                    missing = required_keys - session_data.keys()
+                    raise ValueError(f"Dati mancanti: {', '.join(missing)}")
+                
+                # Preparazione dati per l'esportazione
+                export_data = file_handler.export_session(session_data)
+                
+                return (
+                    {
+                        "content": json.dumps(export_data, indent=4, ensure_ascii=False),
+                        "filename": f"fis_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                    },
+                    ""  # Contenuto vuoto per il loading
+                )
+            except Exception as e:
+                print(f"Errore esportazione: {str(e)}")
+                return dash.no_update, ""
+        return dash.no_update, ""
+
+    # Callback per l'importazione JSON
+    @dash_app.callback(
+        Output('session-store', 'data'),
+        Input('upload-fis', 'contents'),
+        State('upload-fis', 'filename'),
+        prevent_initial_call=True
+    )
+    def handle_json_import(contents, filename):
+        if contents is not None:
+            try:
+                # Decodifica il file
+                content_type, content_string = contents.split(',')
+                decoded = base64.b64decode(content_string)
+                
+                # Parsing e validazione
+                uploaded_data = json.loads(decoded.decode('utf-8'))
+                print("Dati caricati:", uploaded_data)  # Debug
+                validated_data = file_handler.import_json_data(uploaded_data)
+                print("Dati validati:", validated_data)  # Debug
+                
+                # Salvataggio nella sessione corrente
+                current_data = file_handler.load_data()
+                current_data.update({
+                    "variables": validated_data["variables"],
+                    "terms": validated_data["terms"],
+                    "rules": validated_data["rules"]
+                })
+                file_handler.save_data(current_data)
+                
+                return current_data
+                
+            except Exception as e:
+                print(f"Errore importazione: {str(e)}")
+                return dash.no_update
+        
+        return dash.no_update
+
+
     #HOME_PAGE CALLBACKS
     @dash_app.callback(
     Output('url', 'pathname'),

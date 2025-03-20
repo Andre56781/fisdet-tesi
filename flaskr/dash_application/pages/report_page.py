@@ -1,11 +1,19 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
+from datetime import datetime
+import json
 
 def layout():
     return html.Div(
         className="container-fluid p-4",
         children=[
             dcc.Store(id='report-data-store'),
+            dcc.Download(id="download-json"),
+            dcc.Loading(
+                id="export-loading",
+                type="circle",
+                children=[html.Div(id="export-loading-output")]
+            ),
             
             html.Div(
                 className="content",
@@ -110,21 +118,38 @@ def layout():
                         
                         # Footer
                         dbc.CardFooter(
-                            html.Div([
-                                dbc.ButtonGroup([
-                                    dbc.Button(
-                                        [html.I(className="fas fa-home mr-2"), "Torna alla Home Page"],
-                                        color="light",
-                                        className="nav-btn",
-                                        href="/input-page"
-                                    ),
-                                    dbc.Button(
-                                        [html.I(className="fas fa-file-pdf mr-2"), "Download Report"],
-                                        color="primary",
-                                        className="nav-btn"
-                                    )
-                                ], className="d-flex justify-content-center w-100")
-                            ]),
+                            html.Div(
+                                className="d-flex justify-content-center w-100",
+                                children=[
+                                    dbc.ButtonGroup([
+                                        dbc.Button(
+                                            [html.I(className="fas fa-home mr-2"), "Torna alla Home Page"],
+                                            color="light",
+                                            className="nav-btn",
+                                            href="/home"
+                                        ),
+                                        dbc.Button(
+                                            [
+                                                html.I(className="fas fa-file-export mr-2"), 
+                                                html.Span(
+                                                    "Esporta JSON",
+                                                    id="export-text",
+                                                    style={"transition": "all 0.3s ease"}
+                                                )
+                                            ],
+                                            color="success",
+                                            className="nav-btn",
+                                            id="btn-json-export",
+                                            n_clicks=0,
+                                            style={
+                                                "marginLeft": "10px",
+                                                "position": "relative",
+                                                "overflow": "hidden"
+                                            }
+                                        )
+                                    ])
+                                ]
+                            ),
                             className="card-footer-gradient"
                         )
                     ], className="main-card")

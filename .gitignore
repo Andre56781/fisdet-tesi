@@ -52,3 +52,5 @@ Thumbs.db
 /flaskr/dash_application/__pycache__
 *.pyc
 *.pyc
+*.pyc
+*.pyc
