@@ -172,45 +172,70 @@ def register_callbacks(dash_app):
         return current_index, back_button_style, next_button_style
 
     @dash_app.callback(
+        Output('open-type', 'value'),  
+        Input('open-type-radio', 'value')  
+    )
+    def update_open_type(selected_value):
+        # Restituisce il valore selezionato nel RadioItems
+        return selected_value
+
+    @dash_app.callback(
         Output('params-container', 'children'),
         Input('var-type-store', 'data'),
         [Input('function-type', 'value'),
         Input('num-variables-store', 'data'),
-        Input('current-index', 'data')]
+        Input('current-index', 'data'),
+        Input('open-type', 'value')]
     )
-    def update_params(var_type, function_type, num_variables, current_index):
+    def update_params(var_type, function_type, num_variables, current_index, open_type):
         params = []
+        
         if num_variables is None or current_index is None:
             return []
-        # Checkbox che appare solo per la prima e l'ultima variabile
-        if (var_type == 'input' and (current_index == 0 or current_index == num_variables - 1)):
-            params.append(dbc.Checklist(
+
+        # Aggiunta di opzioni di apertura per variabili input ai bordi
+        if var_type == 'input':
+            params.append(dbc.RadioItems(
+                id='open-type-radio',
                 options=[
-                    {'label': 'Funzione chiusa', 'value': 'closed'},
+                    {'label': 'Left open', 'value': 'left'},
+                    {'label': 'Right open', 'value': 'right'},
                 ],
-                id='function-closed-checkbox',
+                inline=True,
+                value=open_type  
             ))
-        elif var_type == 'output':
-            params.append(dbc.Checklist(
-                options=[
-                    {'label': 'Classificazione', 'value': 'closed'}
-                ],
-                id='function-closed-checkbox',
-                inline=True
-            ))
-        # Se il tipo di funzione è "Triangolare"
+
+
+        #elif var_type == 'output':
+        #  params.append(dbc.Checklist(
+            #   options=[{'label': 'Classificazione', 'value': 'closed'}],
+            #    id='open-type-radio',
+            #    inline=True
+        # ))
+
+
+        # Parametri per funzione Triangolare
         if function_type == 'Triangolare':
             params.append(dbc.Label("Parametro a:"))
             params.append(dbc.Input(id='param-a', type='number', value='', required=True))
+            
             params.append(dbc.Label("Parametro b:"))
-            params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+            if open_type == 'left':  
+                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
+            elif open_type == 'right':
+                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
+            elif open_type is None:
+                params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+                
             params.append(dbc.Label("Parametro c:"))
             params.append(dbc.Input(id='param-c', type='number', value='', required=True))
+            
             # Parametri invisibili
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
             params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
             params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
-        # Se il tipo di funzione è "Gaussian"
+
+        # Parametri per funzione Gaussian
         elif function_type == 'Gaussian':
             params.append(dbc.Label("Parametro Mean:"))
             params.append(dbc.Input(id='param-mean', type='number', value='', required=True))
@@ -219,24 +244,32 @@ def register_callbacks(dash_app):
 
             # Parametri invisibili
             params.append(dbc.Input(id='param-b', style={'display': 'none'}))
-            params.append(dbc.Input(id='param-a', style={'display': 'none'}))
             params.append(dbc.Input(id='param-c', style={'display': 'none'}))
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
+
         # Se il tipo di funzione è "Trapezoidale"
         elif function_type == 'Trapezoidale':
             params.append(dbc.Label("Parametro a:"))
             params.append(dbc.Input(id='param-a', type='number', value='', required=True))
+            
             params.append(dbc.Label("Parametro b:"))
-            params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+            if open_type == 'left':  
+                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
+            else:
+                params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+            
             params.append(dbc.Label("Parametro c:"))
-            params.append(dbc.Input(id='param-c', type='number', value='', required=True))
+            if open_type == 'right':  
+                params.append(dbc.Input(id='param-c', type='number', value='', disabled=True))
+            else:
+                params.append(dbc.Input(id='param-c', type='number', value='', required=True))
+                
             params.append(dbc.Label("Parametro d:"))
             params.append(dbc.Input(id='param-d', type='number', value='', required=True))
 
-            # Parametri invisibili
             params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
             params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
-        # Aggiungi tutti i parametri condizionati al layout
+
         return params
 
     @dash_app.callback(
@@ -269,7 +302,7 @@ def register_callbacks(dash_app):
             Input('modify-term-btn', 'n_clicks'),
         ],
         [
-            State('function-closed-checkbox', 'value'),
+            State('open-type-radio', 'value'),
             State('var-type-store', 'data'), 
             State('variable-name', 'value'),
             State('domain-min', 'value'),
@@ -288,7 +321,7 @@ def register_callbacks(dash_app):
         ],
         prevent_initial_call=True
     )
-    def handle_terms(create_clicks, delete_clicks, modify_clicks, closed_checkbox,
+    def handle_terms(create_clicks, delete_clicks, modify_clicks, open_type,
                 var_type, variable_name, domain_min, domain_max, function_type,
                 term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
                 defuzzy_type, button_label, selected_term):
@@ -303,12 +336,12 @@ def register_callbacks(dash_app):
         if var_type == "input":
             defuzzy_type = None
 
-        # Gestione della checkbox per le funzioni "chiuse"
-        if closed_checkbox is None:
-            closed_checkbox = []
-        if closed_checkbox and isinstance(closed_checkbox, list) and 'closed' in closed_checkbox:
-            function_type = f"{function_type}-chiusa"
+        if open_type is None:
+            open_type = []
 
+        if isinstance(open_type, str) and ('left' in open_type or 'right' in open_type):
+            function_type = f"{function_type}-open"
+        
         # Verifica che var_type sia valido
         if var_type not in ['input', 'output']:
             return [dash.no_update,
@@ -321,7 +354,7 @@ def register_callbacks(dash_app):
         if triggered_id == 'create-term-btn.n_clicks':             
             if button_label == 'Salva Modifica':
                 # Esegui la modifica e poi ricarica la lista aggiornata
-                terms_list, message, figure = modify_term(var_type, variable_name, domain_min, domain_max,
+                terms_list, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma)
                 terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
@@ -329,7 +362,7 @@ def register_callbacks(dash_app):
                         '', '', '', '', '', '', '', 'Crea Termine')
             else:
                 # Creazione di un nuovo termine
-                terms_list, message, figure = create_term(var_type, variable_name, domain_min, domain_max,
+                terms_list, message, figure = create_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma,
                                                         defuzzy_type) 
@@ -388,11 +421,21 @@ def register_callbacks(dash_app):
         return [dash.no_update] * 11
 
 
-    def validate_params(params, domain_min, domain_max, function_type):
+    def validate_params(open_type, params, domain_min, domain_max, function_type):
         """
         Valida che i parametri siano compresi tra domain_min e domain_max.
         """
         if function_type == 'Triangolare':
+            a, b, c = params.get('a'), params.get('b'), params.get('c')
+            
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
+                return False, "Errore: I parametri a, b, c devono essere compresi tra il dominio minimo e massimo."
+            
+            # Controllo che a <= b <= c
+            if not (a <= b <= c):
+                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
+            
+        elif function_type == 'Triangolare-open':
             a, b, c = params.get('a'), params.get('b'), params.get('c')
             
             # Controllo che i parametri siano compresi tra domain_min e domain_max
@@ -402,7 +445,7 @@ def register_callbacks(dash_app):
             # Controllo che a <= b <= c
             if not (a <= b <= c):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
-            
+        
         elif function_type == 'Gaussian':
             mean, sigma = params.get('mean'), params.get('sigma')
             
@@ -414,6 +457,17 @@ def register_callbacks(dash_app):
             if sigma <= 0:
                 return False, "Errore: Il parametro sigma deve essere maggiore di zero."
             
+        elif function_type == 'Gaussian-open':
+            mean, sigma = params.get('mean'), params.get('sigma')
+            
+            # Controllo che mean sia compreso tra domain_min e domain_max
+            if not (domain_min <= mean <= domain_max):
+                return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
+            
+            # Controllo che sigma sia positivo (opzionale, se necessario)
+            if sigma <= 0:
+                return False, "Errore: Il parametro sigma deve essere maggiore di zero."
+        
         elif function_type == 'Trapezoidale':
             a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
             
@@ -424,10 +478,23 @@ def register_callbacks(dash_app):
             # Controllo che a <= b <= c <= d
             if not (a <= b <= c <= d):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
+        
+        elif function_type == 'Trapezoidale-open':
+            if open_type == "left":
+                a, b, c, d = params.get('a'), params.get('a'), params.get('c'), params.get('d')
+            if open_type == "right":
+                a, b, c, d = params.get('a'), params.get('b'), params.get('d'), params.get('d')
+            # Controllo che i parametri siano compresi tra domain_min e domain_max
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
+                return False, "Errore: I parametri a, b, c, d devono essere compresi tra il dominio minimo e massimo."
+            
+            # Controllo che a <= b <= c <= d
+            if not (a <= b <= c <= d):
+                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
             
         return True, ""
 
-    def create_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
+    def create_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -443,18 +510,33 @@ def register_callbacks(dash_app):
         params = {}
         if function_type == 'Triangolare':
             params = {'a': param_a, 'b': param_b, 'c': param_c}
-        elif function_type == 'Gaussian':
-            params = {'mean': param_mean, 'sigma': param_sigma}
-        elif function_type == 'Trapezoidale':
-            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-        elif function_type == 'Triangolare-chiusa':
-            params = {'a': param_a, 'b': param_b, 'c': param_c}
-        elif function_type == 'Trapezoidale-chiusa':
-            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-        elif function_type == 'Gaussian-chiusa':
-            params = {'mean': param_mean, 'sigma': param_sigma}
+            
+        if function_type == 'Triangolare-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_c, 'c': param_c}
 
-        is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
+        if function_type == 'Gaussian':
+            params = {'mean': param_mean, 'sigma': param_sigma}
+            
+        elif function_type == 'Gaussian-open':
+            if open_type == 'left':
+                params = {'mean': param_mean, 'sigma': param_sigma}
+            elif open_type == 'right':
+                params = {'mean': param_mean, 'sigma': param_sigma}
+
+        if function_type == 'Trapezoidale':
+            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
+            
+        elif function_type == 'Trapezoidale-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
+
+
+        is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
         if not is_valid:
             return dash.no_update, error_message, dash.no_update
 
@@ -541,7 +623,7 @@ def register_callbacks(dash_app):
             # Restituisci un errore se l'eliminazione fallisce, con dash.no_update per i valori non modificati
             return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    def modify_term(var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
+    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -559,7 +641,7 @@ def register_callbacks(dash_app):
         elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
 
-        is_valid, error_message = validate_params(params, domain_min, domain_max, function_type)
+        is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
         if not is_valid:
             return dash.no_update, error_message, dash.no_update
         payload = {

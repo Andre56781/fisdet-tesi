@@ -8,6 +8,7 @@ def layout() -> html.Div:
         dcc.Store(id='current-index', data=0),
         dcc.Store(id='variables-data', data={}),
         dcc.Store(id='var-type-store', data="input"),
+        dcc.Store(id='open-type'),
         dcc.Store(id='selected-term'),
         dcc.Store(id='defuzzy-type', data="default_value"),
         
@@ -158,7 +159,16 @@ def layout() -> html.Div:
                             ], className="mb-3"), 
 
                             # Contenitore parametri aggiuntivi
-                            html.Div(id='params-container', className="params-container"),
+                            html.Div(id='params-container', className="params-container", children=[
+                                dbc.RadioItems(
+                                    id='open-type-radio', 
+                                    options=[
+                                        {'label': 'Left open', 'value': 'left'},
+                                        {'label': 'Right open', 'value': 'right'}
+                                    ],
+                                    inline=True,
+                                )
+                            ]),
                             
                             # BOTTONE "CREA TERMINE"
                             html.Div(

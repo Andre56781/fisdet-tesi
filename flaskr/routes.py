@@ -122,11 +122,11 @@ def get_terms():
                         y = fuzz.gaussmf(x, params['mean'], params['sigma'])
                     elif function_type == 'Trapezoidale':
                         y = fuzz.trapmf(x, [params['a'], params['b'], params['c'], params['d']])
-                    elif function_type == 'Triangolare-chiusa':
+                    elif function_type == 'Triangolare-open':
                         y = closed_trimf(x, params['a'], params['b'], params['c'])
-                    elif function_type == 'Gaussian-chiusa':
+                    elif function_type == 'Gaussian-open':
                         y = closed_gaussmf(x, params['mean'], params['sigma'], domain_min, domain_max)
-                    elif function_type == 'Trapezoidale-chiusa':
+                    elif function_type == 'Trapezoidale-open':
                         y = closed_trapmf(x, params['a'], params['b'], params['c'], params['d'])
 
                     else:
