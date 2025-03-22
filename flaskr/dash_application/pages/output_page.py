@@ -2,15 +2,72 @@ from dash import dcc, html, Input, Output, State
 from dash_bootstrap_components import Modal, themes, ModalHeader, ModalBody
 import dash_bootstrap_components as dbc
 
-
 def layout() -> html.Div:
     return html.Div([
         dcc.Store(id='num-variables-store'),
         dcc.Store(id='current-index', data=0),
         dcc.Store(id='variables-data', data={}),
         dcc.Store(id='var-type-store', data="output"),
+        dcc.Store(id='open-type'),
         dcc.Store(id='selected-term'),
-
+        
+        # Modal per numero variabili
+        Modal(
+            id="variable-modal",
+            className="custom-modal",
+            backdrop="static",
+            size="md",
+            children=[
+                ModalHeader(
+                    children=[
+                        html.H5("Creation of Output Variables", className="mb-0"),
+                        html.A(
+                            dbc.Button(
+                                html.I(className="fas fa-times"),
+                                id="modal-close-button",
+                                className="ml-auto",
+                                color="link",
+                                style={
+                                    "color": "white", 
+                                    "border": "none", 
+                                    "background": "none",
+                                    "padding": "0.3rem"
+                                }
+                            ),
+                            href="/"
+                        )
+                    ],
+                    className="gradient-header py-2 d-flex justify-content-between align-items-center",
+                    close_button=False
+                ),
+                ModalBody(
+                    html.Div([
+                        html.Div(
+                            "Choose the number of variables",
+                            className="h6 text-muted mb-2"
+                        ),
+                        dcc.Input(
+                            id="num-variables-input",
+                            type="number",
+                            min=1,
+                            value=1,
+                            className="modal-input mx-auto",
+                            style={"width": "120px"}
+                        ),
+                        html.Div(
+                            dbc.Button(
+                                "Submit", 
+                                id="modal-submit-button", 
+                                color="primary",
+                                className="mt-2 btn-sm"
+                            ),
+                            className="text-center"
+                        )
+                    ], className="modal-content-wrapper px-3")
+                ),
+            ]
+        ),
+        
         # Contenuto principale
         html.Div(
             id="main-content",
@@ -99,10 +156,9 @@ def layout() -> html.Div:
                                     )
                                 ], md=6)
                             ], className="mb-3"), 
-
                             # Contenitore parametri aggiuntivi
+
                             html.Div(id='params-container', className="params-container"),
-                            
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Defuzzyfication Method", className="mb-0"),
@@ -126,7 +182,7 @@ def layout() -> html.Div:
                             html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-plus mr-2"), " Create Term"],
-                                    id='create-term-btn',   
+                                    id='create-term-btn',
                                     color="success",
                                     className="action-btn"
                                 ),
@@ -149,7 +205,7 @@ def layout() -> html.Div:
                                         dbc.ListGroup(
                                             id='terms-list',
                                             children=[
-                                                dbc.ListGroupItem("No terms present", style={"textAlign": "center"})
+                                            dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})
                                             ]
                                         )
                                     ),

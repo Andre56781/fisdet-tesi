@@ -55,15 +55,12 @@ def register_callbacks(dash_app):
     def handle_json_import(contents, filename):
         if contents is not None:
             try:
-                # Decodifica il file
                 content_type, content_string = contents.split(',')
                 decoded = base64.b64decode(content_string)
                 
-                # Parsing e validazione
                 uploaded_data = json.loads(decoded.decode('utf-8'))
-                print("Dati caricati:", uploaded_data)  # Debug
+
                 validated_data = file_handler.import_json_data(uploaded_data)
-                print("Dati validati:", validated_data)  # Debug
                 
                 # Salvataggio nella sessione corrente
                 current_data = file_handler.load_data()
@@ -176,8 +173,19 @@ def register_callbacks(dash_app):
         Input('open-type-radio', 'value')  
     )
     def update_open_type(selected_value):
-        # Restituisce il valore selezionato nel RadioItems
         return selected_value
+
+    @dash_app.callback(
+        [Output('defuzzy-type', 'value'),  
+        Output('defuzzy-type', 'disabled')],  
+        Input('classification-checkbox', 'value')  
+    )
+    def toggle_defuzzy_visibility(classification_value):
+        default_value = 'centroid'
+        if 'Classification' in classification_value:
+            return None, True 
+        else:
+            return default_value, False  
 
     @dash_app.callback(
         Output('params-container', 'children'),
@@ -205,14 +213,15 @@ def register_callbacks(dash_app):
                 value=open_type  
             ))
 
-
-        #elif var_type == 'output':
-        #  params.append(dbc.Checklist(
-            #   options=[{'label': 'Classificazione', 'value': 'closed'}],
-            #    id='open-type-radio',
-            #    inline=True
-        # ))
-
+        if var_type == 'output':
+            params.append(dbc.Checklist(
+                id='classification-checkbox', 
+                options=[
+                    {'label': 'Classification', 'value': 'Classification'},
+                ],
+                inline=True,
+                value=[open_type] if open_type else []
+            ))
 
         # Parametri per funzione Triangolare
         if function_type == 'Triangolare':
@@ -302,7 +311,7 @@ def register_callbacks(dash_app):
             Input('modify-term-btn', 'n_clicks'),
         ],
         [
-            State('open-type-radio', 'value'),
+            State('open-type', 'value'),
             State('var-type-store', 'data'), 
             State('variable-name', 'value'),
             State('domain-min', 'value'),
@@ -335,7 +344,9 @@ def register_callbacks(dash_app):
         # Se siamo nella pagina di input, imposta defuzzy_type a None
         if var_type == "input":
             defuzzy_type = None
-
+        if var_type == "output":
+            open_type = None
+        
         if open_type is None:
             open_type = []
 
@@ -720,27 +731,52 @@ def register_callbacks(dash_app):
                         combined_figure = {
                             'data': input_data,
                             'layout': go.Layout(
-                                title=f'Funzioni Fuzzy per {variable_name} (Input)',
-                                xaxis={'title': 'Dominio'},
-                                yaxis={'title': 'Grado di appartenenza'}
+                                title=f'Fuzzy set for {variable_name} (Input)',
+                                xaxis={
+                                    'title': 'Domain',
+                                    'showgrid': True, 
+                                    'gridwidth': 1,   
+                                    'gridcolor': 'lightgray', 
+                                    'dtick': 5  
+                                },
+                                yaxis={
+                                    'title': 'Degree of membership',
+                                    'showgrid': True,  
+                                    'gridwidth': 1,    
+                                    'gridcolor': 'lightgray', 
+                                    'dtick': 0.1  
+                                }
                             )
                         }
                     elif var_type == 'output':
                         combined_figure = {
                             'data': output_data,
                             'layout': go.Layout(
-                                title=f'Funzioni Fuzzy per {variable_name} (Output)',
-                                xaxis={'title': 'Dominio'},
-                                yaxis={'title': 'Grado di appartenenza'}
+                                title=f'Fuzzy set for {variable_name} (Output)',
+                                xaxis={
+                                    'title': 'Domain',
+                                    'showgrid': True,  
+                                    'gridwidth': 1,    
+                                    'gridcolor': 'lightgray',  
+                                    'dtick': 5  
+                                },
+                                yaxis={
+                                    'title': 'Degree of membership',
+                                    'showgrid': True,  
+                                    'gridwidth': 1,    
+                                    'gridcolor': 'lightgray',  
+                                    'dtick': 0.1  
+
+                                }
                             )
                         }
                     else:
                         combined_figure = {
                             'data': [],
                             'layout': go.Layout(
-                                title=f'Nessun dato disponibile per {variable_name}',
-                                xaxis={'title': 'Dominio'},
-                                yaxis={'title': 'Grado di appartenenza'}
+                                title=f'No valid data for {variable_name}',
+                                xaxis={'title': 'Domain'},
+                                yaxis={'title': 'Degree of membership'}
                             )
                         }
 
@@ -812,9 +848,6 @@ def register_callbacks(dash_app):
             print(f"Errore nella callback: {e}")
             return [], [], [], []
 
-
-
-        
     @dash_app.callback(
         Output('rules-list', 'children', allow_duplicate=True),
         Input('create-rule', 'n_clicks'),
