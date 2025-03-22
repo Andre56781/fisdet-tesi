@@ -128,7 +128,7 @@ def register_callbacks(dash_app):
         except (ValueError, TypeError):
             return "Errore: Indice della variabile non valido."
 
-        return f"Creazione Variabile di {var_type} {current_index + 1} di {num_vars}"
+        return f"Creation of  {var_type} Variables {current_index + 1} of {num_vars}"
 
     # Callback per la navigazione tra le variabili
     @dash_app.callback(
