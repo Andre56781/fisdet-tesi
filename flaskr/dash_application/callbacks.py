@@ -836,110 +836,141 @@ def register_callbacks(dash_app):
 
     # Callback per rules_page
     @dash_app.callback(
-    Output("rules-container", "children"),
-    Input("create-rule", "n_clicks"),
-    State("if-dropdown", "value"),
-    State("then-dropdown", "value"),
-    State("rules-container", "children"),
-    prevent_initial_call=True
+        Output("rules-container", "children"),
+        Input("create-rule", "n_clicks"),
+        [State({"type": "if-dropdown", "index": ALL}, "value"),  # Valori selezionati in tutti i dropdown delle variabili
+        State({"type": "if-term-dropdown", "index": ALL}, "value"),  # Valori selezionati in tutti i dropdown dei termini
+        State("then-dropdown", "value"),  # Valore selezionato nel dropdown dell'output
+        State("then-term-dropdown", "value"),  # Valore selezionato nel dropdown del termine dell'output
+        State("rules-container", "children")],  # Regole esistenti
+        prevent_initial_call=True
     )
-    def update_rules(n_clicks, if_var, then_var, existing_rules):
+    def update_rules(n_clicks, all_input_vars, all_input_terms, output_var, output_term, existing_rules):
         """Crea una nuova regola fuzzy e la aggiunge alla lista."""
-        if not if_var or not then_var:
-            return existing_rules  # Se non sono selezionate variabili, non fare nulla
+        if n_clicks is None:
+            return existing_rules
 
-        new_rule = html.Div(f"IF ({if_var} IS ...) THEN ({then_var} IS ...)", className="rule-item")
+        # Verifica che tutti i campi siano selezionati
+        if not all(all_input_vars) or not all(all_input_terms) or not output_var or not output_term:
+            return existing_rules  # Se mancano dei valori, non fare nulla
+
+        # Costruisci la parte IF della regola
+        if_part = " AND ".join([f"({var} IS {term})" for var, term in zip(all_input_vars, all_input_terms)])
+
+        # Costruisci la regola completa
+        new_rule_text = f"IF {if_part} THEN ({output_var} IS {output_term})"
+
+        # Crea un nuovo elemento HTML per la regola
+        new_rule = html.Div(
+            new_rule_text,
+            className="rule-item",
+            style={"marginBottom": "10px", "padding": "5px", "border": "1px solid #ccc", "borderRadius": "5px"}
+        )
+
+        # Aggiungi la nuova regola alla lista delle regole esistenti
         return existing_rules + [new_rule]
-                    
-    #Rules Page Callbacks
+
     @dash_app.callback(
-    [Output("if-dropdown", "options"),
-    Output("then-dropdown", "options"),
-    Output("if-term-dropdown", "options"),
-    Output("then-term-dropdown", "options")],
-    [Input("if-dropdown", "value"),
-    Input("then-dropdown", "value")]
+        [Output({"type": "if-dropdown", "index": ALL}, "options"),
+        Output("then-dropdown", "options"),
+        Output({"type": "if-term-dropdown", "index": ALL}, "options"),
+        Output("then-term-dropdown", "options")], 
+        [Input({"type": "if-dropdown", "index": ALL}, "value"),
+        Input("then-dropdown", "value")],  
+        prevent_initial_call=True
     )
-    def update_dropdowns(input_variable, output_variable):
+    def update_dropdowns(all_input_values, output_variable):
+
         try:
-            # Fai una richiesta per ottenere tutte le variabili e i termini
             response = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
             if response.status_code == 200:
                 data = response.json()
 
-                # Estrai le opzioni delle variabili
+                # Estrai le opzioni delle variabili di input
                 input_options = [{"label": var, "value": var} for var in data.get("input", {}).keys()]
+
+                # Estrai le opzioni delle variabili di output
                 output_options = [{"label": var, "value": var} for var in data.get("output", {}).keys()]
 
-                # Estrai i termini per la variabile selezionata
+                # Estrai i termini per ogni variabile di input selezionata
                 if_terms = []
-                then_terms = []
-                
-                if input_variable and input_variable in data.get("input", {}):
-                    if_terms = data["input"][input_variable]
-                
-                if output_variable and output_variable in data.get("output", {}):
-                    then_terms = data["output"][output_variable]
+                for input_value in all_input_values:
+                    if input_value and input_value in data.get("input", {}):
+                        terms = [{"label": term["label"], "value": term["value"]} for term in data["input"][input_value]]
+                        if_terms.append(terms)
+                    else:
+                        if_terms.append([])  # Se la variabile non è valida, restituisci una lista vuota
 
-                return input_options, output_options, if_terms, then_terms
+                # Estrai i termini per la variabile di output selezionata
+                then_terms = []
+                if output_variable and output_variable in data.get("output", {}):
+                    then_terms = [{"label": term["label"], "value": term["value"]} for term in data["output"][output_variable]]
+
+                return [input_options] * len(all_input_values), output_options, if_terms, then_terms
 
             else:
                 print("Errore nella risposta:", response.status_code)
-                return [], [], [], []
+                return [[]] * len(all_input_values), [], [[]] * len(all_input_values), []
 
         except Exception as e:
             print(f"Errore nella callback: {e}")
-            return [], [], [], []
+            return [[]] * len(all_input_values), [], [[]] * len(all_input_values), []
 
     @dash_app.callback(
         [Output('rules-list', 'children', allow_duplicate=True),
         Output('error-message', 'children')],
         Input('create-rule', 'n_clicks'),
         [
-            State('if-dropdown', 'value'),
-            State('if-term-dropdown', 'value'),
+            State('input-container', 'children'),
             State('then-dropdown', 'value'),
             State('then-term-dropdown', 'value'),
             State('rules-list', 'children')
         ],
         prevent_initial_call=True
-    )
-    def create_rule(n_clicks, input_variable, input_term, output_variable, output_term, current_rules):
+        )
+    def create_rule(n_clicks, input_components, output_variable, output_term, current_rules):
         if n_clicks is None:
             return current_rules, ''
 
-        if not all([input_variable, input_term, output_variable, output_term]):
-            return current_rules, ''
+        # Estrai i valori degli input
+        inputs = []
+        for component in input_components:
+            try:
+                # Accedi ai valori dei dropdown
+                input_var = component['props']['children'][0]['props']['children'][1]['props']['value']
+                input_term = component['props']['children'][0]['props']['children'][3]['props']['value']
+                if input_var and input_term:
+                    inputs.append({"input_variable": input_var, "input_term": input_term})
+            except (IndexError, KeyError) as e:
+                print(f"Errore nell'accesso ai valori del componente: {e}")
+                return current_rules, 'Errore: struttura del componente non valida!'
 
-        # Assicuriamoci che current_rules sia sempre una lista
-        if not isinstance(current_rules, list):
-            current_rules = []
+        if not inputs or not output_variable or not output_term:
+            return current_rules, 'Errore: compila tutti i campi!'
 
-        # Creiamo il testo della nuova regola
-        new_rule_text = f"IF ({input_variable} IS {input_term}) THEN ({output_variable} IS {output_term})"
+        # Crea il testo della regola
+        rule_text = " AND ".join([f"({input['input_variable']} IS {input['input_term']})" for input in inputs])
+        rule_text = f"IF {rule_text} THEN ({output_variable} IS {output_term})"
 
-        # Otteniamo i testi delle regole esistenti
+        # Verifica se la regola esiste già
         existing_rules_texts = [rule['props']['children'] if isinstance(rule, dict) else rule.children for rule in current_rules]
-
-        # Se la regola è già esistente, mostra un messaggio di errore
-        if new_rule_text in existing_rules_texts:
+        if rule_text in existing_rules_texts:
             return current_rules, 'Errore: questa regola esiste già!'
 
+        # Invia la regola al backend
         headers = {'Content-Type': 'application/json'}
         response = requests.post(
             "http://127.0.0.1:5000/api/create_rule",
             json={
-                "input_variable": input_variable,
-                "input_term": input_term,
+                "inputs": inputs,
                 "output_variable": output_variable,
                 "output_term": output_term
             }
         )
 
         if response.status_code == 201:
-            rule_data = response.json()
             new_rule = html.P(
-                f"IF ({input_variable} IS {input_term}) THEN ({output_variable} IS {output_term})",
+                rule_text,
                 className="rule-item",
                 style={"fontSize": "0.9em"}
             )
@@ -999,10 +1030,41 @@ def register_callbacks(dash_app):
             ) for rule in rules_data
         ]
 
+    @dash_app.callback(
+    Output('input-container', 'children'),
+    Input('add-input', 'n_clicks'),
+    State('input-container', 'children')
+    )
+    def manage_inputs(add_clicks, current_inputs):
+        if add_clicks is None:
+            return current_inputs
+        # Aggiungi un nuovo set di dropdown
+        new_input = dbc.Row([
+            dbc.Col([
+                dbc.Label("IF", html_for=f"if-dropdown-{add_clicks}", className="w-100 text-center mb-0"),
+                dcc.Dropdown(
+                    id={"type": "if-dropdown", "index": add_clicks},
+                    options=[], 
+                    placeholder="Select Input Variable",
+                    className="custom-dropdown mb-2",
+                    style={"width": "300px"}  
+                ),
+                dbc.Label("Term", html_for=f"if-term-dropdown-{add_clicks}", className="w-100 text-center mb-0"),
+                dcc.Dropdown(
+                    id={"type": "if-term-dropdown", "index": add_clicks},
+                    options=[],  
+                    placeholder="Select Term",
+                    className="custom-dropdown",
+                    style={"width": "300px"}  
+                ),
+            ], md=6, className="d-flex flex-column align-items-center pe-2")
+        ])
+
+        current_inputs.append(new_input)
+        return current_inputs
+
+
 #Report_page callbakcs
-
-
-
 def fetch_data():
     """Function to fetch data from the backend."""
     try:

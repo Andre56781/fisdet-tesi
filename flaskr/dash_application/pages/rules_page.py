@@ -19,29 +19,46 @@ def layout() -> html.Div:
                         html.H4("Creation of Rules", className="card-title"),
                         dbc.Badge("Fuzzy Rules", color="info", className="ml-2")
                     ], className="card-header-gradient d-flex justify-content-between align-items-center"),
-                    
-                    dbc.CardBody([
-                        dbc.Form([
+                        dbc.CardBody([
+                            dbc.Form([
+                            html.Div(
+                                id="input-container",
+                                children=[
+                                    dbc.Row([
+                                        dbc.Col([
+                                            dbc.Label("IF", html_for=f"if-dropdown-{i}", className="w-100 text-center mb-0"),
+                                            dcc.Dropdown(
+                                                id={"type": "if-dropdown", "index": i},
+                                                options=[], 
+                                                placeholder="Select Input Variable",
+                                                className="custom-dropdown mb-2",
+                                                style={"width": "300px"}  
+                                            ),
+                                            dbc.Label("Term", html_for=f"if-term-dropdown-{i}", className="w-100 text-center mb-0"),
+                                            dcc.Dropdown(
+                                                id={"type": "if-term-dropdown", "index": i},
+                                                options=[], 
+                                                placeholder="Select Term",
+                                                className="custom-dropdown",
+                                                style={"width": "300px"}  
+                                            ),
+                                        ], md=6, className="d-flex flex-column align-items-center pe-2")
+                                    ]) for i in range(1)  
+                                ]
+                            ),
+                            # Pulsante per aggiungere nuovi input
+                            html.Div(
+                                dbc.Button(
+                                    [html.I(className="fas fa-plus mr-2"), " Aggiungi Input"],
+                                    id="add-input",
+                                    color="primary",
+                                    className="action-btn"
+                                ),
+                                className="d-flex justify-content-center pt-1"
+                            ),
+
+                            # Sezione THEN (output)
                             dbc.Row([
-                                dbc.Col([
-                                    dbc.Label("IF", html_for="if-dropdown", className="w-100 text-center mb-0"),
-                                    dcc.Dropdown(
-                                        id="if-dropdown",
-                                        options=[],
-                                        placeholder="Select Input Variable",
-                                        className="custom-dropdown mb-2",
-                                        style={"width": "300px"}  
-                                    ),
-                                    dbc.Label("Term", html_for="if-term-dropdown", className="w-100 text-center mb-0"),
-                                    dcc.Dropdown(
-                                        id="if-term-dropdown",
-                                        options=[],
-                                        placeholder="Select Term",
-                                        className="custom-dropdown",
-                                        style={"width": "300px"}  
-                                    ),
-                                ], md=6, className="d-flex flex-column align-items-center pe-2"),  
-                                
                                 dbc.Col([
                                     dbc.Label("THEN", html_for="then-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
@@ -62,6 +79,7 @@ def layout() -> html.Div:
                                 ], md=6, className="d-flex flex-column align-items-center ps-2"),  
                             ], className="mb-3 g-3"),  
                             
+                            # Pulsante per creare la regola
                             html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-plus mr-2"), " Create Rule"],
@@ -72,6 +90,7 @@ def layout() -> html.Div:
                                 className="d-flex justify-content-center pt-1"
                             ),
                             
+                            # Lista delle regole create
                             html.Div(
                                 id="rules-list",
                                 children=[],
@@ -88,7 +107,7 @@ def layout() -> html.Div:
                                 }
                             ),
 
-                            # Div for displaying error message
+                            # Messaggio di errore
                             html.Div(
                                 id="error-message",
                                 children="",
@@ -100,6 +119,7 @@ def layout() -> html.Div:
                                 }
                             ),
 
+                            # Pulsante per eliminare una regola
                             html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-trash mr-2"), "Delete Rule"],

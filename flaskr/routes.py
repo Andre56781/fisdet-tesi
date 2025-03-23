@@ -30,7 +30,6 @@ def load():
 def create_term():
     try:
         data = request.get_json()
-        #print("Dati ricevuti:", data)  # Debug
 
         var_type = data.get('var_type')
         term_name = data.get('term_name')
@@ -45,7 +44,6 @@ def create_term():
             return jsonify({"error": "var_type deve essere 'input' o 'output'"}), 400
 
         terms_data = load_terms()
-        #print("Termini caricati:", terms_data)  # Debug
 
         # Inizializza il tipo di variabile se non esiste
         if var_type not in terms_data:
@@ -77,23 +75,19 @@ def create_term():
         variable_data['terms'].append(new_term)
 
         save_terms(terms_data)
-        #print("Termini salvati:", terms_data)  # Debug
 
         return jsonify(new_term), 201
 
     except Exception as e:
-        #print("Errore durante la creazione del termine:", str(e))  # Debug
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
 
 
 @bp.route('/get_terms', methods=['GET'])
 def get_terms():
     try:
-        logging.debug("Inizio del caricamento dei termini.")
         terms_data = load_terms()
 
         if not terms_data:
-            logging.debug("Nessun termine trovato, restituito 404.")
             return jsonify({"message": "Nessun termine trovato"}), 404
     
         computed_terms = {"input": {}, "output": {}}
@@ -101,7 +95,6 @@ def get_terms():
             for variable_name, variable_data in variables.items():
                 # Verifica che 'domain' sia presente prima di procedere
                 if 'domain' not in variable_data:
-                    #logging.error(f"Variabile '{variable_name}' non contiene il campo 'domain'. Non sarà elaborata.") # Debug
                     continue  # Salta questa variabile
 
                 domain_min, domain_max = variable_data['domain']
@@ -137,11 +130,9 @@ def get_terms():
                         "x": x.tolist(),
                         "y": y.tolist()
                     })
-        #logging.debug("Termini calcolati correttamente, restituito 200.") # Debug
         return jsonify(computed_terms), 200
 
     except Exception as e:
-        #logging.error(f"Errore durante il processo: {str(e)}")# Debug
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
 def closed_trimf(x, a, b, c):
@@ -327,11 +318,12 @@ def get_rules():
             return jsonify([]), 200  
 
         rules = [
-            {"id": key, 
-            "input_variable": value["input_variable"], 
-            "input_term": value["input_term"], 
-            "output_variable": value["output_variable"], 
-            "output_term": value["output_term"]}
+            {
+                "id": key, 
+                "inputs": value["inputs"],  # Lista di input
+                "output_variable": value["output_variable"], 
+                "output_term": value["output_term"]
+            }
             for key, value in rules_data.items() if key.startswith("Rule")
         ]
 
@@ -347,26 +339,33 @@ def create_rule():
         if not data:
             return jsonify({"error": "Nessun dato fornito"}), 400
 
-        input_variable = data.get('input_variable')
-        input_term = data.get('input_term')
+        # Estrai la lista di input e i dettagli dell'output
+        inputs = data.get('inputs')  # Lista di dizionari: [{"input_variable": "...", "input_term": "..."}, ...]
         output_variable = data.get('output_variable')
         output_term = data.get('output_term')
 
-        if not all([input_variable, input_term, output_variable, output_term]):
+        # Valida i dati
+        if not all([inputs, output_variable, output_term]):
             return jsonify({"error": "Dati incompleti"}), 400
 
+        # Carica le regole esistenti
         rules_data = load_rule()
+
+        # Genera un nuovo ID per la regola
         rule_ids = [int(key.replace("Rule", "")) for key in rules_data.keys() if key.startswith("Rule")]
         next_rule_id = max(rule_ids) + 1 if rule_ids else 0
         rule_id = f"Rule{next_rule_id}"
+
+        # Aggiungi la nuova regola
         rules_data[rule_id] = {
-            "input_variable": input_variable,
-            "input_term": input_term,
+            "inputs": inputs,
             "output_variable": output_variable,
             "output_term": output_term
         }
 
+        # Salva le regole aggiornate
         save_terms(rules_data)
+
         return jsonify({"message": "Regola creata con successo!", "rule_id": rule_id}), 201
 
     except Exception as e:
