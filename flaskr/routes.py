@@ -206,10 +206,10 @@ def modify_term(term_name):
         variable_name = data.get('variable_name')
         domain_min = data.get('domain_min')
         domain_max = data.get('domain_max')
-        function_type = data.get('function_type')  # Qui viene passato il nuovo function_type
+        function_type = data.get('function_type')
         params = data.get('params')
-        defuzzy_type = data.get('defuzzy_type') 
-        open_type = data.get('open_type')  # Aggiunto per gestire "open left" o "open right"
+        defuzzy_type = data.get('defuzzy_type')
+        open_type = data.get('open_type')
 
         # Verifica che tutti i campi obbligatori siano presenti
         missing_fields = []
@@ -222,7 +222,6 @@ def modify_term(term_name):
         if missing_fields and open_type != None:
             return jsonify({"error": f"Dati incompleti: {', '.join(missing_fields)}"}), 400
 
-
         # Validazioni dei parametri in base al tipo di funzione
         if function_type == 'Triangolare':
             if not all(key in params for key in ['a', 'b', 'c']):
@@ -232,9 +231,9 @@ def modify_term(term_name):
 
         elif function_type == 'Triangolare-open':
             if open_type == 'left':
-                params['b'] = params['a']  # Forza b = a per "open left"
+                params['b'] = params['a']
             elif open_type == 'right':
-                params['b'] = params['c']  # Forza b = c per "open right"
+                params['b'] = params['c']
             if not all(key in params for key in ['a', 'b', 'c']):
                 return jsonify({"error": "Parametri mancanti per la funzione triangolare aperta."}), 400
             if params['a'] > params['b'] or params['b'] > params['c']:
@@ -254,9 +253,9 @@ def modify_term(term_name):
 
         elif function_type == 'Trapezoidale-open':
             if open_type == 'left':
-                params['b'] = params['a']  # Forza b = a per "open left"
+                params['b'] = params['a']
             elif open_type == 'right':
-                params['c'] = params['d']  # Forza c = d per "open right"
+                params['c'] = params['d']
             if not all(key in params for key in ['a', 'b', 'c', 'd']):
                 return jsonify({"error": "Parametri mancanti per la funzione trapezoidale aperta."}), 400
             if params['a'] > params['b'] or params['b'] > params['c'] or params['c'] > params['d']:
@@ -272,12 +271,18 @@ def modify_term(term_name):
                 term_to_modify = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
                 if term_to_modify:
                     # Aggiorna i dettagli del termine
-                    term_to_modify['function_type'] = function_type  # Aggiorna il function_type
+                    term_to_modify['function_type'] = function_type
                     term_to_modify['params'] = params
 
-                    # Aggiungi defuzzy_type solo se var_type è 'output'
-                    if var_type == 'output' and defuzzy_type:
-                        term_to_modify['defuzzy_type'] = defuzzy_type
+                    # Gestione del defuzzy_type
+                    if var_type == 'output':
+                        if defuzzy_type is None:
+                            # Se defuzzy_type è None, rimuovilo
+                            if 'defuzzy_type' in term_to_modify:
+                                del term_to_modify['defuzzy_type']
+                        else:
+                            # Altrimenti, aggiorna il defuzzy_type
+                            term_to_modify['defuzzy_type'] = defuzzy_type
 
                     # Salva i dati aggiornati
                     save_terms(terms_data)
@@ -288,7 +293,6 @@ def modify_term(term_name):
 
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
-    
     
 #Creazione Regole
 @bp.route('/get_variables_and_terms', methods=['GET'])

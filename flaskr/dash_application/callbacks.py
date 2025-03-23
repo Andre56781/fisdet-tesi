@@ -182,10 +182,15 @@ def register_callbacks(dash_app):
     )
     def toggle_defuzzy_visibility(classification_value):
         default_value = 'centroid'
+        
+        if classification_value is None:
+            return default_value, False 
+        
         if 'Classification' in classification_value:
             return None, True 
         else:
             return default_value, False  
+
 
     @dash_app.callback(
         Output('params-container', 'children'),
@@ -326,14 +331,15 @@ def register_callbacks(dash_app):
             State('param-sigma', 'value'),
             State('defuzzy-type', 'value'), 
             State('create-term-btn', 'children'),
-            State('selected-term', 'data')
+            State('selected-term', 'data'),
+            State('classification-checkbox', 'value')  
         ],
         prevent_initial_call=True
     )
     def handle_terms(create_clicks, delete_clicks, modify_clicks, open_type,
-                var_type, variable_name, domain_min, domain_max, function_type,
-                term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
-                defuzzy_type, button_label, selected_term):
+                    var_type, variable_name, domain_min, domain_max, function_type,
+                    term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
+                    defuzzy_type, button_label, selected_term, classification_value): 
         ctx = dash.ctx
 
         if not ctx.triggered:
@@ -341,9 +347,11 @@ def register_callbacks(dash_app):
 
         triggered_id = ctx.triggered[0]['prop_id']
 
-        # Se siamo nella pagina di input, imposta defuzzy_type a None
+        # Se siamo nella pagina di input, imposta defuzzy_type e classification_value a None
         if var_type == "input":
             defuzzy_type = None
+            classification_value = None
+            
         if var_type == "output":
             open_type = None
         
@@ -367,7 +375,8 @@ def register_callbacks(dash_app):
                 # Esegui la modifica e poi ricarica la lista aggiornata
                 terms_list, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
-                                                        param_c, param_d, param_mean, param_sigma)
+                                                        param_c, param_d, param_mean, param_sigma,
+                                                        defuzzy_type, classification_value)  
                 terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
                 return (terms_list, message, figure,
                         '', '', '', '', '', '', '', 'Crea Termine')
@@ -376,7 +385,7 @@ def register_callbacks(dash_app):
                 terms_list, message, figure = create_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma,
-                                                        defuzzy_type) 
+                                                        defuzzy_type)  
                 if message == "Termine creato con successo!":
                     return (terms_list, message, figure,
                             '', '', '', '', '', '', '', 'Crea Termine')
@@ -637,9 +646,7 @@ def register_callbacks(dash_app):
             # Restituisci un errore se l'eliminazione fallisce, con dash.no_update per i valori non modificati
             return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
-
-        
+    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None, classification_value=None):
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -680,6 +687,7 @@ def register_callbacks(dash_app):
         is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
         if not is_valid:
             return dash.no_update, error_message, dash.no_update
+
         payload = {
             'term_name': term_name,
             'variable_name': variable_name,
@@ -688,6 +696,16 @@ def register_callbacks(dash_app):
             'function_type': function_type,
             'params': params
         }
+
+        # Gestione del defuzzy_type in base alla checkbox
+        if var_type == "output":
+            if classification_value and 'Classification' in classification_value:
+                # Se la checkbox è spuntata, rimuovi il defuzzy_type
+                payload['defuzzy_type'] = None
+            else:
+                # Altrimenti, aggiorna il defuzzy_type
+                payload['defuzzy_type'] = defuzzy_type
+
         headers = {'Content-Type': 'application/json'}
         response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{term_name}', json=payload)
 
