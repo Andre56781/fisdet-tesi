@@ -206,10 +206,12 @@ def modify_term(term_name):
         variable_name = data.get('variable_name')
         domain_min = data.get('domain_min')
         domain_max = data.get('domain_max')
-        function_type = data.get('function_type')
+        function_type = data.get('function_type')  # Qui viene passato il nuovo function_type
         params = data.get('params')
         defuzzy_type = data.get('defuzzy_type') 
+        open_type = data.get('open_type')  # Aggiunto per gestire "open left" o "open right"
 
+        # Verifica che tutti i campi obbligatori siano presenti
         missing_fields = []
         if not variable_name: missing_fields.append("variable_name")
         if domain_min is None: missing_fields.append("domain_min")
@@ -217,21 +219,48 @@ def modify_term(term_name):
         if not function_type: missing_fields.append("function_type")
         if not params: missing_fields.append("params")
 
-        if missing_fields:
+        if missing_fields and open_type != None:
             return jsonify({"error": f"Dati incompleti: {', '.join(missing_fields)}"}), 400
 
-        # Validazioni dei parametri
-        if params.get('a') is not None and params.get('b') is not None:
-            if params['a'] > params['b']:
-                return jsonify({"error": "'a' non può essere maggiore di 'b'."}), 400
 
-        if params.get('b') is not None and params.get('c') is not None:
-            if params['b'] > params['c']:
-                return jsonify({"error": "'b' non può essere maggiore di 'c'."}), 400
+        # Validazioni dei parametri in base al tipo di funzione
+        if function_type == 'Triangolare':
+            if not all(key in params for key in ['a', 'b', 'c']):
+                return jsonify({"error": "Parametri mancanti per la funzione triangolare."}), 400
+            if params['a'] > params['b'] or params['b'] > params['c']:
+                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c."}), 400
 
-        if params.get('c') is not None and params.get('d') is not None:
-            if params['c'] > params['d']:
-                return jsonify({"error": "'c' non può essere maggiore di 'd'."}), 400
+        elif function_type == 'Triangolare-open':
+            if open_type == 'left':
+                params['b'] = params['a']  # Forza b = a per "open left"
+            elif open_type == 'right':
+                params['b'] = params['c']  # Forza b = c per "open right"
+            if not all(key in params for key in ['a', 'b', 'c']):
+                return jsonify({"error": "Parametri mancanti per la funzione triangolare aperta."}), 400
+            if params['a'] > params['b'] or params['b'] > params['c']:
+                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c."}), 400
+
+        elif function_type == 'Gaussian':
+            if not all(key in params for key in ['mean', 'sigma']):
+                return jsonify({"error": "Parametri mancanti per la funzione gaussiana."}), 400
+            if params['sigma'] <= 0:
+                return jsonify({"error": "Il parametro sigma deve essere maggiore di zero."}), 400
+
+        elif function_type == 'Trapezoidale':
+            if not all(key in params for key in ['a', 'b', 'c', 'd']):
+                return jsonify({"error": "Parametri mancanti per la funzione trapezoidale."}), 400
+            if params['a'] > params['b'] or params['b'] > params['c'] or params['c'] > params['d']:
+                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c <= d."}), 400
+
+        elif function_type == 'Trapezoidale-open':
+            if open_type == 'left':
+                params['b'] = params['a']  # Forza b = a per "open left"
+            elif open_type == 'right':
+                params['c'] = params['d']  # Forza c = d per "open right"
+            if not all(key in params for key in ['a', 'b', 'c', 'd']):
+                return jsonify({"error": "Parametri mancanti per la funzione trapezoidale aperta."}), 400
+            if params['a'] > params['b'] or params['b'] > params['c'] or params['c'] > params['d']:
+                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c <= d."}), 400
 
         # Carica i dati esistenti
         terms_data = load_terms()
@@ -243,7 +272,7 @@ def modify_term(term_name):
                 term_to_modify = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
                 if term_to_modify:
                     # Aggiorna i dettagli del termine
-                    term_to_modify['function_type'] = function_type
+                    term_to_modify['function_type'] = function_type  # Aggiorna il function_type
                     term_to_modify['params'] = params
 
                     # Aggiungi defuzzy_type solo se var_type è 'output'

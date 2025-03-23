@@ -447,7 +447,10 @@ def register_callbacks(dash_app):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
             
         elif function_type == 'Triangolare-open':
-            a, b, c = params.get('a'), params.get('b'), params.get('c')
+            if open_type == "left":
+                a, b, c = params.get('a'), params.get('a'), params.get('c')
+            if open_type == "right":
+                a, b, c = params.get('a'), params.get('c'), params.get('c')
             
             # Controllo che i parametri siano compresi tra domain_min e domain_max
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
@@ -635,6 +638,8 @@ def register_callbacks(dash_app):
             return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma):
+
+        
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -647,10 +652,30 @@ def register_callbacks(dash_app):
         params = {}
         if function_type == 'Triangolare':
             params = {'a': param_a, 'b': param_b, 'c': param_c}
-        elif function_type == 'Gaussian':
+            
+        if function_type == 'Triangolare-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_c, 'c': param_c}
+
+        if function_type == 'Gaussian':
             params = {'mean': param_mean, 'sigma': param_sigma}
-        elif function_type == 'Trapezoidale':
+            
+        elif function_type == 'Gaussian-open':
+            if open_type == 'left':
+                params = {'mean': param_mean, 'sigma': param_sigma}
+            elif open_type == 'right':
+                params = {'mean': param_mean, 'sigma': param_sigma}
+
+        if function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
+            
+        elif function_type == 'Trapezoidale-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
 
         is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
         if not is_valid:
