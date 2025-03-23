@@ -998,3 +998,66 @@ def register_callbacks(dash_app):
                 style={"fontSize": "0.9em"}
             ) for rule in rules_data
         ]
+
+#Report_page callbakcs
+
+
+
+def fetch_data():
+    """Function to fetch data from the backend."""
+    try:
+        # Request to the backend to get terms and rules
+        response_terms = requests.get(f"http://127.0.0.1:5000/api/get_terms")
+        response_rules = requests.get(f"http://127.0.0.1:5000/api/get_rules")
+
+        if response_terms.status_code == 200 and response_rules.status_code == 200:
+            terms_data = response_terms.json()
+            rules_data = response_rules.json()
+            return {"terms": terms_data, "rules": rules_data}
+        else:
+            return None
+    except Exception as e:
+        print(f"Error while loading data: {e}")
+        return None
+
+def generate_variable_section(variables, var_type):
+    """Generates sections for input or output variables."""
+    children = []
+    for var_name, var_data in variables.items():
+        children.append(
+            dbc.Card([
+                dbc.CardHeader(f"{var_type.capitalize()} Variable: {var_name}"),
+                dbc.CardBody([
+                    html.Div([
+                        html.H5(var_name, className="text-primary mb-2" if var_type == "input" else "text-success mb-2"),
+                        dbc.Row([
+                            dbc.Col(f"Domain: {var_data['domain'][0]}-{var_data['domain'][1]}", width=6),
+                            dbc.Col(f"Type: {var_type.capitalize()}", width=6),
+                        ]),
+                        html.Div(
+                            className="mt-2",
+                            children=[
+                                html.Small("Membership Functions:", className="text-muted"),
+                                html.Div([
+                                    dbc.Badge(term["term_name"], color="info" if var_type == "input" else "secondary", className="me-1")
+                                    for term in var_data["terms"]
+                                ], className="mt-1")
+                            ]
+                        )
+                    ], className="variable-card mb-3 p-3")
+                ])
+            ], className="shadow-sm")
+        )
+    return children
+
+def generate_rules_section(rules):
+    """Generates the section for fuzzy rules."""
+    children = []
+    for rule in rules:
+        children.append(
+            html.Li(
+                f"IF {rule['input_variable']} IS {rule['input_term']} THEN {rule['output_variable']} IS {rule['output_term']}",
+                className="rule-item mb-2 p-2"
+            )
+        )
+    return children
