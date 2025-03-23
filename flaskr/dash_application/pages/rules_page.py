@@ -87,7 +87,19 @@ def layout() -> html.Div:
                                     "marginRight": "auto"
                                 }
                             ),
-                            
+
+                            # Div for displaying error message
+                            html.Div(
+                                id="error-message",
+                                children="",
+                                style={
+                                    "color": "red",
+                                    "fontWeight": "bold",
+                                    "textAlign": "center",
+                                    "marginTop": "10px"
+                                }
+                            ),
+
                             html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-trash mr-2"), "Delete Rule"],

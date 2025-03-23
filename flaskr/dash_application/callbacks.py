@@ -892,21 +892,38 @@ def register_callbacks(dash_app):
             return [], [], [], []
 
     @dash_app.callback(
-        Output('rules-list', 'children', allow_duplicate=True),
+        [Output('rules-list', 'children', allow_duplicate=True),
+        Output('error-message', 'children')],
         Input('create-rule', 'n_clicks'),
-        [State('if-dropdown', 'value'),
-        State('if-term-dropdown', 'value'),
-        State('then-dropdown', 'value'),
-        State('then-term-dropdown', 'value'),
-        State('rules-list', 'children')],
+        [
+            State('if-dropdown', 'value'),
+            State('if-term-dropdown', 'value'),
+            State('then-dropdown', 'value'),
+            State('then-term-dropdown', 'value'),
+            State('rules-list', 'children')
+        ],
         prevent_initial_call=True
     )
     def create_rule(n_clicks, input_variable, input_term, output_variable, output_term, current_rules):
         if n_clicks is None:
-            return current_rules
+            return current_rules, ''
 
         if not all([input_variable, input_term, output_variable, output_term]):
-            return current_rules
+            return current_rules, ''
+
+        # Assicuriamoci che current_rules sia sempre una lista
+        if not isinstance(current_rules, list):
+            current_rules = []
+
+        # Creiamo il testo della nuova regola
+        new_rule_text = f"IF ({input_variable} IS {input_term}) THEN ({output_variable} IS {output_term})"
+
+        # Otteniamo i testi delle regole esistenti
+        existing_rules_texts = [rule['props']['children'] if isinstance(rule, dict) else rule.children for rule in current_rules]
+
+        # Se la regola è già esistente, mostra un messaggio di errore
+        if new_rule_text in existing_rules_texts:
+            return current_rules, 'Errore: questa regola esiste già!'
 
         headers = {'Content-Type': 'application/json'}
         response = requests.post(
@@ -927,9 +944,10 @@ def register_callbacks(dash_app):
                 style={"fontSize": "0.9em"}
             )
             current_rules.append(new_rule)
-            return current_rules
+            return current_rules, ''
 
-        return current_rules
+        return current_rules, ''
+
 
     @dash_app.callback(
     Output('rules-list', 'children',  allow_duplicate=True),
@@ -980,4 +998,3 @@ def register_callbacks(dash_app):
                 style={"fontSize": "0.9em"}
             ) for rule in rules_data
         ]
-    
