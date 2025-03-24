@@ -1206,11 +1206,19 @@ def generate_rules_section(rules):
     """Generates the section for fuzzy rules."""
     children = []
     for rule in rules:
+        inputs = rule.get("inputs", [])
+        inputs_text = " AND ".join(
+            f"({inp['input_variable']} IS {inp['input_term']})" for inp in inputs
+        )
+        output_text = f"({rule['output_variable']} IS {rule['output_term']})"
+        rule_text = f"IF {inputs_text} THEN {output_text}"
+
         children.append(
             html.Li(
-                f"IF {rule['input_variable']} IS {rule['input_term']} THEN {rule['output_variable']} IS {rule['output_term']}",
+                rule_text,
                 className="rule-item mb-2 p-2"
             )
         )
     return children
+
 
