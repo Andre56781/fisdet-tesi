@@ -873,47 +873,55 @@ def register_callbacks(dash_app):
         [Output({"type": "if-dropdown", "index": ALL}, "options"),
         Output("then-dropdown", "options"),
         Output({"type": "if-term-dropdown", "index": ALL}, "options"),
-        Output("then-term-dropdown", "options")], 
+        Output("then-term-dropdown", "options")],
         [Input({"type": "if-dropdown", "index": ALL}, "value"),
-        Input("then-dropdown", "value")],  
+        Input("then-dropdown", "value")],
         prevent_initial_call=True
     )
     def update_dropdowns(all_input_values, output_variable):
-
         try:
             response = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
-            if response.status_code == 200:
-                data = response.json()
-
-                # Estrai le opzioni delle variabili di input
-                input_options = [{"label": var, "value": var} for var in data.get("input", {}).keys()]
-
-                # Estrai le opzioni delle variabili di output
-                output_options = [{"label": var, "value": var} for var in data.get("output", {}).keys()]
-
-                # Estrai i termini per ogni variabile di input selezionata
-                if_terms = []
-                for input_value in all_input_values:
-                    if input_value and input_value in data.get("input", {}):
-                        terms = [{"label": term["label"], "value": term["value"]} for term in data["input"][input_value]]
-                        if_terms.append(terms)
-                    else:
-                        if_terms.append([])  # Se la variabile non è valida, restituisci una lista vuota
-
-                # Estrai i termini per la variabile di output selezionata
-                then_terms = []
-                if output_variable and output_variable in data.get("output", {}):
-                    then_terms = [{"label": term["label"], "value": term["value"]} for term in data["output"][output_variable]]
-
-                return [input_options] * len(all_input_values), output_options, if_terms, then_terms
-
-            else:
+            if response.status_code != 200:
                 print("Errore nella risposta:", response.status_code)
                 return [[]] * len(all_input_values), [], [[]] * len(all_input_values), []
+
+            data = response.json()
+
+            # Opzioni originali
+            all_input_vars = list(data.get("input", {}).keys())
+            all_output_vars = list(data.get("output", {}).keys())
+
+            # Opzioni dropdown variabili input (escludi selezionate dagli altri blocchi)
+            input_options_list = []
+            for i, selected in enumerate(all_input_values):
+                # Variabili selezionate in altri blocchi
+                used = [v for j, v in enumerate(all_input_values) if j != i and v]
+                available_vars = [v for v in all_input_vars if v not in used]
+                input_options_list.append([{"label": v, "value": v} for v in available_vars])
+
+            # Dropdown variabili output
+            output_options = [{"label": v, "value": v} for v in all_output_vars]
+
+            # Opzioni per i termini dei blocchi IF
+            if_term_options = []
+            for selected in all_input_values:
+                if selected and selected in data.get("input", {}):
+                    terms = data["input"][selected]
+                    if_term_options.append([{"label": t["label"], "value": t["value"]} for t in terms])
+                else:
+                    if_term_options.append([])
+
+            # Opzioni per i termini output
+            then_term_options = []
+            if output_variable and output_variable in data.get("output", {}):
+                then_term_options = [{"label": t["label"], "value": t["value"]} for t in data["output"][output_variable]]
+
+            return input_options_list, output_options, if_term_options, then_term_options
 
         except Exception as e:
             print(f"Errore nella callback: {e}")
             return [[]] * len(all_input_values), [], [[]] * len(all_input_values), []
+
 
     @dash_app.callback(
         [Output('rules-list', 'children', allow_duplicate=True),
