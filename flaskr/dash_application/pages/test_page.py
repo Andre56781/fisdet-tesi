@@ -91,21 +91,30 @@ def layout() -> html.Div:
                                         className="d-flex justify-content-center mb-4"
                                     ),
                                     html.Div(
-                                        id="rule-membership-section",
-                                        children=[
-                                            html.H5("Attivazione delle Regole", className="mb-3 text-center", style={"color": "#2c3e50"}),
-                                            dbc.Row([
-                                                dbc.Col([
-                                                    html.Div(id="rules-list-membership", className="rule-membership-container", style={"borderRight": "2px solid #eee", "paddingRight": "1.5rem"})
-                                                ], md=6),
-                                                dbc.Col([
-                                                    html.Div(id="membership-values", className="membership-values-container")
-                                                ], md=6)
-                                            ], className="g-3 membership-section", style={"minHeight": "250px", "maxHeight": "400px", "overflowY": "auto"})
-                                        ],
-                                        style={"backgroundColor": "#f8f9fa", "borderRadius": "10px", "padding": "1.5rem", "marginBottom": "2rem"}
-                                    ),
-                                    # ⚠️ Box di output statici: non devono essere aggiornati dal layout
+                                    id="rule-membership-section",
+                                    children=[
+                                        html.H5("Attivazione delle Regole", className="mb-3 text-center", style={"color": "#2c3e50"}),
+
+                                        # Regole centrate
+                                        dbc.Row([
+                                            dbc.Col(
+                                                html.Div(id="rules-list-membership", className="rule-membership-container"),
+                                                md=8,
+                                                className="mx-auto"
+                                            )
+                                        ], className="justify-content-center mb-4", style={"minHeight": "150px"}),
+
+                                        # Valori di output sotto
+                                        dbc.Row([
+                                            dbc.Col(
+                                                html.Div(id="membership-values", className="membership-values-container"),
+                                                md=8,
+                                                className="mx-auto"
+                                            )
+                                        ])
+                                    ],
+                                    style={"backgroundColor": "#f8f9fa", "borderRadius": "10px", "padding": "1.5rem", "marginBottom": "2rem"}
+                                ),
                                     dbc.Row(output_controls, className="g-4")
                                 ], style={"padding": "0 2rem"})
                             ])

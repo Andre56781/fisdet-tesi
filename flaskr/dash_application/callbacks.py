@@ -1019,18 +1019,24 @@ def register_callbacks(dash_app):
             return []
         
     @dash_app.callback(
-    Output("rules-list", "children"),
-    Input("rules-store", "data")
+        Output("rules-list", "children"),
+        Input("rules-store", "data")
     )
     def display_existing_rules(rules_data):
+        rules_display = []
+        for rule in rules_data:
+            inputs = rule.get("inputs", [])
+            inputs_text = " AND ".join(
+                f"({inp['input_variable']} IS {inp['input_term']})" for inp in inputs
+            )
+            output_text = f"({rule['output_variable']} IS {rule['output_term']})"
+            rule_text = f"IF {inputs_text} THEN {output_text}"
 
-        return [
-            html.P(
-                f"IF ({rule['input_variable']} IS {rule['input_term']}) THEN ({rule['output_variable']} IS {rule['output_term']})",
-                className="rule-item",
-                style={"fontSize": "0.9em"}
-            ) for rule in rules_data
-        ]
+            rules_display.append(
+                html.P(rule_text, className="rule-item", style={"fontSize": "0.9em"})
+            )
+        return rules_display
+
 
     @dash_app.callback(
     Output('input-container', 'children'),
@@ -1065,7 +1071,7 @@ def register_callbacks(dash_app):
         current_inputs.append(new_input)
         return current_inputs
 
-#Regole
+    #Regole
     @dash_app.callback(
         Output("inference-data", "data"),
         Output("rules-list-membership", "children"),
@@ -1086,27 +1092,49 @@ def register_callbacks(dash_app):
 
             response = requests.post("http://127.0.0.1:5000/api/infer", json={"inputs": inputs_dict})
             if response.status_code != 200:
-                return dash.no_update, ["Errore"], ["Errore"]
+                return dash.no_update, [html.Div("Errore nell'inferenza", className="text-danger")], []
 
             result = response.json()
-            rule_outputs = result["rule_outputs"]
-            outputs = result["results"]
+            rule_outputs = result.get("rule_outputs", [])
+            outputs = result.get("results", {})
 
-            # Visualizza le attivazioni delle regole
-            rules_display = [
-                html.Div(f"{r['output_variable']} IS {r['output_term']} --> {round(r['activation'], 3)}", className="mb-1")
-                for r in rule_outputs
+            rule_map = {
+                (rule["output_variable"], rule["output_term"]): rule
+                for key, rule in result.items()
+                if key.startswith("Rule") and isinstance(rule, dict)
+            }
+
+            rules_display = []
+            for rule in rule_outputs:
+                key = (rule["output_variable"], rule["output_term"])
+                rule_data = rule_map.get(key)
+
+                if rule_data and "inputs" in rule_data:
+                    inputs = rule_data["inputs"]
+                    inputs_text = " AND ".join(
+                        f"({inp['input_variable']} IS {inp['input_term']})"
+                        for inp in inputs
+                    )
+                    output_text = f"({rule['output_variable']} IS {rule['output_term']})"
+                    rule_text = f"IF {inputs_text} THEN {output_text} → {round(rule['activation'], 3)}"
+                else:
+                    output_text = f"({rule['output_variable']} IS {rule['output_term']})"
+                    rule_text = f"IF ? THEN {output_text} → {round(rule['activation'], 3)}"
+
+                rules_display.append(
+                    html.P(rule_text, className="rule-inference text-center", style={"fontSize": "0.9em"})
+                )
+
+            membership_display = [
+                html.P(f"{k}: {round(v, 2)}", className="fw-bold text-center")
+                for k, v in outputs.items()
             ]
-
-            # Nessuna ripetizione dei risultati finali, già visibili nei box
-            membership_display = []
 
             return result, rules_display, membership_display
 
         except Exception as e:
             print(f"Errore inferenza: {e}")
-            return dash.no_update, ["Errore"], ["Errore"]
-
+            return dash.no_update, [html.Div("Errore durante l'inferenza", className="text-danger")], []
 
 
     @dash_app.callback(

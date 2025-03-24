@@ -405,12 +405,18 @@ def infer():
         rule_outputs = apply_rules(fuzzified, rules)
         results = aggregate_and_defuzzify(terms_data, rule_outputs)
 
-        return jsonify({
+        full_result = {
             "inputs": inputs,
             "fuzzified": fuzzified,
             "rule_outputs": rule_outputs,
             "results": results
-        })
+        }
+
+        for key, rule in rules_data.items():
+            if key.startswith("Rule"):
+                full_result[key] = rule
+
+        return jsonify(full_result)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -480,6 +486,7 @@ def apply_rules(fuzzified_inputs, rules):
 
 def aggregate_and_defuzzify(terms_data, rule_outputs):
     results = {}
+
     for var_name in terms_data["output"]:
         domain_min, domain_max = terms_data["output"][var_name]["domain"]
         x = np.linspace(domain_min, domain_max, 100)
@@ -505,7 +512,14 @@ def aggregate_and_defuzzify(terms_data, rule_outputs):
 
                     agg_y = np.fmax(agg_y, np.fmin(ro["activation"], y))
 
-        result = fuzz.defuzz(x, agg_y, 'centroid') if np.sum(agg_y) > 0 else 0
+        defuzzy_method = terms_data["output"][var_name].get("defuzzy_type", "centroid")
+
+        try:
+            result = fuzz.defuzz(x, agg_y, defuzzy_method) if np.sum(agg_y) > 0 else 0
+        except Exception as e:
+            print(f"[ERRORE defuzzificazione] Variabile '{var_name}', metodo '{defuzzy_method}':", e)
+            result = 0
+
         results[var_name] = result
 
     return results
