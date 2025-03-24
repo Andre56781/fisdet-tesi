@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file,current_app
 import os
 from flaskr.file_handler import *
 import logging
@@ -38,7 +38,7 @@ def create_term():
         domain_max = data.get('domain_max')
         function_type = data.get('function_type')
         params = data.get('params')
-        defuzzy_type = data.get('defuzzy_type') 
+        defuzzy_type = data.get('defuzzy_type')
 
         if var_type not in ["input", "output"]:
             return jsonify({"error": "var_type deve essere 'input' o 'output'"}), 400
@@ -49,7 +49,14 @@ def create_term():
         if var_type not in terms_data:
             terms_data[var_type] = {}
 
-        # Controlla se la variabile esiste già
+        if var_type == "output":
+            existing_variables = list(terms_data[var_type].keys())
+            if existing_variables and variable_name not in existing_variables:
+                return jsonify({
+                    "error": f"È possibile inserire solo una variabile {var_type}. Esiste già '{existing_variables[0]}'."
+                }), 400
+
+        # Se la variabile non esiste, creala
         if variable_name not in terms_data[var_type]:
             terms_data[var_type][variable_name] = {
                 "domain": [domain_min, domain_max],
@@ -58,17 +65,21 @@ def create_term():
 
         variable_data = terms_data[var_type][variable_name]
 
-        # Controlla che il dominio sia coerente
+        # Controlla coerenza del dominio
         if variable_data['domain'] != [domain_min, domain_max]:
             return jsonify({"error": "Dominio incoerente per la variabile esistente"}), 400
 
+        # Controlla duplicazione del termine
         existing_term = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
         if existing_term:
             return jsonify({"error": "Il termine esiste già per questa variabile"}), 400
 
-        new_term = {"term_name": term_name, "function_type": function_type, "params": params}
-        
-        # Aggiungi defuzzy_type solo se var_type è 'output'
+        new_term = {
+            "term_name": term_name,
+            "function_type": function_type,
+            "params": params
+        }
+
         if var_type == 'output' and defuzzy_type:
             new_term['defuzzy_type'] = defuzzy_type
 
@@ -80,6 +91,7 @@ def create_term():
 
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+
 
 
 @bp.route('/get_terms', methods=['GET'])
@@ -339,8 +351,7 @@ def create_rule():
         if not data:
             return jsonify({"error": "Nessun dato fornito"}), 400
 
-        # Estrai la lista di input e i dettagli dell'output
-        inputs = data.get('inputs')  # Lista di dizionari: [{"input_variable": "...", "input_term": "..."}, ...]
+        inputs = data.get('inputs')  
         output_variable = data.get('output_variable')
         output_term = data.get('output_term')
 
@@ -371,20 +382,22 @@ def create_rule():
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
-@bp.route('delete_rule/<rule_id>', methods=['DELETE'])
+@bp.route('/delete_rule/<rule_id>', methods=["DELETE"])
 def delete_rule(rule_id):
+    current_app.logger.info(f"Tentativo di eliminare la regola con ID: {rule_id}")
     try:
-        rules_data = load_rule()
-        if not isinstance(rules_data, dict) or rule_id not in rules_data:
-            return jsonify({"error": "Regola non trovata"}), 404
-
-        del rules_data[rule_id]
-        save_terms(rules_data)
-
-        return jsonify({"message": "Regola eliminata con successo!"}), 200
-
+        data = load_terms
+        current_app.logger.debug(f"Regole attuali prima dell'eliminazione: {data}")
+        if rule_id in data:
+            del data[rule_id]
+            save_terms(data)
+            current_app.logger.info(f"Regola {rule_id} eliminata con successo.")
+            return jsonify({"message": f"Regola {rule_id} eliminata"}), 200
+        else:
+            return jsonify({"error": f"Regola {rule_id} non trovata"}), 404
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
+
     
 @bp.route('/infer', methods=['POST'])
 def infer():

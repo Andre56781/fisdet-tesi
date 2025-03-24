@@ -1,92 +1,28 @@
-from dash import dcc, html, Input, Output, State
-from dash_bootstrap_components import Modal, themes, ModalHeader, ModalBody
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 
 def layout() -> html.Div:
     return html.Div([
-        dcc.Store(id='num-variables-store'),
+        dcc.Store(id='num-variables-store', data=1),
         dcc.Store(id='current-index', data=0),
         dcc.Store(id='variables-data', data={}),
         dcc.Store(id='var-type-store', data="output"),
         dcc.Store(id='open-type'),
+        dcc.Store(id='selected-rule-index', data=None),
         dcc.Store(id='selected-term'),
-        
-        # Modal per numero variabili
-        Modal(
-            id="variable-modal",
-            className="custom-modal",
-            backdrop="static",
-            size="md",
-            children=[
-                ModalHeader(
-                    children=[
-                        html.H5("Creation of Output Variables", className="mb-0"),
-                        html.A(
-                            dbc.Button(
-                                html.I(className="fas fa-times"),
-                                id="modal-close-button",
-                                className="ml-auto",
-                                color="link",
-                                style={
-                                    "color": "white", 
-                                    "border": "none", 
-                                    "background": "none",
-                                    "padding": "0.3rem"
-                                }
-                            ),
-                            href="/"
-                        )
-                    ],
-                    className="gradient-header py-2 d-flex justify-content-between align-items-center",
-                    close_button=False
-                ),
-                ModalBody(
-                    html.Div([
-                        html.Div(
-                            "Choose the number of variables",
-                            className="h6 text-muted mb-2"
-                        ),
-                        dcc.Input(
-                            id="num-variables-input",
-                            type="number",
-                            min=1,
-                            value=1,
-                            className="modal-input mx-auto",
-                            style={"width": "120px"}
-                        ),
-                        html.Div(
-                            dbc.Button(
-                                "Submit", 
-                                id="modal-submit-button", 
-                                color="primary",
-                                className="mt-2 btn-sm"
-                            ),
-                            className="text-center"
-                        )
-                    ], className="modal-content-wrapper px-3")
-                ),
-            ]
-        ),
-        
-        # Contenuto principale
         html.Div(
             id="main-content",
             className="content",
-            style={"display": "none", "position": "relative"},
+            style={"display": "block", "position": "relative"},
             children=[
-                
                 dbc.Card([
-                    dbc.CardHeader(
-                        [
-                            html.H4(id="variable-title", className="card-title"),
-                            dbc.Badge("Current Variable", color="info", className="ml-2")
-                        ],
-                        className="card-header-gradient d-flex justify-content-between align-items-center"
-                    ),
-                    
+                    dbc.CardHeader([
+                        html.H4("Output Variable", className="card-title"),
+                        dbc.Badge("Current Variable", color="info", className="ml-2")
+                    ], className="card-header-gradient d-flex justify-content-between align-items-center"),
+
                     dbc.CardBody([
                         dbc.Form([
-                            # PRIMO GRUPPO DI CAMPI
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Variable Name", html_for="variable-name", className="mb-0"),
@@ -100,33 +36,16 @@ def layout() -> html.Div:
                                         required=True
                                     )
                                 ], md=6),
-                                
+
                                 dbc.Col([
                                     dbc.Label("Domain", className="form-label mb-0"),
                                     dbc.InputGroup([
-                                        dbc.Input(
-                                            id='domain-min',
-                                            type='number',
-                                            className="input-field",
-                                            value='0',
-                                            placeholder="0",
-                                            debounce=True,
-                                            required=True
-                                        ),
-                                        dbc.Input(
-                                            id='domain-max',
-                                            type='number',
-                                            className="input-field",
-                                            value='',
-                                            placeholder="100",
-                                            debounce=True,
-                                            required=True
-                                        )
+                                        dbc.Input(id='domain-min', type='number', className="input-field", value='0', placeholder="0", debounce=True, required=True),
+                                        dbc.Input(id='domain-max', type='number', className="input-field", value='', placeholder="100", debounce=True, required=True)
                                     ], className="domain-input-group mb-3")
                                 ], md=6)
                             ], className="mb-1"),
 
-                            # SECONDO GRUPPO DI CAMPI
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Fuzzy Function Type", className="mb-0"),
@@ -142,7 +61,7 @@ def layout() -> html.Div:
                                         clearable=False
                                     )
                                 ], md=6),
-                                
+
                                 dbc.Col([
                                     dbc.Label("Fuzzy Term Name", className="mb-0"),
                                     dbc.Input(
@@ -155,10 +74,10 @@ def layout() -> html.Div:
                                         required=True
                                     )
                                 ], md=6)
-                            ], className="mb-3"), 
-                            # Contenitore parametri aggiuntivi
+                            ], className="mb-3"),
 
                             html.Div(id='params-container', className="params-container"),
+
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Defuzzyfication Method", className="mb-0"),
@@ -177,27 +96,19 @@ def layout() -> html.Div:
                                         value='centroid'
                                     )
                                 ], md=6),
-                            ]), 
-                            # BOTTONE "CREA TERMINE"
+                            ]),
+
                             html.Div(
-                                dbc.Button(
-                                    [html.I(className="fas fa-plus mr-2"), " Create Term"],
-                                    id='create-term-btn',
-                                    color="success",
-                                    className="action-btn"
-                                ),
+                                dbc.Button([
+                                    html.I(className="fas fa-plus mr-2"),
+                                    " Create Term"
+                                ], id='create-term-btn', color="success", className="action-btn"),
                                 className="d-flex justify-content-center pt-2",
                             ),
                         ]),
-                        
-                        # GRAFICO (a sinistra) E LISTA TERMINI (a destra)
-                        dbc.Row([
-                            # Grafico a sinistra
-                            dbc.Col([
-                                dcc.Graph(id='graph', className="custom-graph")
-                            ], md=8),
 
-                            # Lista dei termini a destra
+                        dbc.Row([
+                            dbc.Col([dcc.Graph(id='graph', className="custom-graph")], md=8),
                             dbc.Col([
                                 dbc.Card([
                                     dbc.CardHeader("Terms List"),
@@ -205,7 +116,7 @@ def layout() -> html.Div:
                                         dbc.ListGroup(
                                             id='terms-list',
                                             children=[
-                                            dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})
+                                                dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})
                                             ]
                                         )
                                     ),
@@ -219,28 +130,20 @@ def layout() -> html.Div:
                             ], md=4)
                         ], className="mt-4"),
 
-                        # MESSAGGI
                         html.Div(id='message', className="alert-message")
                     ]),
-                    
-                    # FOOTER CON I PULSANTI ALLINEATI A DESTRA
+
                     dbc.CardFooter(
                         html.Div([
                             dbc.ButtonGroup([
-                                dbc.Button(
-                                    [html.I(className="fas fa-arrow-left mr-2"), "Go Back"],
-                                    id="back-button",
-                                    color="light",
-                                    className="nav-btn",
-                                    style={"display": "inline-block"}
-                                ),
-                                dbc.Button(
-                                    [html.I(className="fas fa-arrow-right mr-2"), "Go Next"],
-                                    id="next-button",
-                                    color="primary",
-                                    className="nav-btn",
-                                    style={"display": "inline-block"}
-                                )
+                                dbc.Button([
+                                    html.I(className="fas fa-arrow-left mr-2"),
+                                    "Go Back"
+                                ], id="back-button", color="light", className="nav-btn", style={"display": "none"}),
+                                dbc.Button([
+                                    html.I(className="fas fa-arrow-right mr-2"),
+                                    "Go Next"
+                                ], id="next-button", color="primary", className="nav-btn", style={"display": "none"})
                             ])
                         ], className="d-flex justify-content-end"),
                         className="card-footer-gradient"

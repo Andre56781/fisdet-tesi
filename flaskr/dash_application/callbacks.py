@@ -927,43 +927,39 @@ def register_callbacks(dash_app):
         Output('error-message', 'children')],
         Input('create-rule', 'n_clicks'),
         [
-            State('input-container', 'children'),
+            State({'type': 'if-dropdown', 'index': ALL}, 'value'),
+            State({'type': 'if-term-dropdown', 'index': ALL}, 'value'),
             State('then-dropdown', 'value'),
             State('then-term-dropdown', 'value'),
             State('rules-list', 'children')
         ],
         prevent_initial_call=True
-        )
-    def create_rule(n_clicks, input_components, output_variable, output_term, current_rules):
+    )
+    def create_rule(n_clicks, input_vars, input_terms, output_variable, output_term, current_rules):
         if n_clicks is None:
             return current_rules, ''
 
-        # Estrai i valori degli input
-        inputs = []
-        for component in input_components:
-            try:
-                # Accedi ai valori dei dropdown
-                input_var = component['props']['children'][0]['props']['children'][1]['props']['value']
-                input_term = component['props']['children'][0]['props']['children'][3]['props']['value']
-                if input_var and input_term:
-                    inputs.append({"input_variable": input_var, "input_term": input_term})
-            except (IndexError, KeyError) as e:
-                print(f"Errore nell'accesso ai valori del componente: {e}")
-                return current_rules, 'Errore: struttura del componente non valida!'
-
-        if not inputs or not output_variable or not output_term:
+        # Verifica che tutti i campi siano compilati
+        if not all(input_vars) or not all(input_terms) or not output_variable or not output_term:
             return current_rules, 'Errore: compila tutti i campi!'
 
-        # Crea il testo della regola
-        rule_text = " AND ".join([f"({input['input_variable']} IS {input['input_term']})" for input in inputs])
+        # Costruzione regola
+        inputs = []
+        for var, term in zip(input_vars, input_terms):
+            inputs.append({
+                "input_variable": var,
+                "input_term": term
+            })
+
+        rule_text = " AND ".join([f"({i['input_variable']} IS {i['input_term']})" for i in inputs])
         rule_text = f"IF {rule_text} THEN ({output_variable} IS {output_term})"
 
-        # Verifica se la regola esiste già
+        # Evita duplicati
         existing_rules_texts = [rule['props']['children'] if isinstance(rule, dict) else rule.children for rule in current_rules]
         if rule_text in existing_rules_texts:
             return current_rules, 'Errore: questa regola esiste già!'
 
-        # Invia la regola al backend
+        # Salva via API
         headers = {'Content-Type': 'application/json'}
         response = requests.post(
             "http://127.0.0.1:5000/api/create_rule",
@@ -980,10 +976,10 @@ def register_callbacks(dash_app):
                 className="rule-item",
                 style={"fontSize": "0.9em"}
             )
-            current_rules.append(new_rule)
-            return current_rules, ''
+            return current_rules + [new_rule], ''
 
-        return current_rules, ''
+        return current_rules, 'Errore durante la creazione della regola.'
+
 
     @dash_app.callback(
         Output("rules-list", "children"),
@@ -1028,24 +1024,33 @@ def register_callbacks(dash_app):
     @dash_app.callback(
         Output("rules-store", "data", allow_duplicate=True),
         Input("delete-rule", "n_clicks"),
-        State("rule-selector", "value"),
+        State("selected-rule-index", "data"),
         State("rules-store", "data"),
         prevent_initial_call=True
     )
-    def delete_selected_rule(n_clicks, selected_rule_index, rules):
-        if n_clicks is None or selected_rule_index is None or not rules:
-            return rules
+    def delete_rule(n_clicks, selected_index, current_rules):
+        if n_clicks is None or selected_index is None or not current_rules:
+            return current_rules
 
-        updated_rules = [r for idx, r in enumerate(rules) if idx != selected_rule_index]
+        # Costruisci l'ID della regola da eliminare
+        rule_id = f"Rule{selected_index}"
 
+        # Chiamata al backend
         try:
-            res = requests.post("http://127.0.0.1:5000/api/save_rules", json=updated_rules)
+            res = requests.delete(f"http://127.0.0.1:5000/api/delete_rule/{rule_id}")
             if res.status_code != 200:
-                print("Errore nel salvataggio delle regole")
+                print("Errore durante eliminazione:", res.text)
+                return current_rules
         except Exception as e:
-            print(f"Errore nella richiesta: {e}")
+            print("Errore nella richiesta DELETE:", e)
+            return current_rules
 
+        # Aggiorna la lista visualizzata (rimuove la selezionata)
+        updated_rules = [r for idx, r in enumerate(current_rules) if idx != selected_index]
         return updated_rules
+
+
+
 
                 
     @dash_app.callback(
@@ -1074,7 +1079,6 @@ def register_callbacks(dash_app):
             return [], []
 
 
-
     @dash_app.callback(
         [Output('input-container', 'children', allow_duplicate=True),
         Output('input-count', 'data', allow_duplicate=True)],
@@ -1093,7 +1097,6 @@ def register_callbacks(dash_app):
         ], className="d-flex flex-column align-items-center border rounded p-2", style={"minWidth": "220px"})
 
         return [first_input], 1
-
 
 
     @dash_app.callback(
@@ -1118,8 +1121,6 @@ def register_callbacks(dash_app):
 
         current_inputs.append(new_input)
         return current_inputs, input_count + 1
-
-
 
 
     #Regole
@@ -1187,7 +1188,6 @@ def register_callbacks(dash_app):
             print(f"Errore inferenza: {e}")
             return dash.no_update, [html.Div("Errore durante l'inferenza", className="text-danger")], []
 
-
     @dash_app.callback(
         Output({"type": "output", "variable": MATCH}, "children"),
         Input("inference-data", "data"),
@@ -1202,7 +1202,6 @@ def register_callbacks(dash_app):
         value = data.get("results", {}).get(var_name, 0)
 
         return str(round(value, 2))
-
 
 
 #Report_page callbakcs
