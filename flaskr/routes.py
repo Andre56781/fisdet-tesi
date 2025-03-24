@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_file,current_app
+from flask import Blueprint, request, jsonify, send_file
 import os
 from flaskr.file_handler import *
 import logging
@@ -65,7 +65,6 @@ def create_term():
 
         variable_data = terms_data[var_type][variable_name]
 
-        # Controlla coerenza del dominio
         if variable_data['domain'] != [domain_min, domain_max]:
             return jsonify({"error": "Dominio incoerente per la variabile esistente"}), 400
 
@@ -297,6 +296,32 @@ def modify_term(term_name):
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
+@bp.route('/clear_output', methods=['POST'])
+def clear_output():
+    try:
+        data = load_data()
+        output_vars = list(data.get("output", {}).keys())
+
+        # Rimuovi completamente la sezione "output" se presente
+        if "output" in data:
+            del data["output"]
+
+        # Rimuovi tutte le RuleX con quella variabile in output_variable
+        rules_to_delete = []
+        for key, value in data.items():
+            if key.startswith("Rule") and value.get("output_variable") in output_vars:
+                rules_to_delete.append(key)
+        for rule_key in rules_to_delete:
+            del data[rule_key]
+        save_data(data)
+        
+        return jsonify({"message": "Sezione output e regole associate rimosse con successo."}), 200
+    except Exception as e:
+        return jsonify({"error": f"Errore durante la cancellazione dell'output: {str(e)}"}), 500
+
+
+
+
 #Creazione Regole
 @bp.route('/get_variables_and_terms', methods=['GET'])
 def get_variables_and_terms():
@@ -382,21 +407,6 @@ def create_rule():
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
-@bp.route('/delete_rule/<rule_id>', methods=["DELETE"])
-def delete_rule(rule_id):
-    current_app.logger.info(f"Tentativo di eliminare la regola con ID: {rule_id}")
-    try:
-        data = load_terms
-        current_app.logger.debug(f"Regole attuali prima dell'eliminazione: {data}")
-        if rule_id in data:
-            del data[rule_id]
-            save_terms(data)
-            current_app.logger.info(f"Regola {rule_id} eliminata con successo.")
-            return jsonify({"message": f"Regola {rule_id} eliminata"}), 200
-        else:
-            return jsonify({"error": f"Regola {rule_id} non trovata"}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
     
 @bp.route('/infer', methods=['POST'])

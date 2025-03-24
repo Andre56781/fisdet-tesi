@@ -10,6 +10,22 @@ def layout() -> html.Div:
         dcc.Store(id='open-type'),
         dcc.Store(id='selected-rule-index', data=None),
         dcc.Store(id='selected-term'),
+        
+        dbc.Modal(
+        id="classification-warning-modal",
+        is_open=False,
+        backdrop="static",
+        centered=True,
+        children=[
+            dbc.ModalHeader("Warning"),
+            dbc.ModalBody("Do you really want to change the type? If confirmed, you will lose all output data."),
+            dbc.ModalFooter([
+                dbc.Button("Yes", id="confirm-classification", color="danger", className="mr-2"),
+                dbc.Button("No", id="cancel-classification", color="secondary")
+                ])
+            ]
+        ),
+
         html.Div(
             id="main-content",
             className="content",
@@ -132,22 +148,6 @@ def layout() -> html.Div:
 
                         html.Div(id='message', className="alert-message")
                     ]),
-
-                    dbc.CardFooter(
-                        html.Div([
-                            dbc.ButtonGroup([
-                                dbc.Button([
-                                    html.I(className="fas fa-arrow-left mr-2"),
-                                    "Go Back"
-                                ], id="back-button", color="light", className="nav-btn", style={"display": "none"}),
-                                dbc.Button([
-                                    html.I(className="fas fa-arrow-right mr-2"),
-                                    "Go Next"
-                                ], id="next-button", color="primary", className="nav-btn", style={"display": "none"})
-                            ])
-                        ], className="d-flex justify-content-end"),
-                        className="card-footer-gradient"
-                    )
                 ])
             ]
         )

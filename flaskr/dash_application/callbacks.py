@@ -6,7 +6,7 @@ import requests
 import dash_bootstrap_components as dbc
 import json
 from flaskr import file_handler
-from flaskr.file_handler import load_data, export_session
+from flaskr.file_handler import load_data, export_session, save_terms
 from datetime import datetime
 import re
 from dash.exceptions import PreventUpdate
@@ -441,6 +441,54 @@ def register_callbacks(dash_app):
                         dash.no_update, 'Crea Termine')
 
         return [dash.no_update] * 11
+
+    @dash_app.callback(
+        Output("classification-warning-modal", "is_open"),
+        [Input("classification-checkbox", "value")],
+        [State("classification-warning-modal", "is_open")]
+    )
+    def show_classification_modal(value, is_open):
+        if value and "Classification" in value:
+            return True
+        return False
+
+    @dash_app.callback(
+        [
+            Output("classification-checkbox", "value", allow_duplicate=True),
+            Output("message", "children", allow_duplicate=True),
+            Output("terms-list", "children", allow_duplicate=True),
+            Output("graph", "figure", allow_duplicate=True),
+            Output("classification-warning-modal", "is_open", allow_duplicate=True)
+        ],
+        [
+            Input("confirm-classification", "n_clicks"),
+            Input("cancel-classification", "n_clicks")
+        ],
+        prevent_initial_call=True
+    )
+    def handle_classification_change(confirm_click, cancel_click):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            raise dash.exceptions.PreventUpdate
+
+        triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+        if triggered_id == "confirm-classification":
+            # Chiamata API al backend per eliminare output e regole
+            try:
+                headers = {'Content-Type': 'application/json'}
+                responde = requests.post("http://127.0.0.1:5000/api/clear_output")
+                if responde.status_code == 200:
+                    return [], "Output data has been cleared.", [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})], {}, False
+                else:
+                    return [], f"Errore: {r.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, False
+            except Exception as e:
+                return [], f"Errore di connessione al backend: {e}", dash.no_update, dash.no_update, False
+
+        elif triggered_id == "cancel-classification":
+            return [], "", dash.no_update, dash.no_update, False
+
+        raise dash.exceptions.PreventUpdate
 
 
     def validate_params(open_type, params, domain_min, domain_max, function_type):
