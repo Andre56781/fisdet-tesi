@@ -1,7 +1,61 @@
 from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
+from ..callbacks import fetch_data
 
 def layout() -> html.Div:
+    """Main function that generates the page layout."""
+    # Fetch data from the backend
+    data = fetch_data()
+
+    # If data is not available, show an error message
+    if not data:
+        return html.Div("Error while loading data.", className="text-danger")
+
+    terms = data.get("terms", {})
+    
+    # Genera dinamicamente gli input per le variabili
+    input_controls = []
+    for var_name, var_data in terms.get("input", {}).items():  
+        domain_min, domain_max = var_data["domain"]
+        input_controls.append(
+            dbc.Col([
+                dbc.Label(f"{var_name} ({domain_min}-{domain_max})", html_for=f"{var_name}-input", className="mb-2"),
+                dbc.Input(
+                    id=f"{var_name}-input",
+                    type="number",
+                    min=domain_min,
+                    max=domain_max,
+                    step=0.1 if (domain_max - domain_min) < 10 else 1,
+                    className="input-field",
+                    placeholder=f"{domain_min} - {domain_max}",
+                    style={"width": "100%"}
+                )
+            ], md=4, className="pe-2")
+        )
+
+    # Genera dinamicamente gli output
+    output_controls = []
+    for var_name, var_data in terms.get("output", {}).items(): 
+        output_controls.append(
+            dbc.Col(
+                dbc.Card([
+                    dbc.CardHeader(
+                        f"Risultato {var_name}",
+                        className="bg-light fw-medium py-2"
+                    ),
+                    dbc.CardBody(
+                        html.H2("0",  # Valore iniziale
+                            id=f"{var_name}-output",
+                            className="card-text text-center text-primary mb-0",
+                            style={"fontSize": "2.5rem"}
+                        )
+                    )
+                ], className="variable-card h-100"),
+                md=6,
+                className="pe-2" if len(output_controls) % 2 == 0 else "ps-2"
+            )
+        )
+
     return html.Div([
         dcc.Store(id='inference-data'),
         dcc.Store(id='rule-memberships', data={}),
@@ -31,49 +85,10 @@ def layout() -> html.Div:
                                     html.Div(
                                         id="inference-inputs",
                                         children=[
-                                            dbc.Row([
-                                                dbc.Col([
-                                                    dbc.Label("Temperatura (°C)", html_for="temp-input", className="mb-2"),
-                                                    dbc.Input(
-                                                        id="temp-input",
-                                                        type="number",
-                                                        min=0,
-                                                        max=50,
-                                                        step=0.1,
-                                                        className="input-field",
-                                                        placeholder="0 - 50",
-                                                        style={"width": "100%"}
-                                                    )
-                                                ], md=4, className="pe-2"),
-                                                
-                                                dbc.Col([
-                                                    dbc.Label("Umidità (%)", html_for="humidity-input", className="mb-2"),
-                                                    dbc.Input(
-                                                        id="humidity-input",
-                                                        type="number",
-                                                        min=0,
-                                                        max=100,
-                                                        step=1,
-                                                        className="input-field",
-                                                        placeholder="0 - 100",
-                                                        style={"width": "100%"}
-                                                    )
-                                                ], md=4, className="px-2"),
-                                                
-                                                dbc.Col([
-                                                    dbc.Label("Pressione (hPa)", html_for="pressure-input", className="mb-2"),
-                                                    dbc.Input(
-                                                        id="pressure-input",
-                                                        type="number",
-                                                        min=900,
-                                                        max=1100,
-                                                        step=1,
-                                                        className="input-field",
-                                                        placeholder="900 - 1100",
-                                                        style={"width": "100%"}
-                                                    )
-                                                ], md=4, className="ps-2"),
-                                            ], className="mb-4 g-3")
+                                            dbc.Row(
+                                                input_controls,
+                                                className="mb-4 g-3"
+                                            )
                                         ]
                                     ),
                                     
@@ -89,7 +104,7 @@ def layout() -> html.Div:
                                         className="d-flex justify-content-center mb-4"
                                     ),
                                     
-                                    # Nuova Sezione Rule Membership
+                                    # Sezione Rule Membership
                                     html.Div(
                                         id="rule-membership-section",
                                         children=[
@@ -129,64 +144,14 @@ def layout() -> html.Div:
                                     html.Div(
                                         id="inference-results",
                                         children=[
-                                            dbc.Row([
-                                                dbc.Col(
-                                                    dbc.Card([
-                                                        dbc.CardHeader(
-                                                            "Risultato Velocità Ventola",
-                                                            className="bg-light fw-medium py-2"
-                                                        ),
-                                                        dbc.CardBody(
-                                                            html.H2("0 RPM", 
-                                                                id="fan-speed-output",
-                                                                className="card-text text-center text-primary mb-0",
-                                                                style={"fontSize": "2.5rem"}
-                                                            )
-                                                        )
-                                                    ], className="variable-card h-100"),
-                                                    md=6,
-                                                    className="pe-2"
-                                                ),
-                                                
-                                                dbc.Col(
-                                                    dbc.Card([
-                                                        dbc.CardHeader(
-                                                            "Risultato Potenza",
-                                                            className="bg-light fw-medium py-2"
-                                                        ),
-                                                        dbc.CardBody(
-                                                            html.H2("0 W", 
-                                                                id="power-output",
-                                                                className="card-text text-center text-primary mb-0",
-                                                                style={"fontSize": "2.5rem"}
-                                                            )
-                                                        )
-                                                    ], className="variable-card h-100"),
-                                                    md=6,
-                                                    className="ps-2"
-                                                )
-                                            ], className="g-4")
+                                            dbc.Row(
+                                                output_controls,
+                                                className="g-4"
+                                            )
                                         ]
                                     )
                                 ], style={"padding": "0 2rem"})
-                            ]),
-                            
-                            dbc.CardFooter(
-                                html.Div([
-                                    dbc.Button(
-                                        [html.I(className="fas fa-arrow-left mr-2"), "Indietro"],
-                                        id="back-inference",
-                                        color="light",
-                                        className="nav-btn"
-                                    ),
-                                    dbc.Button(
-                                        [html.I(className="fas fa-sync-alt mr-2"), "Reset"],
-                                        id="reset-inference",
-                                        color="warning",
-                                        className="nav-btn"
-                                    )
-                                ], className="d-flex justify-content-end gap-3")
-                            )
+                            ])
                         ], className="main-card"),
                         width={"size": 10, "offset": 1},
                         className="py-4"
