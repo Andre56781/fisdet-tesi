@@ -871,56 +871,57 @@ def register_callbacks(dash_app):
 
     @dash_app.callback(
         [Output({"type": "if-dropdown", "index": ALL}, "options"),
-        Output("then-dropdown", "options"),
         Output({"type": "if-term-dropdown", "index": ALL}, "options"),
+        Output("then-dropdown", "options"),
+        Output("then-dropdown", "value"),
         Output("then-term-dropdown", "options")],
-        [Input({"type": "if-dropdown", "index": ALL}, "value"),
-        Input("then-dropdown", "value")],
+        [Input({"type": "if-dropdown", "index": ALL}, "value")],
         prevent_initial_call=True
     )
-    def update_dropdowns(all_input_values, output_variable):
+    def update_dropdowns(all_input_values):
         try:
             response = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
             if response.status_code != 200:
-                print("Errore nella risposta:", response.status_code)
-                return [[]] * len(all_input_values), [], [[]] * len(all_input_values), []
+                return [[]] * len(all_input_values), [[]] * len(all_input_values), [], None, []
 
             data = response.json()
+            input_vars = list(data.get("input", {}).keys())
+            output_data = data.get("output", {})
 
-            # Opzioni originali
-            all_input_vars = list(data.get("input", {}).keys())
-            all_output_vars = list(data.get("output", {}).keys())
+            output_var_name = next(iter(output_data), None)
 
-            # Opzioni dropdown variabili input (escludi selezionate dagli altri blocchi)
+            # Costruisci le opzioni per le dropdown IF (escludendo già selezionate)
             input_options_list = []
             for i, selected in enumerate(all_input_values):
-                # Variabili selezionate in altri blocchi
                 used = [v for j, v in enumerate(all_input_values) if j != i and v]
-                available_vars = [v for v in all_input_vars if v not in used]
-                input_options_list.append([{"label": v, "value": v} for v in available_vars])
+                available = [v for v in input_vars if v not in used]
+                input_options_list.append([{"label": v, "value": v} for v in available])
 
-            # Dropdown variabili output
-            output_options = [{"label": v, "value": v} for v in all_output_vars]
-
-            # Opzioni per i termini dei blocchi IF
+            # Dropdown Term per IF
             if_term_options = []
             for selected in all_input_values:
-                if selected and selected in data.get("input", {}):
+                if selected and selected in data["input"]:
                     terms = data["input"][selected]
                     if_term_options.append([{"label": t["label"], "value": t["value"]} for t in terms])
                 else:
                     if_term_options.append([])
 
-            # Opzioni per i termini output
-            then_term_options = []
-            if output_variable and output_variable in data.get("output", {}):
-                then_term_options = [{"label": t["label"], "value": t["value"]} for t in data["output"][output_variable]]
+            # THEN dropdown options e value (disabilitato)
+            then_dropdown_options = [{"label": output_var_name, "value": output_var_name}] if output_var_name else []
+            then_dropdown_value = output_var_name
 
-            return input_options_list, output_options, if_term_options, then_term_options
+            # Termini della variabile di output
+            then_terms = []
+            if output_var_name and output_var_name in output_data:
+                then_terms = [{"label": t["label"], "value": t["value"]} for t in output_data[output_var_name]]
+
+            return input_options_list, if_term_options, then_dropdown_options, then_dropdown_value, then_terms
 
         except Exception as e:
-            print(f"Errore nella callback: {e}")
-            return [[]] * len(all_input_values), [], [[]] * len(all_input_values), []
+            print(f"Errore in update_dropdowns: {e}")
+            return [[]] * len(all_input_values), [[]] * len(all_input_values), [], None, []
+
+
 
 
     @dash_app.callback(

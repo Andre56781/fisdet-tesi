@@ -36,16 +36,29 @@ def layout() -> html.Div:
                                 ),
                                 className="d-flex justify-content-center pt-1"
                             ),
-
-                            # THEN
+                            # Sezione THEN (output)
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("THEN", className="w-100 text-center mb-0"),
-                                    dcc.Dropdown(id="then-dropdown", placeholder="Select Output Variable", style={"width": "300px"}),
-                                    dbc.Label("Term", className="w-100 text-center mb-0"),
-                                    dcc.Dropdown(id="then-term-dropdown", placeholder="Select Term", style={"width": "300px"}),
-                                ], md=6, className="d-flex flex-column align-items-center ps-2")
+                                    dbc.Label("THEN Variable", html_for="then-dropdown", className="w-100 text-center mb-0"),
+                                    dcc.Dropdown(
+                                        id="then-dropdown",
+                                        options=[],
+                                        value=None,
+                                        disabled=True,
+                                        className="custom-dropdown mb-2",
+                                        style={"width": "300px"}  
+                                    ),
+                                    dbc.Label("THEN Term", html_for="then-term-dropdown", className="w-100 text-center mb-0"),
+                                    dcc.Dropdown(
+                                        id="then-term-dropdown",
+                                        options=[],
+                                        placeholder="Select Term",
+                                        className="custom-dropdown",
+                                        style={"width": "300px"}  
+                                    ),
+                                ], md=6, className="d-flex flex-column align-items-center ps-2"),  
                             ], className="mb-3 g-3"),
+
 
                             html.Div(
                                 dbc.Button(
