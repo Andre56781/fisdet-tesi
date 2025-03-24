@@ -196,97 +196,63 @@ def register_callbacks(dash_app):
 
     @dash_app.callback(
         Output('params-container', 'children'),
-        Input('var-type-store', 'data'),
-        [Input('function-type', 'value'),
-        Input('num-variables-store', 'data'),
-        Input('current-index', 'data'),
-        Input('open-type', 'value')]
+        [
+            Input('var-type-store', 'data'),
+            Input('function-type', 'value'),
+            Input('num-variables-store', 'data'),
+            Input('current-index', 'data'),
+            Input('open-type', 'value')
+        ]
     )
     def update_params(var_type, function_type, num_variables, current_index, open_type):
-        params = []
-        
-        if num_variables is None or current_index is None:
-            return []
+        if not function_type or num_variables is None or current_index is None:
+            return [] 
 
-        # Aggiunta di opzioni di apertura per variabili input ai bordi
+        params = []
+
         if var_type == 'input':
             params.append(dbc.RadioItems(
                 id='open-type-radio',
                 options=[
                     {'label': 'Left open', 'value': 'left'},
-                    {'label': 'Right open', 'value': 'right'},
+                    {'label': 'Right open', 'value': 'right'}
                 ],
                 inline=True,
-                value=open_type  
+                value=open_type
             ))
 
-        if var_type == 'output':
-            params.append(dbc.Checklist(
-                id='classification-checkbox', 
-                options=[
-                    {'label': 'Classification', 'value': 'Classification'},
-                ],
-                inline=True,
-                value=[open_type] if open_type else []
-            ))
-
-        # Parametri per funzione Triangolare
         if function_type == 'Triangolare':
-            params.append(dbc.Label("Parametro a:"))
-            params.append(dbc.Input(id='param-a', type='number', value='', required=True))
-            
-            params.append(dbc.Label("Parametro b:"))
-            if open_type == 'left':  
-                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
-            elif open_type == 'right':
-                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
-            elif open_type is None:
-                params.append(dbc.Input(id='param-b', type='number', value='', required=True))
-                
-            params.append(dbc.Label("Parametro c:"))
-            params.append(dbc.Input(id='param-c', type='number', value='', required=True))
-            
-            # Parametri invisibili
-            params.append(dbc.Input(id='param-d', style={'display': 'none'}))
-            params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
-            params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
-
-        # Parametri per funzione Gaussian
+            params.extend([
+                dbc.Label("Parametro a:"), dbc.Input(id='param-a', type='number', value='', required=True),
+                dbc.Label("Parametro b:"), dbc.Input(id='param-b', type='number', value='', required=True),
+                dbc.Label("Parametro c:"), dbc.Input(id='param-c', type='number', value='', required=True),
+                dbc.Input(id='param-d', style={'display': 'none'}),
+                dbc.Input(id='param-mean', style={'display': 'none'}),
+                dbc.Input(id='param-sigma', style={'display': 'none'}),
+            ])
         elif function_type == 'Gaussian':
-            params.append(dbc.Label("Parametro Mean:"))
-            params.append(dbc.Input(id='param-mean', type='number', value='', required=True))
-            params.append(dbc.Label("Parametro Sigma:"))
-            params.append(dbc.Input(id='param-sigma', type='number', value='', required=True))
-
-            # Parametri invisibili
-            params.append(dbc.Input(id='param-b', style={'display': 'none'}))
-            params.append(dbc.Input(id='param-c', style={'display': 'none'}))
-            params.append(dbc.Input(id='param-d', style={'display': 'none'}))
-
-        # Se il tipo di funzione è "Trapezoidale"
+            params.extend([
+                dbc.Label("Parametro Mean:"), dbc.Input(id='param-mean', type='number', value='', required=True),
+                dbc.Label("Parametro Sigma:"), dbc.Input(id='param-sigma', type='number', value='', required=True),
+                dbc.Input(id='param-a', style={'display': 'none'}),
+                dbc.Input(id='param-b', style={'display': 'none'}),
+                dbc.Input(id='param-c', style={'display': 'none'}),
+                dbc.Input(id='param-d', style={'display': 'none'}),
+            ])
         elif function_type == 'Trapezoidale':
-            params.append(dbc.Label("Parametro a:"))
-            params.append(dbc.Input(id='param-a', type='number', value='', required=True))
-            
-            params.append(dbc.Label("Parametro b:"))
-            if open_type == 'left':  
-                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
-            else:
-                params.append(dbc.Input(id='param-b', type='number', value='', required=True))
-            
-            params.append(dbc.Label("Parametro c:"))
-            if open_type == 'right':  
-                params.append(dbc.Input(id='param-c', type='number', value='', disabled=True))
-            else:
-                params.append(dbc.Input(id='param-c', type='number', value='', required=True))
-                
-            params.append(dbc.Label("Parametro d:"))
-            params.append(dbc.Input(id='param-d', type='number', value='', required=True))
-
-            params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
-            params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
+            params.extend([
+                dbc.Label("Parametro a:"), dbc.Input(id='param-a', type='number', value='', required=True),
+                dbc.Label("Parametro b:"), dbc.Input(id='param-b', type='number', value='', required=True),
+                dbc.Label("Parametro c:"), dbc.Input(id='param-c', type='number', value='', required=True),
+                dbc.Label("Parametro d:"), dbc.Input(id='param-d', type='number', value='', required=True),
+                dbc.Input(id='param-mean', style={'display': 'none'}),
+                dbc.Input(id='param-sigma', style={'display': 'none'}),
+            ])
 
         return params
+
+
+
 
     @dash_app.callback(
     Output('defuzzy-type', 'invalid'),
@@ -334,14 +300,13 @@ def register_callbacks(dash_app):
             State('defuzzy-type', 'value'), 
             State('create-term-btn', 'children'),
             State('selected-term', 'data'),
-            State('classification-checkbox', 'value')  
         ],
         prevent_initial_call=True
     )
     def handle_terms(create_clicks, delete_clicks, modify_clicks, open_type,
                     var_type, variable_name, domain_min, domain_max, function_type,
                     term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
-                    defuzzy_type, button_label, selected_term, classification_value): 
+                    defuzzy_type, button_label, selected_term): 
         ctx = dash.ctx
 
         if not ctx.triggered:
@@ -349,10 +314,9 @@ def register_callbacks(dash_app):
 
         triggered_id = ctx.triggered[0]['prop_id']
 
-        # Se siamo nella pagina di input, imposta defuzzy_type e classification_value a None
+        # Se siamo nella pagina di input, imposta defuzzy_type a None
         if var_type == "input":
             defuzzy_type = None
-            classification_value = None
             
         if var_type == "output":
             open_type = None
@@ -378,7 +342,7 @@ def register_callbacks(dash_app):
                 terms_list, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma,
-                                                        defuzzy_type, classification_value)  
+                                                        defuzzy_type)  
                 terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
                 return (terms_list, message, figure,
                         '', '', '', '', '', '', '', 'Crea Termine')
@@ -444,27 +408,29 @@ def register_callbacks(dash_app):
 
     @dash_app.callback(
         Output("classification-warning-modal", "is_open"),
-        [Input("classification-checkbox", "value")],
-        [State("classification-warning-modal", "is_open")]
+        Input("classification-checkbox", "value"),
+        State("classification-confirmed", "data")
     )
-    def show_classification_modal(value, is_open):
-        if value and "Classification" in value:
+    def show_classification_modal(value, confirmed):
+        if value and "Classification" in value and not confirmed:
             return True
         return False
 
+
     @dash_app.callback(
-        [
-            Output("classification-checkbox", "value", allow_duplicate=True),
-            Output("message", "children", allow_duplicate=True),
-            Output("terms-list", "children", allow_duplicate=True),
-            Output("graph", "figure", allow_duplicate=True),
-            Output("classification-warning-modal", "is_open", allow_duplicate=True)
-        ],
-        [
-            Input("confirm-classification", "n_clicks"),
-            Input("cancel-classification", "n_clicks")
-        ],
-        prevent_initial_call=True
+    [
+        Output("classification-checkbox", "value", allow_duplicate=True),
+        Output("message", "children", allow_duplicate=True),
+        Output("terms-list", "children", allow_duplicate=True),
+        Output("graph", "figure", allow_duplicate=True),
+        Output("classification-warning-modal", "is_open", allow_duplicate=True),
+        Output("classification-confirmed", "data", allow_duplicate=True)  
+    ],
+    [
+        Input("confirm-classification", "n_clicks"),
+        Input("cancel-classification", "n_clicks")
+    ],
+    prevent_initial_call=True
     )
     def handle_classification_change(confirm_click, cancel_click):
         ctx = dash.callback_context
@@ -474,21 +440,121 @@ def register_callbacks(dash_app):
         triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
         if triggered_id == "confirm-classification":
-            # Chiamata API al backend per eliminare output e regole
             try:
-                headers = {'Content-Type': 'application/json'}
-                responde = requests.post("http://127.0.0.1:5000/api/clear_output")
-                if responde.status_code == 200:
-                    return [], "Output data has been cleared.", [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})], {}, False
+                response = requests.post("http://127.0.0.1:5000/api/clear_output")
+                if response.status_code == 200:
+                    return (
+                        ["Classification"],  
+                        "Output data has been cleared.",
+                        [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})],
+                        {},  
+                        False,  
+                        True   
+                    )
                 else:
-                    return [], f"Errore: {r.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, False
+                    return (
+                        ["Classification"],
+                        f"Errore: {response.json().get('error', 'Errore sconosciuto')}",
+                        dash.no_update,
+                        dash.no_update,
+                        False,
+                        False
+                    )
             except Exception as e:
-                return [], f"Errore di connessione al backend: {e}", dash.no_update, dash.no_update, False
+                return (
+                    ["Classification"],
+                    f"Errore di connessione al backend: {e}",
+                    dash.no_update,
+                    dash.no_update,
+                    False,
+                    False
+                )
 
         elif triggered_id == "cancel-classification":
-            return [], "", dash.no_update, dash.no_update, False
+            return (
+                [], "", dash.no_update, dash.no_update, False, False
+            )
 
         raise dash.exceptions.PreventUpdate
+
+
+
+    @dash_app.callback(
+        Output("graph-container", "style"),
+        Output("output-hideable-fields", "style"),
+        Input("classification-checkbox", "value"),
+        prevent_initial_call=True,
+        allow_duplicate=True
+    )
+    def toggle_fields_classification(classification_value):
+        if classification_value and "Classification" in classification_value:
+            return {"display": "none"}, {"display": "none"}  # nasconde graph + campi fuzzy
+        return {"display": "block"}, {"display": "block"}  # mostra tutto il resto
+
+    @dash_app.callback(
+        Output("classification-counter", "style"),
+        Output("classification-counter", "children"),
+        Input("classification-checkbox", "value"),
+        Input("classification-term-count", "data")
+    )
+    def update_classification_counter(classification_value, term_count):
+        if classification_value and "Classification" in classification_value:
+            return {"display": "block"}, f"Classification Terms Created: {term_count}"
+        return {"display": "none"}, ""
+
+    @dash_app.callback(
+    Output("dynamic-right-column", "children"),
+    Input("classification-checkbox", "value"),
+    prevent_initial_call="initial_duplicate"
+    )
+    def switch_right_column_content(classification_value):
+        if classification_value and "Classification" in classification_value:
+            return html.Div([
+                dbc.Label("Fuzzy Term Name", className="mb-0"),
+                dbc.Input(
+                    id='term-name',
+                    type='text',
+                    value='',
+                    pattern="^[a-zA-Z0-9]*$",
+                    className="input-field",
+                    debounce=True,
+                    required=True
+                )
+            ])
+        else:
+            return html.Div([
+                dbc.Label("Domain", className="form-label mb-0"),
+                dbc.InputGroup([
+                    dbc.Input(
+                        id='domain-min',
+                        type='number',
+                        className="input-field",
+                        value='0',
+                        placeholder="0",
+                        debounce=True,
+                        required=True
+                    ),
+                    dbc.Input(
+                        id='domain-max',
+                        type='number',
+                        className="input-field",
+                        value='',
+                        placeholder="100",
+                        debounce=True,
+                        required=True
+                    )
+                ], className="domain-input-group mb-3")
+            ])
+    @dash_app.callback(
+        Output("term-name-row", "style"),
+        Input("classification-checkbox", "value"),
+        prevent_initial_call=True
+    )
+    def toggle_term_name_row(classification_value):
+        if classification_value and "Classification" in classification_value:
+            return {"display": "none"}
+        return {"display": "block"}
+
 
 
     def validate_params(open_type, params, domain_min, domain_max, function_type):
@@ -696,7 +762,7 @@ def register_callbacks(dash_app):
             # Restituisci un errore se l'eliminazione fallisce, con dash.no_update per i valori non modificati
             return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None, classification_value=None):
+    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -748,11 +814,7 @@ def register_callbacks(dash_app):
         }
 
         # Gestione del defuzzy_type in base alla checkbox
-        if var_type == "output":
-            if classification_value and 'Classification' in classification_value:
-                # Se la checkbox è spuntata, rimuovi il defuzzy_type
-                payload['defuzzy_type'] = "Classification"
-            else:
+        if var_type == "input":
                 # Altrimenti, aggiorna il defuzzy_type
                 payload['defuzzy_type'] = defuzzy_type
 

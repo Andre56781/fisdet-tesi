@@ -10,7 +10,6 @@ def layout() -> html.Div:
         dcc.Store(id='var-type-store', data="input"),
         dcc.Store(id='open-type'),
         dcc.Store(id='selected-term'),
-        dcc.Store(id='classification-checkbox', data=[]),
         dcc.Store(id='defuzzy-type', data="default_value"),
 
         # Modal per numero variabili
