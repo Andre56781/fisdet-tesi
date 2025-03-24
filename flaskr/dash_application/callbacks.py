@@ -187,7 +187,7 @@ def register_callbacks(dash_app):
             return default_value, False 
         
         if 'Classification' in classification_value:
-            return None, True 
+            return "Classification", True 
         else:
             return default_value, False  
 
@@ -701,7 +701,7 @@ def register_callbacks(dash_app):
         if var_type == "output":
             if classification_value and 'Classification' in classification_value:
                 # Se la checkbox è spuntata, rimuovi il defuzzy_type
-                payload['defuzzy_type'] = None
+                payload['defuzzy_type'] = "Classification"
             else:
                 # Altrimenti, aggiorna il defuzzy_type
                 payload['defuzzy_type'] = defuzzy_type
