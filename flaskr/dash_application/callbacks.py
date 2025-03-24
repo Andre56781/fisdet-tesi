@@ -922,8 +922,6 @@ def register_callbacks(dash_app):
             return [[]] * len(all_input_values), [[]] * len(all_input_values), [], None, []
 
 
-
-
     @dash_app.callback(
         [Output('rules-list', 'children', allow_duplicate=True),
         Output('error-message', 'children')],
@@ -987,28 +985,68 @@ def register_callbacks(dash_app):
 
         return current_rules, ''
 
+    @dash_app.callback(
+        Output("rules-list", "children"),
+        Input("rules-store", "data")
+    )
+    def update_rules_radioitems(rules):
+        if not rules:
+            return html.Div("Nessuna regola definita.", className="text-center text-muted")
+
+        options = []
+
+        for idx, rule in enumerate(rules):
+            inputs = rule.get("inputs", {})
+
+            # Gestione sia del formato lista che dict
+            if isinstance(inputs, list):
+                try:
+                    inputs = {item["input_variable"]: item["input_term"] for item in inputs}
+                except Exception as e:
+                    print(f"Errore nella conversione della regola {idx}: {e}")
+                    inputs = {}
+
+            inputs_text = " AND ".join(
+                f"({var} IS {term})" for var, term in inputs.items()
+            )
+            output_text = f"({rule['output_variable']} IS {rule['output_term']})"
+            label = f"IF {inputs_text} THEN {output_text}"
+
+            options.append({"label": label, "value": idx})
+
+        return [
+            dcc.RadioItems(
+                id="rule-selector",
+                options=options,
+                value=None,
+                labelStyle={"display": "block"},
+                style={"padding": "10px"}
+            )
+        ]
+
 
     @dash_app.callback(
-    Output('rules-list', 'children',  allow_duplicate=True),
-    Input('delete-rule', 'n_clicks'),
-    [State('rules-list', 'children')],
-    prevent_initial_call=True
+        Output("rules-store", "data", allow_duplicate=True),
+        Input("delete-rule", "n_clicks"),
+        State("rule-selector", "value"),
+        State("rules-store", "data"),
+        prevent_initial_call=True
     )
-    def delete_rule(n_clicks, current_rules):
-        if n_clicks is None or not current_rules:
-            return current_rules
+    def delete_selected_rule(n_clicks, selected_rule_index, rules):
+        if n_clicks is None or selected_rule_index is None or not rules:
+            return rules
 
-        # Ottieni l'ID della regola da eliminare (ad esempio, l'ultima regola)
-        rule_id = f"Rule{len(current_rules) - 1}"
+        updated_rules = [r for idx, r in enumerate(rules) if idx != selected_rule_index]
 
-        headers = {'Content-Type': 'application/json'}
-        response = requests.delete(f"http://127.0.0.1:5000/api/delete_rule/{rule_id}")
+        try:
+            res = requests.post("http://127.0.0.1:5000/api/save_rules", json=updated_rules)
+            if res.status_code != 200:
+                print("Errore nel salvataggio delle regole")
+        except Exception as e:
+            print(f"Errore nella richiesta: {e}")
 
-        if response.status_code == 200:
-            # Rimuovi la regola dalla lista visualizzata
-            return current_rules[:-1]
+        return updated_rules
 
-        return current_rules
                 
     @dash_app.callback(
         [Output("rules-store", "data"),
@@ -1035,25 +1073,6 @@ def register_callbacks(dash_app):
             print(f"Errore nel caricamento delle regole o variabili: {e}")
             return [], []
 
-        
-    @dash_app.callback(
-        Output("rules-list", "children"),
-        Input("rules-store", "data")
-    )
-    def display_existing_rules(rules_data):
-        rules_display = []
-        for rule in rules_data:
-            inputs = rule.get("inputs", [])
-            inputs_text = " AND ".join(
-                f"({inp['input_variable']} IS {inp['input_term']})" for inp in inputs
-            )
-            output_text = f"({rule['output_variable']} IS {rule['output_term']})"
-            rule_text = f"IF {inputs_text} THEN {output_text}"
-
-            rules_display.append(
-                html.P(rule_text, className="rule-item", style={"fontSize": "0.9em"})
-            )
-        return rules_display
 
 
     @dash_app.callback(
