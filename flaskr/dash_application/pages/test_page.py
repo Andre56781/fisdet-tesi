@@ -1,21 +1,18 @@
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html
 import dash_bootstrap_components as dbc
 from ..callbacks import fetch_data
 
 def layout() -> html.Div:
-    """Main function that generates the page layout."""
-    # Fetch data from the backend
     data = fetch_data()
 
-    # If data is not available, show an error message
-    if not data:
-        return html.Div("Error while loading data.", className="text-danger")
+    if not data or "terms" not in data:
+        return html.Div("Errore durante il caricamento dei dati fuzzy.", className="text-danger")
 
-    terms = data.get("terms", {})
-    
-    # Genera dinamicamente gli input per le variabili
+    terms = data["terms"]
+
+    # Costruzione input
     input_controls = []
-    for var_name, var_data in terms.get("input", {}).items():  
+    for var_name, var_data in terms.get("input", {}).items():
         domain_min, domain_max = var_data["domain"]
         input_controls.append(
             dbc.Col([
@@ -33,19 +30,19 @@ def layout() -> html.Div:
             ], md=4, className="pe-2")
         )
 
-    # Genera dinamicamente gli output
+    # Costruzione output
     output_controls = []
-    for var_name, var_data in terms.get("output", {}).items(): 
+    for var_name, var_data in terms.get("output", {}).items():
         output_controls.append(
             dbc.Col(
                 dbc.Card([
                     dbc.CardHeader(
                         f"Risultato {var_name}",
-                        className="bg-light fw-medium py-2"
+                        className="bg-primary text-white fw-medium py-2"
                     ),
                     dbc.CardBody(
-                        html.H2("0",  # Valore iniziale
-                            id=f"{var_name}-output",
+                        html.H2("0",
+                            id={"type": "output", "variable": var_name},
                             className="card-text text-center text-primary mb-0",
                             style={"fontSize": "2.5rem"}
                         )
@@ -59,14 +56,11 @@ def layout() -> html.Div:
     return html.Div([
         dcc.Store(id='inference-data'),
         dcc.Store(id='rule-memberships', data={}),
-        
+
         html.Div(
             id="inference-content",
             className="content",
-            style={
-                "display": "block",
-                "position": "relative"
-            },
+            style={"display": "block", "position": "relative"},
             children=[
                 dbc.Row(
                     dbc.Col(
@@ -78,21 +72,14 @@ def layout() -> html.Div:
                                 ],
                                 className="card-header-gradient d-flex justify-content-between align-items-center"
                             ),
-                            
                             dbc.CardBody([
                                 dbc.Form([
-                                    # Sezione Input Variabili
                                     html.Div(
                                         id="inference-inputs",
                                         children=[
-                                            dbc.Row(
-                                                input_controls,
-                                                className="mb-4 g-3"
-                                            )
+                                            dbc.Row(input_controls, className="mb-4 g-3")
                                         ]
                                     ),
-                                    
-                                    # Bottone Calcola
                                     html.Div(
                                         dbc.Button(
                                             [html.I(className="fas fa-calculator mr-2"), " Calcola Inferenza"],
@@ -103,53 +90,23 @@ def layout() -> html.Div:
                                         ),
                                         className="d-flex justify-content-center mb-4"
                                     ),
-                                    
-                                    # Sezione Rule Membership
                                     html.Div(
                                         id="rule-membership-section",
                                         children=[
-                                            html.H5("Rule Activation Strength", 
-                                                    className="mb-3 text-center",
-                                                    style={"color": "#2c3e50"}),
+                                            html.H5("Attivazione delle Regole", className="mb-3 text-center", style={"color": "#2c3e50"}),
                                             dbc.Row([
                                                 dbc.Col([
-                                                    html.Div(
-                                                        id="rules-list-membership",
-                                                        className="rule-membership-container",
-                                                        style={
-                                                            "borderRight": "2px solid #eee",
-                                                            "paddingRight": "1.5rem"
-                                                        },
-                                                    )
+                                                    html.Div(id="rules-list-membership", className="rule-membership-container", style={"borderRight": "2px solid #eee", "paddingRight": "1.5rem"})
                                                 ], md=6),
-                                                
                                                 dbc.Col([
-                                                    html.Div(
-                                                        id="membership-values",
-                                                        className="membership-values-container",
-                                                    )
+                                                    html.Div(id="membership-values", className="membership-values-container")
                                                 ], md=6)
-                                            ], className="g-3 membership-section",
-                                            style={"minHeight": "250px", "maxHeight": "400px", "overflowY": "auto"})
+                                            ], className="g-3 membership-section", style={"minHeight": "250px", "maxHeight": "400px", "overflowY": "auto"})
                                         ],
-                                        style={
-                                            "backgroundColor": "#f8f9fa",
-                                            "borderRadius": "10px",
-                                            "padding": "1.5rem",
-                                            "marginBottom": "2rem"
-                                        }
+                                        style={"backgroundColor": "#f8f9fa", "borderRadius": "10px", "padding": "1.5rem", "marginBottom": "2rem"}
                                     ),
-                                    
-                                    # Sezione Risultati
-                                    html.Div(
-                                        id="inference-results",
-                                        children=[
-                                            dbc.Row(
-                                                output_controls,
-                                                className="g-4"
-                                            )
-                                        ]
-                                    )
+                                    # ⚠️ Box di output statici: non devono essere aggiornati dal layout
+                                    dbc.Row(output_controls, className="g-4")
                                 ], style={"padding": "0 2rem"})
                             ])
                         ], className="main-card"),

@@ -385,3 +385,127 @@ def delete_rule(rule_id):
 
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+    
+@bp.route('/infer', methods=['POST'])
+def infer():
+    try:
+        inputs = request.json.get("inputs")
+        terms_data = load_terms()
+        rules_data = load_rule()
+        rules = [
+            {
+                "inputs": rule["inputs"],
+                "output_variable": rule["output_variable"],
+                "output_term": rule["output_term"]
+            }
+            for key, rule in rules_data.items() if key.startswith("Rule")
+        ]
+
+        fuzzified = fuzzify_input(terms_data, inputs)
+        rule_outputs = apply_rules(fuzzified, rules)
+        results = aggregate_and_defuzzify(terms_data, rule_outputs)
+
+        return jsonify({
+            "inputs": inputs,
+            "fuzzified": fuzzified,
+            "rule_outputs": rule_outputs,
+            "results": results
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+def fuzzify_input(terms_data, inputs):
+    fuzzified = {}
+    for var_name, value in inputs.items():
+        variable = terms_data["input"].get(var_name)
+        if not variable:
+            continue
+
+        domain_min, domain_max = variable["domain"]
+        x = np.linspace(domain_min, domain_max, 100)
+        memberships = {}
+
+        for term in variable["terms"]:
+            name = term["term_name"]
+            ftype = term["function_type"]
+            p = term["params"]
+
+            if ftype == "Triangolare":
+                y = fuzz.trimf(x, [p["a"], p["b"], p["c"]])
+            elif ftype == "Gaussian":
+                y = fuzz.gaussmf(x, p["mean"], p["sigma"])
+            elif ftype == "Trapezoidale":
+                y = fuzz.trapmf(x, [p["a"], p["b"], p["c"], p["d"]])
+            elif ftype == "Triangolare-open":
+                y = fuzz.trimf(x, [p["a"], p["b"], p["c"]])
+                y[x < p["a"]] = 0
+                y[x > p["c"]] = 0
+            elif ftype == "Gaussian-open":
+                y = fuzz.gaussmf(x, p["mean"], p["sigma"])
+                y[x < domain_min] = 0
+                y[x > domain_max] = 0
+            elif ftype == "Trapezoidale-open":
+                y = fuzz.trapmf(x, [p["a"], p["b"], p["c"], p["d"]])
+                y[x < p["a"]] = 0
+                y[x > p["d"]] = 0
+            else:
+                continue
+
+            mu = np.interp(value, x, y)
+            memberships[name] = mu
+
+        fuzzified[var_name] = memberships
+    return fuzzified
+
+
+def apply_rules(fuzzified_inputs, rules):
+    rule_outputs = []
+
+    for rule in rules:
+        strength = 1.0
+        for cond in rule["inputs"]:
+            var = cond["input_variable"]
+            term = cond["input_term"]
+            mu = fuzzified_inputs.get(var, {}).get(term, 0)
+            strength = min(strength, mu)
+
+        rule_outputs.append({
+            "output_variable": rule["output_variable"],
+            "output_term": rule["output_term"],
+            "activation": strength
+        })
+    return rule_outputs
+
+
+def aggregate_and_defuzzify(terms_data, rule_outputs):
+    results = {}
+    for var_name in terms_data["output"]:
+        domain_min, domain_max = terms_data["output"][var_name]["domain"]
+        x = np.linspace(domain_min, domain_max, 100)
+        agg_y = np.zeros_like(x)
+
+        for ro in rule_outputs:
+            if ro["output_variable"] != var_name:
+                continue
+
+            for term in terms_data["output"][var_name]["terms"]:
+                if term["term_name"] == ro["output_term"]:
+                    ftype = term["function_type"]
+                    p = term["params"]
+
+                    if ftype == "Triangolare":
+                        y = fuzz.trimf(x, [p["a"], p["b"], p["c"]])
+                    elif ftype == "Gaussian":
+                        y = fuzz.gaussmf(x, p["mean"], p["sigma"])
+                    elif ftype == "Trapezoidale":
+                        y = fuzz.trapmf(x, [p["a"], p["b"], p["c"], p["d"]])
+                    else:
+                        continue
+
+                    agg_y = np.fmax(agg_y, np.fmin(ro["activation"], y))
+
+        result = fuzz.defuzz(x, agg_y, 'centroid') if np.sum(agg_y) > 0 else 0
+        results[var_name] = result
+
+    return results

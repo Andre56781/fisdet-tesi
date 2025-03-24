@@ -1,6 +1,6 @@
 import dash
 import base64
-from dash import dcc, html, Input, Output, State, ctx, ALL
+from dash import dcc, html, Input, Output, State, ctx, ALL, MATCH, callback_context
 import plotly.graph_objects as go
 import requests
 import dash_bootstrap_components as dbc
@@ -9,6 +9,8 @@ from flaskr import file_handler
 from flaskr.file_handler import load_data, export_session
 from datetime import datetime
 import re
+from dash.exceptions import PreventUpdate
+
 
 def register_callbacks(dash_app):
 
@@ -1063,6 +1065,66 @@ def register_callbacks(dash_app):
         current_inputs.append(new_input)
         return current_inputs
 
+#Regole
+    @dash_app.callback(
+        Output("inference-data", "data"),
+        Output("rules-list-membership", "children"),
+        Output("membership-values", "children"),
+        Input("start-inference", "n_clicks"),
+        State("inference-inputs", "children"),
+        prevent_initial_call=True
+    )
+    def run_inference(n_clicks, input_children):
+        try:
+            inputs_dict = {}
+            for col in input_children[0]["props"]["children"]:
+                input_id = col["props"]["children"][1]["props"]["id"]
+                input_value = col["props"]["children"][1]["props"]["value"]
+                var_name = input_id.replace("-input", "")
+                if input_value is not None:
+                    inputs_dict[var_name] = float(input_value)
+
+            response = requests.post("http://127.0.0.1:5000/api/infer", json={"inputs": inputs_dict})
+            if response.status_code != 200:
+                return dash.no_update, ["Errore"], ["Errore"]
+
+            result = response.json()
+            rule_outputs = result["rule_outputs"]
+            outputs = result["results"]
+
+            # Visualizza le attivazioni delle regole
+            rules_display = [
+                html.Div(f"{r['output_variable']} IS {r['output_term']} --> {round(r['activation'], 3)}", className="mb-1")
+                for r in rule_outputs
+            ]
+
+            # Nessuna ripetizione dei risultati finali, già visibili nei box
+            membership_display = []
+
+            return result, rules_display, membership_display
+
+        except Exception as e:
+            print(f"Errore inferenza: {e}")
+            return dash.no_update, ["Errore"], ["Errore"]
+
+
+
+    @dash_app.callback(
+        Output({"type": "output", "variable": MATCH}, "children"),
+        Input("inference-data", "data"),
+        State({"type": "output", "variable": MATCH}, "id"),
+        prevent_initial_call=True
+    )
+    def update_output_value(data, matched_id):
+        if not data:
+            raise PreventUpdate
+
+        var_name = matched_id["variable"]
+        value = data.get("results", {}).get(var_name, 0)
+
+        return str(round(value, 2))
+
+
 
 #Report_page callbakcs
 def fetch_data():
@@ -1123,3 +1185,4 @@ def generate_rules_section(rules):
             )
         )
     return children
+

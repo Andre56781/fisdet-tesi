@@ -8,7 +8,7 @@ BASE_DIR = "instance/user_files"
 def get_session_id():
     """Crea un identificativo di sessione basato sul browser senza autenticazione."""
     user_info = request.headers.get('User-Agent', '') + request.remote_addr
-    user_id = request.cookies.get('user_id', 'default_user')  # Ad esempio, usando un cookie per identificare univocamente l'utente
+    user_id = request.cookies.get('user_id', 'default_user') 
     session_id = hashlib.md5((user_info + user_id).encode()).hexdigest()
     return session_id
 
@@ -19,7 +19,7 @@ def get_session_file():
 
 def save_data(data):
     """Salva i dati dell'utente in un file JSON."""
-    os.makedirs(BASE_DIR, exist_ok=True)  # Crea la cartella se non esiste
+    os.makedirs(BASE_DIR, exist_ok=True)  
     file_path = get_session_file()
     try:
         with open(file_path, "w") as f:
@@ -49,7 +49,7 @@ def load_terms():
 
 def save_terms(data):
     """Salva i dati nel file JSON."""
-    os.makedirs(BASE_DIR, exist_ok=True)  # Crea la cartella se non esiste
+    os.makedirs(BASE_DIR, exist_ok=True)  
     file_path = get_session_file()
     with open(file_path, 'w') as f:
         json.dump(data, f, indent=4)
