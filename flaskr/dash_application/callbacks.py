@@ -1002,18 +1002,30 @@ def register_callbacks(dash_app):
         return current_rules
                 
     @dash_app.callback(
-        Output("rules-store", "data"),
+        [Output("rules-store", "data"),
+        Output("input-variables", "data")],
         Input("url_rules", "pathname")
     )
     def load_rules_on_page_load(pathname):
         try:
-            response = requests.get("http://127.0.0.1:5000/api/get_rules")
-            if response.status_code == 200:
-                return response.json()  
-            return []
+            # Richiesta regole
+            response_rules = requests.get("http://127.0.0.1:5000/api/get_rules")
+            rules = response_rules.json() if response_rules.status_code == 200 else []
+
+            # Richiesta variabili
+            response_vars = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
+            input_vars = []
+
+            if response_vars.status_code == 200:
+                data = response_vars.json()
+                input_vars = list(data.get("input", {}).keys())
+
+            return rules, input_vars
+
         except Exception as e:
-            print(f"Errore nel caricamento delle regole: {e}")
-            return []
+            print(f"Errore nel caricamento delle regole o variabili: {e}")
+            return [], []
+
         
     @dash_app.callback(
         Output("rules-list", "children"),
@@ -1036,35 +1048,50 @@ def register_callbacks(dash_app):
 
 
     @dash_app.callback(
-        Output('input-container', 'children'),
-        Input('add-input', 'n_clicks'),
-        State('input-container', 'children')
+        [Output('input-container', 'children', allow_duplicate=True),
+        Output('input-count', 'data', allow_duplicate=True)],
+        Input('input-variables', 'data'),
+        prevent_initial_call=True
     )
-    def manage_inputs(add_clicks, current_inputs):
-        if add_clicks is None:
-            return current_inputs
+    def init_input_blocks(input_variables):
+        if not input_variables:
+            return [], 0
+
+        first_input = html.Div([
+            dbc.Label("IF", className="w-100 text-center mb-0"),
+            dcc.Dropdown(id={"type": "if-dropdown", "index": 0}, placeholder="Select Input Variable", style={"width": "200px"}),
+            dbc.Label("Term", className="w-100 text-center mb-0"),
+            dcc.Dropdown(id={"type": "if-term-dropdown", "index": 0}, placeholder="Select Term", style={"width": "200px"}),
+        ], className="d-flex flex-column align-items-center border rounded p-2", style={"minWidth": "220px"})
+
+        return [first_input], 1
+
+
+
+    @dash_app.callback(
+        [Output('input-container', 'children'),
+        Output('input-count', 'data')],
+        Input('add-input', 'n_clicks'),
+        State('input-container', 'children'),
+        State('input-variables', 'data'),
+        State('input-count', 'data'),
+        prevent_initial_call=True
+    )
+    def manage_inputs(add_clicks, current_inputs, input_variables, input_count):
+        if not input_variables or input_count >= len(input_variables):
+            return current_inputs, input_count
 
         new_input = html.Div([
             dbc.Label("IF", className="w-100 text-center mb-0"),
-            dcc.Dropdown(
-                id={"type": "if-dropdown", "index": add_clicks},
-                options=[], 
-                placeholder="Select Input Variable",
-                className="custom-dropdown mb-2",
-                style={"width": "200px"}  
-            ),
+            dcc.Dropdown(id={"type": "if-dropdown", "index": input_count}, placeholder="Select Input Variable", style={"width": "200px"}),
             dbc.Label("Term", className="w-100 text-center mb-0"),
-            dcc.Dropdown(
-                id={"type": "if-term-dropdown", "index": add_clicks},
-                options=[], 
-                placeholder="Select Term",
-                className="custom-dropdown",
-                style={"width": "200px"}  
-            ),
+            dcc.Dropdown(id={"type": "if-term-dropdown", "index": input_count}, placeholder="Select Term", style={"width": "200px"}),
         ], className="d-flex flex-column align-items-center border rounded p-2", style={"minWidth": "220px"})
 
         current_inputs.append(new_input)
-        return current_inputs
+        return current_inputs, input_count + 1
+
+
 
 
     #Regole
