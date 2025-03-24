@@ -18,33 +18,35 @@ def layout() -> html.Div:
                         html.H4("Creation of Rules", className="card-title"),
                         dbc.Badge("Fuzzy Rules", color="info", className="ml-2")
                     ], className="card-header-gradient d-flex justify-content-between align-items-center"),
-                        dbc.CardBody([
-                            dbc.Form([
+                    dbc.CardBody([
+                        dbc.Form([
+
+                            # Input container in griglia flessibile
                             html.Div(
                                 id="input-container",
+                                className="d-flex flex-wrap justify-content-start gap-3 mb-3",
                                 children=[
-                                    dbc.Row([
-                                        dbc.Col([
-                                            dbc.Label("IF", html_for=f"if-dropdown-{i}", className="w-100 text-center mb-0"),
-                                            dcc.Dropdown(
-                                                id={"type": "if-dropdown", "index": i},
-                                                options=[], 
-                                                placeholder="Select Input Variable",
-                                                className="custom-dropdown mb-2",
-                                                style={"width": "300px"}  
-                                            ),
-                                            dbc.Label("Term", html_for=f"if-term-dropdown-{i}", className="w-100 text-center mb-0"),
-                                            dcc.Dropdown(
-                                                id={"type": "if-term-dropdown", "index": i},
-                                                options=[], 
-                                                placeholder="Select Term",
-                                                className="custom-dropdown",
-                                                style={"width": "300px"}  
-                                            ),
-                                        ], md=6, className="d-flex flex-column align-items-center pe-2")
-                                    ]) for i in range(1)  
+                                    html.Div([
+                                        dbc.Label("IF", className="w-100 text-center mb-0"),
+                                        dcc.Dropdown(
+                                            id={"type": "if-dropdown", "index": 0},
+                                            options=[], 
+                                            placeholder="Select Input Variable",
+                                            className="custom-dropdown mb-2",
+                                            style={"width": "200px"}  
+                                        ),
+                                        dbc.Label("Term", className="w-100 text-center mb-0"),
+                                        dcc.Dropdown(
+                                            id={"type": "if-term-dropdown", "index": 0},
+                                            options=[], 
+                                            placeholder="Select Term",
+                                            className="custom-dropdown",
+                                            style={"width": "200px"}  
+                                        ),
+                                    ], className="d-flex flex-column align-items-center border rounded p-2", style={"minWidth": "220px"})
                                 ]
                             ),
+
                             # Pulsante per aggiungere nuovi input
                             html.Div(
                                 dbc.Button(
@@ -129,7 +131,7 @@ def layout() -> html.Div:
                                 className="d-flex justify-content-center pt-3"
                             )
                         ])
-                    ]),
+                    ])
                 ], className="main-card mx-auto")
             ]
         )

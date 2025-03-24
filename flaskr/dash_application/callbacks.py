@@ -840,11 +840,11 @@ def register_callbacks(dash_app):
     @dash_app.callback(
         Output("rules-container", "children"),
         Input("create-rule", "n_clicks"),
-        [State({"type": "if-dropdown", "index": ALL}, "value"),  # Valori selezionati in tutti i dropdown delle variabili
-        State({"type": "if-term-dropdown", "index": ALL}, "value"),  # Valori selezionati in tutti i dropdown dei termini
-        State("then-dropdown", "value"),  # Valore selezionato nel dropdown dell'output
-        State("then-term-dropdown", "value"),  # Valore selezionato nel dropdown del termine dell'output
-        State("rules-container", "children")],  # Regole esistenti
+        [State({"type": "if-dropdown", "index": ALL}, "value"),  
+        State({"type": "if-term-dropdown", "index": ALL}, "value"),  
+        State("then-dropdown", "value"),  
+        State("then-term-dropdown", "value"),  
+        State("rules-container", "children")],  
         prevent_initial_call=True
     )
     def update_rules(n_clicks, all_input_vars, all_input_terms, output_var, output_term, existing_rules):
@@ -852,9 +852,8 @@ def register_callbacks(dash_app):
         if n_clicks is None:
             return existing_rules
 
-        # Verifica che tutti i campi siano selezionati
         if not all(all_input_vars) or not all(all_input_terms) or not output_var or not output_term:
-            return existing_rules  # Se mancano dei valori, non fare nulla
+            return existing_rules  
 
         # Costruisci la parte IF della regola
         if_part = " AND ".join([f"({var} IS {term})" for var, term in zip(all_input_vars, all_input_terms)])
@@ -862,14 +861,12 @@ def register_callbacks(dash_app):
         # Costruisci la regola completa
         new_rule_text = f"IF {if_part} THEN ({output_var} IS {output_term})"
 
-        # Crea un nuovo elemento HTML per la regola
         new_rule = html.Div(
             new_rule_text,
             className="rule-item",
             style={"marginBottom": "10px", "padding": "5px", "border": "1px solid #ccc", "borderRadius": "5px"}
         )
 
-        # Aggiungi la nuova regola alla lista delle regole esistenti
         return existing_rules + [new_rule]
 
     @dash_app.callback(
@@ -1039,37 +1036,36 @@ def register_callbacks(dash_app):
 
 
     @dash_app.callback(
-    Output('input-container', 'children'),
-    Input('add-input', 'n_clicks'),
-    State('input-container', 'children')
+        Output('input-container', 'children'),
+        Input('add-input', 'n_clicks'),
+        State('input-container', 'children')
     )
     def manage_inputs(add_clicks, current_inputs):
         if add_clicks is None:
             return current_inputs
-        # Aggiungi un nuovo set di dropdown
-        new_input = dbc.Row([
-            dbc.Col([
-                dbc.Label("IF", html_for=f"if-dropdown-{add_clicks}", className="w-100 text-center mb-0"),
-                dcc.Dropdown(
-                    id={"type": "if-dropdown", "index": add_clicks},
-                    options=[], 
-                    placeholder="Select Input Variable",
-                    className="custom-dropdown mb-2",
-                    style={"width": "300px"}  
-                ),
-                dbc.Label("Term", html_for=f"if-term-dropdown-{add_clicks}", className="w-100 text-center mb-0"),
-                dcc.Dropdown(
-                    id={"type": "if-term-dropdown", "index": add_clicks},
-                    options=[],  
-                    placeholder="Select Term",
-                    className="custom-dropdown",
-                    style={"width": "300px"}  
-                ),
-            ], md=6, className="d-flex flex-column align-items-center pe-2")
-        ])
+
+        new_input = html.Div([
+            dbc.Label("IF", className="w-100 text-center mb-0"),
+            dcc.Dropdown(
+                id={"type": "if-dropdown", "index": add_clicks},
+                options=[], 
+                placeholder="Select Input Variable",
+                className="custom-dropdown mb-2",
+                style={"width": "200px"}  
+            ),
+            dbc.Label("Term", className="w-100 text-center mb-0"),
+            dcc.Dropdown(
+                id={"type": "if-term-dropdown", "index": add_clicks},
+                options=[], 
+                placeholder="Select Term",
+                className="custom-dropdown",
+                style={"width": "200px"}  
+            ),
+        ], className="d-flex flex-column align-items-center border rounded p-2", style={"minWidth": "220px"})
 
         current_inputs.append(new_input)
         return current_inputs
+
 
     #Regole
     @dash_app.callback(
