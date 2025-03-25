@@ -36,7 +36,7 @@ To effectively use this repository, ensure you have the following prerequisites 
 Once all dependencies are installed:
 
 ```bash
-python app.py
+python run.py
 ```
 
 This command will start the server locally, allowing you to access and interact with the application via your web browser at `http://127.0.0.1:8050`.
