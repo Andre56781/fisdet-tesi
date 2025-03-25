@@ -23,7 +23,7 @@ def save_data(data):
     file_path = get_session_file()
     try:
         with open(file_path, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=4)
     except Exception as e:
         print(f"Errore durante il salvataggio dei dati: {e}")
         raise
@@ -60,34 +60,3 @@ def load_rule():
         with open(file_path, "r") as f:
             return json.load(f)
     return {"rules": [], "dropdown_options": []}
-
-#IMPORT/EXPORT JSON
-def export_session(session_data):
-    """Formatta i dati per l'esportazione"""
-    return {
-        "metadata": {
-            "created_at": datetime.now().isoformat(),
-            "version": "1.0.0",
-            "system": "Fuzzy Inference System"
-        },
-        "variables": session_data.get("variables", {}),
-        "terms": session_data.get("terms", {}),
-        "rules": session_data.get("rules", [])
-    }
-
-def import_json_data(uploaded_data):
-    """Valida e importa i dati da un file JSON caricato"""
-    required_sections = {"variables", "terms", "rules"}
-    
-    if not isinstance(uploaded_data, dict):
-        raise ValueError("Formato JSON non valido")
-    
-    if not required_sections.issubset(uploaded_data.keys()):
-        missing = required_sections - uploaded_data.keys()
-        raise ValueError(f"Sezioni mancanti nel JSON: {', '.join(missing)}")
-    
-    return {
-        "variables": uploaded_data["variables"],
-        "terms": uploaded_data["terms"],
-        "rules": uploaded_data["rules"]
-    }

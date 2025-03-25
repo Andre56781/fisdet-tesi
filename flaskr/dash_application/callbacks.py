@@ -6,7 +6,7 @@ import requests
 import dash_bootstrap_components as dbc
 import json
 from flaskr import file_handler
-from flaskr.file_handler import load_data, export_session, save_terms
+from flaskr.file_handler import save_terms
 from datetime import datetime
 import re
 from dash.exceptions import PreventUpdate
@@ -24,62 +24,50 @@ def register_callbacks(dash_app):
     def handle_json_export(n_clicks):
         if n_clicks:
             try:
-                session_data = file_handler.load_data()
-                
-                # Validazione struttura dati
-                required_keys = {"variables", "terms", "rules"}
-                if not required_keys.issubset(session_data.keys()):
-                    missing = required_keys - session_data.keys()
-                    raise ValueError(f"Dati mancanti: {', '.join(missing)}")
-                
-                # Preparazione dati per l'esportazione
-                export_data = file_handler.export_session(session_data)
-                
-                return (
-                    {
-                        "content": json.dumps(export_data, indent=4, ensure_ascii=False),
-                        "filename": f"fis_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-                    },
-                    ""  # Contenuto vuoto per il loading
-                )
+                response = requests.get("http://127.0.0.1:5000/api/export_json")
+                if response.status_code == 200:
+                    data = response.json()
+                    return (
+                        {
+                            "content": json.dumps(data, indent=4, ensure_ascii=False),
+                            "filename": f"fis_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                        },
+                        ""
+                    )
+                else:
+                    return dash.no_update, "Errore export"
             except Exception as e:
-                print(f"Errore esportazione: {str(e)}")
+                print(f"Errore esportazione: {e}")
                 return dash.no_update, ""
         return dash.no_update, ""
+
 
     # Callback per l'importazione JSON
     @dash_app.callback(
         Output('session-store', 'data'),
+        Output('import-feedback', 'children'),
         Input('upload-fis', 'contents'),
         State('upload-fis', 'filename'),
         prevent_initial_call=True
     )
     def handle_json_import(contents, filename):
-        if contents is not None:
+        if contents:
             try:
                 content_type, content_string = contents.split(',')
                 decoded = base64.b64decode(content_string)
-                
                 uploaded_data = json.loads(decoded.decode('utf-8'))
 
-                validated_data = file_handler.import_json_data(uploaded_data)
-                
-                # Salvataggio nella sessione corrente
-                current_data = file_handler.load_data()
-                current_data.update({
-                    "variables": validated_data["variables"],
-                    "terms": validated_data["terms"],
-                    "rules": validated_data["rules"]
-                })
-                file_handler.save_data(current_data)
-                
-                return current_data
-                
+                response = requests.post(
+                    "http://127.0.0.1:5000/api/import_json",
+                    json=uploaded_data
+                )
+                if response.status_code == 200:
+                    return uploaded_data, dbc.Alert("Importazione completata!", color="success", dismissable=True)
+                else:
+                    return dash.no_update, dbc.Alert(f"Errore: {response.json().get('error', 'Errore sconosciuto')}", color="danger", dismissable=True)
             except Exception as e:
-                print(f"Errore importazione: {str(e)}")
-                return dash.no_update
-        
-        return dash.no_update
+                return dash.no_update, dbc.Alert(f"Errore durante l'import: {e}", color="danger", dismissable=True)
+        return dash.no_update, dash.no_update
 
 
     #HOME_PAGE CALLBACKS
@@ -92,6 +80,7 @@ def register_callbacks(dash_app):
         if contents:
             return '/report'
         return dash.no_update
+
 
     # Callback per la gestione della sottomissione del modal e la visualizzazione del contenuto principale
     @dash_app.callback(

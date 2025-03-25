@@ -80,7 +80,6 @@ def layout() -> html.Div:
                                     html.Div(
                                         className="d-flex flex-column align-items-center gap-2",
                                         children=[
-                                            # Pulsante Importa
                                             dcc.Upload(
                                                 id='upload-fis',
                                                 children=dbc.Button(
@@ -105,9 +104,9 @@ def layout() -> html.Div:
                                                 ),
                                                 accept='.json',
                                                 multiple=False
-                                            ), 
-                                            
+                                            ),
                                             # Testo trascinamento file
+                                            html.Div(id="import-feedback", className="mt-3"),                         
                                             html.Span(
                                                 "Drag and drop your file or click here to import your FIS",
                                                 style={
@@ -133,5 +132,5 @@ def layout() -> html.Div:
                     )
                 ]
             )
-        ] 
+        ]
     )

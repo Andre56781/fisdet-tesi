@@ -5,7 +5,8 @@ import dash_bootstrap_components as dbc
 def serve_layout() -> html.Div:
     return html.Div([
         dcc.Location(id='url', refresh=False), 
-        
+        dcc.Store(id="session-store"),
+
         # Font Awesome
         html.Link(
             rel='stylesheet',

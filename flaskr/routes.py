@@ -6,6 +6,7 @@ import skfuzzy as fuzz
 import numpy as np
 import json
 import logging
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -552,3 +553,30 @@ def aggregate_and_defuzzify(terms_data, rule_outputs):
         results[var_name] = result
 
     return results
+
+#IMPORT/EXPORT
+@bp.route("/export_json", methods=["GET"])
+def export_json():
+    try:
+        data = load_data()
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": f"Errore durante export: {str(e)}"}), 500
+
+@bp.route("/import_json", methods=["POST"])
+def import_json():
+    try:
+        data = request.get_json()
+
+        if not isinstance(data, dict):
+            return jsonify({"error": "Formato non valido"}), 400
+
+        # Salva direttamente come file di sessione
+        save_data(data)
+
+        return jsonify({"message": "Importazione completata"}), 200
+
+    except Exception as e:
+        print(f"Errore import:", e)
+        return jsonify({"error": f"Errore durante import: {str(e)}"}), 500
+
