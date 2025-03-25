@@ -5,17 +5,14 @@ from ..callbacks import fetch_data, generate_variable_section, generate_rules_se
 
 def layout():
     """Main function that generates the page layout."""
-    # Fetch data from the backend
     data = fetch_data()
 
-    # If data is not available, show an error message
     if not data:
         return html.Div("Error while loading data.", className="text-danger")
 
     terms = data.get("terms", {})
     rules = data.get("rules", [])
 
-    # Generate layout sections
     input_children = generate_variable_section(terms.get("input", {}), "input")
     output_children = generate_variable_section(terms.get("output", {}), "output")
     rules_children = generate_rules_section(rules)
@@ -23,7 +20,7 @@ def layout():
     return html.Div(
         className="container-fluid p-4",
         children=[
-            dcc.Store(id='report-data-store', data=data),  # Store data in the Store
+            dcc.Store(id='report-data-store', data=data),  
             dcc.Download(id="download-json"),
             dcc.Loading(
                 id="export-loading",
@@ -35,7 +32,6 @@ def layout():
                 className="content",
                 children=[
                     dbc.Card([
-                        # Header with title
                         dbc.CardHeader(
                             [
                                 html.H3("Fuzzy System Report", className="mb-0"),
@@ -45,7 +41,6 @@ def layout():
                         ),
                         
                         dbc.CardBody([
-                            # Input/Output Section
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Card([
@@ -62,7 +57,6 @@ def layout():
                                 ], md=6),
                             ], className="mb-4"),
                             
-                            # Rules Section
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Card([
@@ -75,7 +69,6 @@ def layout():
                             ], className="mb-4"),
                         ]),
                         
-                        # Footer
                         dbc.CardFooter(
                             html.Div(
                                 className="d-flex justify-content-center w-100",
