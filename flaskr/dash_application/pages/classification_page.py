@@ -6,18 +6,9 @@ def layout() -> html.Div:
         dcc.Store(id='classification-term-count', data=0),
         dcc.Store(id="classification-confirmed"),
 
-
         dbc.Card([
             dbc.CardHeader([
-                html.H4("Classification Mode", className="card-title"),
-                dbc.Checklist(
-                    id='classification-checkbox',
-                    options=[{'label': '', 'value': 'Classification'}],
-                    value=['Classification'],
-                    inline=True,
-                    switch=True,
-                    className="pt-2 float-end"
-                )
+                html.H4("Classification Mode", className="card-title")
             ], className="card-header-gradient d-flex justify-content-between align-items-center"),
 
             dbc.CardBody([
@@ -32,6 +23,14 @@ def layout() -> html.Div:
                             className="input-field",
                             debounce=True,
                             required=True
+                        ),
+                        dbc.Checklist(
+                            id='classification-checkbox',
+                            options=[{'label': 'Classification', 'value': 'Classification'}],
+                            value=['Classification'],
+                            inline=True,
+                            switch=True,
+                            className="pt-2"
                         )
                     ], md=6),
 
