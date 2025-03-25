@@ -13,8 +13,7 @@ from dash.exceptions import PreventUpdate
 
 
 def register_callbacks(dash_app):
-
-    #IMPORT/EXPORT JSON
+    """Registra tutti i callback necessari all'app Dash per la gestione delle variabili fuzzy, regole e inferenza."""
     @dash_app.callback(
         Output("download-json", "data"),
         Output("export-loading", "children"),
@@ -22,6 +21,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def handle_json_export(n_clicks):
+        """Esporta il file JSON con la configurazione attuale."""
         if n_clicks:
             try:
                 response = requests.get("http://127.0.0.1:5000/api/export_json")
@@ -42,7 +42,6 @@ def register_callbacks(dash_app):
         return dash.no_update, ""
 
 
-    # Callback per l'importazione JSON
     @dash_app.callback(
         Output('session-store', 'data'),
         Output('import-feedback', 'children'),
@@ -51,6 +50,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def handle_json_import(contents, filename):
+        """Importa un file JSON e aggiorna lo store di sessione."""
         if contents:
             try:
                 content_type, content_string = contents.split(',')
@@ -70,19 +70,18 @@ def register_callbacks(dash_app):
         return dash.no_update, dash.no_update
 
 
-    #HOME_PAGE CALLBACKS
     @dash_app.callback(
     Output('url', 'pathname'),
     Input('upload-fis', 'contents'),
     prevent_initial_call=True
     )
     def handle_upload(contents):
+        """Reindirizza alla pagina /report dopo l'upload del file."""
         if contents:
             return '/report'
         return dash.no_update
 
 
-    # Callback per la gestione della sottomissione del modal e la visualizzazione del contenuto principale
     @dash_app.callback(
             [Output("variable-modal", "is_open"),
             Output("main-content", "style"),
@@ -91,6 +90,7 @@ def register_callbacks(dash_app):
             [State("num-variables-input", "value")]
         )
     def handle_modal_submit(n_clicks, num_variables):
+        """Gestisce l'inserimento del numero di variabili da creare."""
         if not n_clicks:
             return [True, {"display": "none"}, None]
 
@@ -104,7 +104,6 @@ def register_callbacks(dash_app):
         except:
             return [True, {"display": "none"}, None]
 
-    # Callback per aggiornare il titolo della variabile (es. "Variabile X di Y")
     @dash_app.callback(
         Output("variable-title", "children"),
         Input("var-type-store", "data"),
@@ -112,6 +111,7 @@ def register_callbacks(dash_app):
         Input("num-variables-store", "data")]
     )
     def update_title(var_type, current_index, num_vars):
+        """Aggiorna il titolo della variabile in base all'indice corrente."""
         if num_vars is None or current_index is None:
             return ""
         try:
@@ -121,7 +121,6 @@ def register_callbacks(dash_app):
 
         return f"Creation of  {var_type} Variables {current_index + 1} of {num_vars}"
 
-    # Callback per la navigazione tra le variabili
     @dash_app.callback(
     [Output("current-index", "data"),
     Output("back-button", "style"),
@@ -136,10 +135,8 @@ def register_callbacks(dash_app):
         ctx = dash.callback_context
 
         if not ctx.triggered:
-            # Se il callback è stato eseguito all'avvio, imposta current_index a 0
             current_index = 0 if current_index is None else current_index
         else:
-            # Altrimenti, gestisci i click sui pulsanti
             triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
             if triggered_id == "next-button" and current_index < num_variables - 1:
@@ -147,7 +144,6 @@ def register_callbacks(dash_app):
             elif triggered_id == "back-button" and current_index > 0:
                 current_index -= 1
 
-        # Gestione della visibilità dei pulsanti
         if num_variables == 1:
             back_button_style = {'display': 'none'}
             next_button_style = {'display': 'none'}
@@ -210,7 +206,6 @@ def register_callbacks(dash_app):
                 value=open_type
             ))
 
-        # Parametri per funzione Triangolare
         if function_type == 'Triangolare':
             params.append(dbc.Label("Parametro a:"))
             params.append(dbc.Input(id='param-a', type='number', value='', required=True))
@@ -226,24 +221,20 @@ def register_callbacks(dash_app):
             params.append(dbc.Label("Parametro c:"))
             params.append(dbc.Input(id='param-c', type='number', value='', required=True))
             
-            # Parametri invisibili
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
             params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
             params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
 
-        # Parametri per funzione Gaussian
         elif function_type == 'Gaussian':
             params.append(dbc.Label("Parametro Mean:"))
             params.append(dbc.Input(id='param-mean', type='number', value='', required=True))
             params.append(dbc.Label("Parametro Sigma:"))
             params.append(dbc.Input(id='param-sigma', type='number', value='', required=True))
 
-            # Parametri invisibili
             params.append(dbc.Input(id='param-b', style={'display': 'none'}))
             params.append(dbc.Input(id='param-c', style={'display': 'none'}))
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
 
-        # Se il tipo di funzione è "Trapezoidale"
         elif function_type == 'Trapezoidale':
             params.append(dbc.Label("Parametro a:"))
             params.append(dbc.Input(id='param-a', type='number', value='', required=True))
@@ -323,6 +314,7 @@ def register_callbacks(dash_app):
                     var_type, variable_name, domain_min, domain_max, function_type,
                     term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma,
                     defuzzy_type, button_label, selected_term): 
+        """Gestisce la creazione, modifica ed eliminazione dei termini fuzzy.""" 
         ctx = dash.ctx
 
         if not ctx.triggered:
@@ -330,7 +322,6 @@ def register_callbacks(dash_app):
 
         triggered_id = ctx.triggered[0]['prop_id']
 
-        # Se siamo nella pagina di input, imposta defuzzy_type a None
         if var_type == "input":
             defuzzy_type = None
             
@@ -343,7 +334,6 @@ def register_callbacks(dash_app):
         if isinstance(open_type, str) and ('left' in open_type or 'right' in open_type):
             function_type = f"{function_type}-open"
         
-        # Verifica che var_type sia valido
         if var_type not in ['input', 'output']:
             return [dash.no_update,
                     "Errore: var_type deve essere 'input' o 'output'",
@@ -351,10 +341,8 @@ def register_callbacks(dash_app):
                     dash.no_update, dash.no_update, dash.no_update, dash.no_update,
                     'Crea Termine']
 
-        # --- Creazione del Termine ---
         if triggered_id == 'create-term-btn.n_clicks':             
             if button_label == 'Salva Modifica':
-                # Esegui la modifica e poi ricarica la lista aggiornata
                 terms_list, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma,
@@ -363,7 +351,6 @@ def register_callbacks(dash_app):
                 return (terms_list, message, figure,
                         '', '', '', '', '', '', '', 'Crea Termine')
             else:
-                # Creazione di un nuovo termine
                 terms_list, message, figure = create_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma,
@@ -375,7 +362,6 @@ def register_callbacks(dash_app):
                         dash.no_update, dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update, 'Crea Termine')
 
-        # --- Eliminazione del Termine (usando il termine selezionato) ---
         elif triggered_id == 'delete-term-btn.n_clicks':
             if not selected_term:
                 return (dash.no_update,
@@ -386,7 +372,6 @@ def register_callbacks(dash_app):
                         dash.no_update, 'Crea Termine')
             return delete_term(variable_name, selected_term, var_type) + ('Crea Termine',)
 
-        # --- Modifica del Termine (usando il termine selezionato) ---
         elif triggered_id == 'modify-term-btn.n_clicks':
             if not selected_term:
                 return (dash.no_update,
@@ -428,6 +413,7 @@ def register_callbacks(dash_app):
         State("classification-confirmed", "data")
     )
     def show_classification_modal(value, confirmed):
+        """Mostra un modal di conferma quando si attiva la modalità Classification.""" 
         if value and "Classification" in value and not confirmed:
             return True
         return False
@@ -449,6 +435,7 @@ def register_callbacks(dash_app):
     prevent_initial_call=True
     )
     def handle_classification_change(confirm_click, cancel_click):
+        """Gestisce la conferma o l'annullamento della modalità Classification.""" 
         ctx = dash.callback_context
         if not ctx.triggered:
             raise dash.exceptions.PreventUpdate
@@ -503,9 +490,10 @@ def register_callbacks(dash_app):
         allow_duplicate=True
     )
     def toggle_fields_classification(classification_value):
+        """Mostra o nasconde i campi fuzzy in base alla modalità Classification.""" 
         if classification_value and "Classification" in classification_value:
-            return {"display": "none"}, {"display": "none"}  # nasconde graph + campi fuzzy
-        return {"display": "block"}, {"display": "block"}  # mostra tutto il resto
+            return {"display": "none"}, {"display": "none"}  
+        return {"display": "block"}, {"display": "block"}  
 
     @dash_app.callback(
         Output("classification-counter", "style"),
@@ -514,6 +502,7 @@ def register_callbacks(dash_app):
         Input("classification-term-count", "data")
     )
     def update_classification_counter(classification_value, term_count):
+        """Aggiorna e mostra il contatore dei termini in modalità Classification.""" 
         if classification_value and "Classification" in classification_value:
             return {"display": "block"}, f"Classification Terms Created: {term_count}"
         return {"display": "none"}, ""
@@ -524,6 +513,7 @@ def register_callbacks(dash_app):
     prevent_initial_call="initial_duplicate"
     )
     def switch_right_column_content(classification_value):
+        """Cambia i campi mostrati nella colonna destra in base alla modalità Classification.""" 
         if classification_value and "Classification" in classification_value:
             return html.Div([
                 dbc.Label("Fuzzy Term Name", className="mb-0"),
@@ -567,6 +557,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def toggle_term_name_row(classification_value):
+        """Mostra o nasconde la riga del nome del termine in base alla modalità Classification.""" 
         if classification_value and "Classification" in classification_value:
             return {"display": "none"}
         return {"display": "block"}
@@ -574,16 +565,13 @@ def register_callbacks(dash_app):
 
 
     def validate_params(open_type, params, domain_min, domain_max, function_type):
-        """
-        Valida che i parametri siano compresi tra domain_min e domain_max.
-        """
+        """Valida i parametri di un termine fuzzy rispetto al dominio e al tipo di funzione.""" 
         if function_type == 'Triangolare':
             a, b, c = params.get('a'), params.get('b'), params.get('c')
             
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
                 return False, "Errore: I parametri a, b, c devono essere compresi tra il dominio minimo e massimo."
             
-            # Controllo che a <= b <= c
             if not (a <= b <= c):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
             
@@ -593,29 +581,24 @@ def register_callbacks(dash_app):
             if open_type == "right":
                 a, b, c = params.get('a'), params.get('c'), params.get('c')
             
-            # Controllo che i parametri siano compresi tra domain_min e domain_max
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
                 return False, "Errore: I parametri a, b, c devono essere compresi tra il dominio minimo e massimo."
             
-            # Controllo che a <= b <= c
             if not (a <= b <= c):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
         
         elif function_type == 'Gaussian':
             mean, sigma = params.get('mean'), params.get('sigma')
             
-            # Controllo che mean sia compreso tra domain_min e domain_max
             if not (domain_min <= mean <= domain_max):
                 return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
             
-            # Controllo che sigma sia positivo (opzionale, se necessario)
             if sigma <= 0:
                 return False, "Errore: Il parametro sigma deve essere maggiore di zero."
             
         elif function_type == 'Gaussian-open':
             mean, sigma = params.get('mean'), params.get('sigma')
             
-            # Controllo che mean sia compreso tra domain_min e domain_max
             if not (domain_min <= mean <= domain_max):
                 return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
             
@@ -623,11 +606,9 @@ def register_callbacks(dash_app):
         elif function_type == 'Trapezoidale':
             a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
             
-            # Controllo che i parametri siano compresi tra domain_min e domain_max
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
                 return False, "Errore: I parametri a, b, c, d devono essere compresi tra il dominio minimo e massimo."
             
-            # Controllo che a <= b <= c <= d
             if not (a <= b <= c <= d):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
         
@@ -636,18 +617,16 @@ def register_callbacks(dash_app):
                 a, b, c, d = params.get('a'), params.get('a'), params.get('c'), params.get('d')
             if open_type == "right":
                 a, b, c, d = params.get('a'), params.get('b'), params.get('d'), params.get('d')
-            # Controllo che i parametri siano compresi tra domain_min e domain_max
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
                 return False, "Errore: I parametri a, b, c, d devono essere compresi tra il dominio minimo e massimo."
             
-            # Controllo che a <= b <= c <= d
             if not (a <= b <= c <= d):
                 return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
             
         return True, ""
 
     def create_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
-        
+        """Crea un nuovo termine fuzzy e aggiorna grafico e lista.""" 
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -700,11 +679,9 @@ def register_callbacks(dash_app):
             'params': params
         }
 
-        # Aggiungi open_type SOLO se è una funzione open
         if 'open' in function_type and open_type:
             payload['open_type'] = open_type
 
-        # Aggiungi defuzzy_type solo se siamo nella pagina di output
         if var_type == "output" and defuzzy_type:
             payload['defuzzy_type'] = defuzzy_type
 
@@ -727,6 +704,7 @@ def register_callbacks(dash_app):
         State({'type': 'term-item', 'index': dash.ALL}, 'id')
     )
     def update_selected_term_and_styles(n_clicks_list, ids):
+        """Aggiorna il termine selezionato e applica lo stile evidenziato.""" 
         default_style = {'cursor': 'pointer'}
         if not n_clicks_list or all(nc is None for nc in n_clicks_list):
             return dash.no_update, [default_style for _ in ids]
@@ -759,25 +737,24 @@ def register_callbacks(dash_app):
         Input('selected-term', 'data')
     )
     def update_buttons(selected_term):
+        """Abilita o disabilita i pulsanti di modifica/eliminazione in base alla selezione.""" 
         if selected_term:
             return False, False
         return True, True
 
 
-    # Funzione per l'eliminazione di un termine fuzzy
     def delete_term(variable_name, term_name, var_type):
+        """Elimina un termine fuzzy esistente.""" 
         response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{term_name}')
 
         if response.status_code == 200:
-            # Dopo aver eliminato il termine, aggiorna la lista e il grafico
             terms_list, figure = update_terms_list_and_figure(variable_name,var_type)
-            # Restituisci 10 valori, includendo terms_list e figure aggiornati
             return terms_list, f"Termine '{term_name}' eliminato con successo!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         else:
-            # Restituisci un errore se l'eliminazione fallisce, con dash.no_update per i valori non modificati
             return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
+        """Modifica un termine fuzzy esistente e aggiorna grafico e lista.""" 
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -825,9 +802,7 @@ def register_callbacks(dash_app):
             'params': params
         }
 
-        # Gestione del defuzzy_type in base alla checkbox
         if var_type == "input":
-                # Altrimenti, aggiorna il defuzzy_type
                 payload['defuzzy_type'] = defuzzy_type
 
         headers = {'Content-Type': 'application/json'}
@@ -841,6 +816,7 @@ def register_callbacks(dash_app):
             return dash.no_update, f"Errore: {error_message}", dash.no_update
         
     def update_terms_list_and_figure(variable_name, var_type):
+        """Recupera i termini fuzzy e costruisce il grafico corrispondente.""" 
         if variable_name and var_type:
             try:
                 headers = {'Content-Type': 'application/json'}
@@ -851,11 +827,9 @@ def register_callbacks(dash_app):
                     input_data = []
                     output_data = []
 
-                    # Estrai i dati solo se esistono nella risposta
                     input_variables = terms_data.get('input', {})
                     output_variables = terms_data.get('output', {})
 
-                    # Gestisci i termini di input
                     if var_type == 'input' and variable_name in input_variables:
                         variable_data = input_variables[variable_name]
                         for term in variable_data['terms']:
@@ -874,7 +848,6 @@ def register_callbacks(dash_app):
                             )
                             input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
 
-                    # Gestisci i termini di output
                     elif var_type == 'output' and variable_name in output_variables:
                         variable_data = output_variables[variable_name]
                         for term in variable_data['terms']:
@@ -893,7 +866,6 @@ def register_callbacks(dash_app):
                             )
                             output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
 
-                    # Creazione del grafico in base al tipo di variabile
                     if var_type == 'input':
                         combined_figure = {
                             'data': input_data,
@@ -947,18 +919,14 @@ def register_callbacks(dash_app):
                             )
                         }
 
-                    # Restituzione della lista dei termini e della figura combinata
                     return terms_list, combined_figure
                 else:
-                    # Se la richiesta all'API fallisce
                     return [html.Li("Errore nel recupero dei termini.")], dash.no_update
             except Exception as e:
-                # Gestione dell'errore nella richiesta o nel processamento
                 return [html.Li(f"Errore durante il recupero dei dati: {str(e)}")], dash.no_update
         else:
             return [], dash.no_update
 
-    # Callback per rules_page
     @dash_app.callback(
         Output("rules-container", "children"),
         Input("create-rule", "n_clicks"),
@@ -970,17 +938,15 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def update_rules(n_clicks, all_input_vars, all_input_terms, output_var, output_term, existing_rules):
-        """Crea una nuova regola fuzzy e la aggiunge alla lista."""
+        """Crea una nuova regola fuzzy e la aggiunge al contenitore.""" 
         if n_clicks is None:
             return existing_rules
 
         if not all(all_input_vars) or not all(all_input_terms) or not output_var or not output_term:
             return existing_rules  
 
-        # Costruisci la parte IF della regola
         if_part = " AND ".join([f"({var} IS {term})" for var, term in zip(all_input_vars, all_input_terms)])
 
-        # Costruisci la regola completa
         new_rule_text = f"IF {if_part} THEN ({output_var} IS {output_term})"
 
         new_rule = html.Div(
@@ -1001,6 +967,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def update_dropdowns(all_input_values):
+        """Aggiorna le opzioni delle dropdown IF/THEN in base alle variabili disponibili.""" 
         try:
             response = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
             if response.status_code != 200:
@@ -1012,14 +979,12 @@ def register_callbacks(dash_app):
 
             output_var_name = next(iter(output_data), None)
 
-            # Costruisci le opzioni per le dropdown IF (escludendo già selezionate)
             input_options_list = []
             for i, selected in enumerate(all_input_values):
                 used = [v for j, v in enumerate(all_input_values) if j != i and v]
                 available = [v for v in input_vars if v not in used]
                 input_options_list.append([{"label": v, "value": v} for v in available])
 
-            # Dropdown Term per IF
             if_term_options = []
             for selected in all_input_values:
                 if selected and selected in data["input"]:
@@ -1028,11 +993,9 @@ def register_callbacks(dash_app):
                 else:
                     if_term_options.append([])
 
-            # THEN dropdown options e value (disabilitato)
             then_dropdown_options = [{"label": output_var_name, "value": output_var_name}] if output_var_name else []
             then_dropdown_value = output_var_name
 
-            # Termini della variabile di output
             then_terms = []
             if output_var_name and output_var_name in output_data:
                 then_terms = [{"label": t["label"], "value": t["value"]} for t in output_data[output_var_name]]
@@ -1047,44 +1010,39 @@ def register_callbacks(dash_app):
 
 
     @dash_app.callback(
-        [Output('rules-list', 'children', allow_duplicate=True),
-        Output('error-message', 'children')],
+        [
+            Output('rules-list', 'children', allow_duplicate=True),
+            Output('rules-store', 'data', allow_duplicate=True),
+            Output('error-message', 'children')
+        ],
         Input('create-rule', 'n_clicks'),
         [
             State({'type': 'if-dropdown', 'index': ALL}, 'value'),
             State({'type': 'if-term-dropdown', 'index': ALL}, 'value'),
             State('then-dropdown', 'value'),
             State('then-term-dropdown', 'value'),
-            State('rules-list', 'children')
+            State('rules-list', 'children'),
+            State('rules-store', 'data')
         ],
         prevent_initial_call=True
     )
-    def create_rule(n_clicks, input_vars, input_terms, output_variable, output_term, current_rules):
+    def create_rule(n_clicks, input_vars, input_terms, output_variable, output_term, current_rules, rules_data):
+        """Crea una regola fuzzy e la salva nel backend.""" 
         if n_clicks is None:
-            return current_rules, ''
+            return current_rules, rules_data, ''
 
-        # Verifica che tutti i campi siano compilati
         if not all(input_vars) or not all(input_terms) or not output_variable or not output_term:
-            return current_rules, 'Errore: compila tutti i campi!'
+            return current_rules, rules_data, 'Errore: compila tutti i campi!'
 
-        # Costruzione regola
-        inputs = []
-        for var, term in zip(input_vars, input_terms):
-            inputs.append({
-                "input_variable": var,
-                "input_term": term
-            })
+        inputs = [{"input_variable": var, "input_term": term} for var, term in zip(input_vars, input_terms)]
 
         rule_text = " AND ".join([f"({i['input_variable']} IS {i['input_term']})" for i in inputs])
         rule_text = f"IF {rule_text} THEN ({output_variable} IS {output_term})"
 
-        # Evita duplicati
         existing_rules_texts = [rule['props']['children'] if isinstance(rule, dict) else rule.children for rule in current_rules]
         if rule_text in existing_rules_texts:
-            return current_rules, 'Errore: questa regola esiste già!'
+            return current_rules, rules_data, 'Errore: questa regola esiste già!'
 
-        # Salva via API
-        headers = {'Content-Type': 'application/json'}
         response = requests.post(
             "http://127.0.0.1:5000/api/create_rule",
             json={
@@ -1095,15 +1053,25 @@ def register_callbacks(dash_app):
         )
 
         if response.status_code == 201:
-            new_rule = html.P(
-                rule_text,
-                className="rule-item",
-                style={"fontSize": "0.9em"}
-            )
-            current_rules.append(new_rule)
-            return current_rules, ''
+            rule_id = response.json().get("rule_id")
+            rules_data.append({
+                "id": rule_id,
+                "inputs": inputs,
+                "output_variable": output_variable,
+                "output_term": output_term
+            })
 
-        return current_rules, ''
+            new_rule = dbc.ListGroupItem(
+                rule_text,
+                id={'type': 'rule-item', 'index': rule_id},
+                n_clicks=0,
+                style={"cursor": "pointer"}
+            )
+
+            return current_rules + [new_rule], rules_data, ''
+
+        return current_rules, rules_data, 'Errore durante il salvataggio della regola'
+
 
     @dash_app.callback(
         [Output("rules-list", "children", allow_duplicate=True),
@@ -1115,6 +1083,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def select_rule(n_clicks, all_ids, rules_data):
+        """Evidenzia la regola selezionata e salva il relativo ID.""" 
         selected_id = None
         styles = []
 
@@ -1126,7 +1095,6 @@ def register_callbacks(dash_app):
                 selected_id = all_ids[idx]['index']
                 break
 
-        # Ricrea la lista con evidenziazione
         rule_items = []
         for rule in rules_data:
             inputs = rule.get("inputs", [])
@@ -1160,6 +1128,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def delete_selected_rule(n_clicks, selected_rule_id, rules_data):
+        """Elimina la regola selezionata e aggiorna la lista.""" 
         if not selected_rule_id:
             raise dash.exceptions.PreventUpdate
 
@@ -1179,11 +1148,9 @@ def register_callbacks(dash_app):
     )
     def load_rules_on_page_load(pathname):
         try:
-            # Richiesta regole
             response_rules = requests.get("http://127.0.0.1:5000/api/get_rules")
             rules = response_rules.json() if response_rules.status_code == 200 else []
 
-            # Richiesta variabili
             response_vars = requests.get("http://127.0.0.1:5000/api/get_variables_and_terms")
             input_vars = []
 
@@ -1203,6 +1170,7 @@ def register_callbacks(dash_app):
         Input("rules-store", "data")
     )
     def display_existing_rules(rules_data):
+        """Mostra tutte le regole presenti nella lista.""" 
         rules_display = []
         for rule in rules_data:
             inputs = rule.get("inputs", [])
@@ -1230,6 +1198,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def init_input_blocks(input_variables):
+        """Inizializza il primo blocco IF-Term per la creazione di una regola.""" 
         if not input_variables:
             return [], 0
 
@@ -1253,6 +1222,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def manage_inputs(add_clicks, current_inputs, input_variables, input_count):
+        """Aggiunge dinamicamente nuovi blocchi IF-Term per la creazione delle regole.""" 
         if not input_variables or input_count >= len(input_variables):
             return current_inputs, input_count
 
@@ -1277,6 +1247,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def run_inference(n_clicks, input_children):
+        """Esegue l'inferenza fuzzy sui valori inseriti e mostra attivazioni e output.""" 
         try:
             inputs_dict = {}
             for col in input_children[0]["props"]["children"]:
@@ -1339,6 +1310,7 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def update_output_value(data, matched_id):
+        """Aggiorna il valore visualizzato per ogni variabile di output dopo l'inferenza.""" 
         if not data:
             raise PreventUpdate
 
@@ -1350,9 +1322,8 @@ def register_callbacks(dash_app):
 
 #Report_page callbakcs
 def fetch_data():
-    """Function to fetch data from the backend."""
+    """Recupera dati da backend per la pagina report.""" 
     try:
-        # Request to the backend to get terms and rules
         response_terms = requests.get(f"http://127.0.0.1:5000/api/get_terms")
         response_rules = requests.get(f"http://127.0.0.1:5000/api/get_rules")
 
@@ -1367,7 +1338,7 @@ def fetch_data():
         return None
 
 def generate_variable_section(variables, var_type):
-    """Generates sections for input or output variables."""
+    """Genera le card per visualizzare le variabili (input/output) nel report.""" 
     children = []
     for var_name, var_data in variables.items():
         children.append(
@@ -1397,7 +1368,7 @@ def generate_variable_section(variables, var_type):
     return children
 
 def generate_rules_section(rules):
-    """Generates the section for fuzzy rules."""
+    """Genera la sezione di visualizzazione delle regole fuzzy nel report.""" 
     children = []
     for rule in rules:
         inputs = rule.get("inputs", [])
