@@ -130,7 +130,7 @@ def get_terms():
                     elif function_type == 'Triangolare-open':
                         y = open_trimf(x, params['a'], params['b'], params['c'])
                     elif function_type == 'Gaussian-open':
-                        open_type = params.pop('open_type', 'left')  # rimuove e NON salva
+                        open_type = params.pop('open_type', 'left')  
                         y = open_gaussmf(x, params['mean'], params['sigma'], domain_min, domain_max, open_type)
                     elif function_type == 'Trapezoidale-open':
                         y = open_trapmf(x, params['a'], params['b'], params['c'], params['d'])

@@ -210,36 +210,63 @@ def register_callbacks(dash_app):
                 value=open_type
             ))
 
+        # Parametri per funzione Triangolare
         if function_type == 'Triangolare':
-            params.extend([
-                dbc.Label("Parametro a:"), dbc.Input(id='param-a', type='number', value='', required=True),
-                dbc.Label("Parametro b:"), dbc.Input(id='param-b', type='number', value='', required=True),
-                dbc.Label("Parametro c:"), dbc.Input(id='param-c', type='number', value='', required=True),
-                dbc.Input(id='param-d', style={'display': 'none'}),
-                dbc.Input(id='param-mean', style={'display': 'none'}),
-                dbc.Input(id='param-sigma', style={'display': 'none'}),
-            ])
+            params.append(dbc.Label("Parametro a:"))
+            params.append(dbc.Input(id='param-a', type='number', value='', required=True))
+            
+            params.append(dbc.Label("Parametro b:"))
+            if open_type == 'left':  
+                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
+            elif open_type == 'right':
+                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
+            elif open_type is None:
+                params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+                
+            params.append(dbc.Label("Parametro c:"))
+            params.append(dbc.Input(id='param-c', type='number', value='', required=True))
+            
+            # Parametri invisibili
+            params.append(dbc.Input(id='param-d', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
+
+        # Parametri per funzione Gaussian
         elif function_type == 'Gaussian':
-            params.extend([
-                dbc.Label("Parametro Mean:"), dbc.Input(id='param-mean', type='number', value='', required=True),
-                dbc.Label("Parametro Sigma:"), dbc.Input(id='param-sigma', type='number', value='', required=True),
-                dbc.Input(id='param-a', style={'display': 'none'}),
-                dbc.Input(id='param-b', style={'display': 'none'}),
-                dbc.Input(id='param-c', style={'display': 'none'}),
-                dbc.Input(id='param-d', style={'display': 'none'}),
-            ])
+            params.append(dbc.Label("Parametro Mean:"))
+            params.append(dbc.Input(id='param-mean', type='number', value='', required=True))
+            params.append(dbc.Label("Parametro Sigma:"))
+            params.append(dbc.Input(id='param-sigma', type='number', value='', required=True))
+
+            # Parametri invisibili
+            params.append(dbc.Input(id='param-b', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-c', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-d', style={'display': 'none'}))
+
+        # Se il tipo di funzione è "Trapezoidale"
         elif function_type == 'Trapezoidale':
-            params.extend([
-                dbc.Label("Parametro a:"), dbc.Input(id='param-a', type='number', value='', required=True),
-                dbc.Label("Parametro b:"), dbc.Input(id='param-b', type='number', value='', required=True),
-                dbc.Label("Parametro c:"), dbc.Input(id='param-c', type='number', value='', required=True),
-                dbc.Label("Parametro d:"), dbc.Input(id='param-d', type='number', value='', required=True),
-                dbc.Input(id='param-mean', style={'display': 'none'}),
-                dbc.Input(id='param-sigma', style={'display': 'none'}),
-            ])
+            params.append(dbc.Label("Parametro a:"))
+            params.append(dbc.Input(id='param-a', type='number', value='', required=True))
+            
+            params.append(dbc.Label("Parametro b:"))
+            if open_type == 'left':  
+                params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
+            else:
+                params.append(dbc.Input(id='param-b', type='number', value='', required=True))
+            
+            params.append(dbc.Label("Parametro c:"))
+            if open_type == 'right':  
+                params.append(dbc.Input(id='param-c', type='number', value='', disabled=True))
+            else:
+                params.append(dbc.Input(id='param-c', type='number', value='', required=True))
+                
+            params.append(dbc.Label("Parametro d:"))
+            params.append(dbc.Input(id='param-d', type='number', value='', required=True))
+
+            params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
+            params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
 
         return params
-
 
 
 
