@@ -1,5 +1,9 @@
 # FISDeT
-<p align="center"><a href="" target="_blank"><img src="https://raw.githubusercontent.com/Andre56781/fisdet-tesi/flaskr/assets/images/LogoInt.png" width="400" alt="FISDeT logo"></a></p>
+<p align="center">
+    <a href="#" target="_blank">
+        <img src="https://raw.githubusercontent.com/Andre56781/fisdet-tesi/main/flaskr/assets/images/LogoInt.png" width="400" alt="FISDeT logo">
+    </a>
+</p>
 
 ## About FISDeT
 FISDeT is a dedicated tool for designing and optimizing Fuzzy Inference Systems (FIS). Its mission is to simplify the FIS development process, making fuzzy modeling accessible and efficient for engineers, researchers, and enthusiasts alike. With an intuitive interface and customizable features, FISDeT transforms complexity into opportunity, fostering innovation and improving the quality of fuzzy models.
