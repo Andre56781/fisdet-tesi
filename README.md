@@ -27,7 +27,7 @@ To effectively use this repository, ensure you have the following prerequisites 
 3. Install the Required Packages:
 
     ```bash
-pip install -r requirements.txt
+    pip install -r requirements.txt
     ```
 
 ### Running the Application
