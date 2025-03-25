@@ -7,6 +7,7 @@
 
 ## About FISDeT
 FISDeT is a dedicated tool for designing and optimizing Fuzzy Inference Systems (FIS). Its mission is to simplify the FIS development process, making fuzzy modeling accessible and efficient for engineers, researchers, and enthusiasts alike. With an intuitive interface and customizable features, FISDeT transforms complexity into opportunity, fostering innovation and improving the quality of fuzzy models.
+
 ## Developing
 
 To effectively use this repository, ensure you have the following prerequisites installed:
@@ -30,7 +31,7 @@ To effectively use this repository, ensure you have the following prerequisites 
     pip install -r requirements.txt
     ```
 
-### Running the Application
+## Running the Application
 
 Once all dependencies are installed:
 
