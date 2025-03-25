@@ -312,7 +312,7 @@ def modify_term(term_name):
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
     
-""" @bp.route('/clear_output', methods=['POST']) #Per la classificazione
+@bp.route('/clear_output', methods=['POST']) 
 def clear_output():
     try:
         data = load_data()
@@ -334,7 +334,7 @@ def clear_output():
         return jsonify({"message": "Sezione output e regole associate rimosse con successo."}), 200
     except Exception as e:
         return jsonify({"error": f"Errore durante la cancellazione dell'output: {str(e)}"}), 500
-""" 
+
 
 
 

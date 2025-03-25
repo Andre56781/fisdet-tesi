@@ -11,7 +11,6 @@ from datetime import datetime
 import re
 from dash.exceptions import PreventUpdate
 
-
 def register_callbacks(dash_app):
 
     """Registra tutti i callback necessari all'app Dash per la gestione delle variabili fuzzy, regole e inferenza."""
@@ -69,18 +68,6 @@ def register_callbacks(dash_app):
             except Exception as e:
                 return dash.no_update, dbc.Alert(f"Error during import: {e}", color="danger", dismissable=True)
         return dash.no_update, dash.no_update
-
-
-    @dash_app.callback(
-    Output('url', 'pathname'),
-    Input('upload-fis', 'contents'),
-    prevent_initial_call=True
-    )
-    def handle_upload(contents):
-        """Reindirizza alla pagina /report dopo l'upload del file."""
-        if contents:
-            return '/report'
-        return dash.no_update
 
 
     @dash_app.callback(
@@ -408,10 +395,24 @@ def register_callbacks(dash_app):
         State("classification-confirmed", "data")
     )
     def show_classification_modal(value, confirmed):
-        """Mostra un modal di conferma quando si attiva la modalità Classification.""" 
-        if value and "Classification" in value and not confirmed:
-            return True
+        print(f"[DEBUG] Modal check → checkbox: {value}, confirmed: {confirmed}")
+        if value and "Classification" in value:
+            if not confirmed or confirmed is None:
+                return True
         return False
+
+    
+
+
+    @dash_app.callback(
+        Output("classification-confirmed", "data"),
+        Input("url", "pathname"),
+        prevent_initial_call=True
+    )
+    def reset_classification_confirmation(pathname):
+        if pathname == "/output":
+            return False
+        raise dash.exceptions.PreventUpdate
 
 
     @dash_app.callback(
@@ -475,21 +476,6 @@ def register_callbacks(dash_app):
 
         raise dash.exceptions.PreventUpdate
 
-
-
-    @dash_app.callback(
-        Output("graph-container", "style"),
-        Output("output-hideable-fields", "style"),
-        Input("classification-checkbox", "value"),
-        prevent_initial_call=True,
-        allow_duplicate=True
-    )
-    def toggle_fields_classification(classification_value):
-        """Mostra o nasconde i campi fuzzy in base alla modalità Classification.""" 
-        if classification_value and "Classification" in classification_value:
-            return {"display": "none"}, {"display": "none"}  
-        return {"display": "block"}, {"display": "block"}  
-
     @dash_app.callback(
         Output("classification-counter", "style"),
         Output("classification-counter", "children"),
@@ -503,49 +489,24 @@ def register_callbacks(dash_app):
         return {"display": "none"}, ""
 
     @dash_app.callback(
-    Output("dynamic-right-column", "children"),
-    Input("classification-checkbox", "value"),
-    prevent_initial_call="initial_duplicate"
+        Output('url', 'pathname'),
+        Input("classification-checkbox", "value"),
+        State("classification-confirmed", "data"),
+        prevent_initial_call=True
     )
-    def switch_right_column_content(classification_value):
-        """Cambia i campi mostrati nella colonna destra in base alla modalità Classification.""" 
-        if classification_value and "Classification" in classification_value:
-            return html.Div([
-                dbc.Label("Fuzzy Term Name", className="mb-0"),
-                dbc.Input(
-                    id='term-name',
-                    type='text',
-                    value='',
-                    pattern="^[a-zA-Z0-9]*$",
-                    className="input-field",
-                    debounce=True,
-                    required=True
-                )
-            ])
-        else:
-            return html.Div([
-                dbc.Label("Domain", className="form-label mb-0"),
-                dbc.InputGroup([
-                    dbc.Input(
-                        id='domain-min',
-                        type='number',
-                        className="input-field",
-                        value='0',
-                        placeholder="0",
-                        debounce=True,
-                        required=True
-                    ),
-                    dbc.Input(
-                        id='domain-max',
-                        type='number',
-                        className="input-field",
-                        value='',
-                        placeholder="100",
-                        debounce=True,
-                        required=True
-                    )
-                ], className="domain-input-group mb-3")
-            ])
+    def handle_classification_redirect(checkbox_value, confirmed):
+        print(f"[DEBUG] Redirect → checkbox: {checkbox_value}, confirmed: {confirmed}")
+
+        if checkbox_value and "Classification" in checkbox_value:
+            if confirmed:
+                return "/classification"
+            else:
+                raise dash.exceptions.PreventUpdate 
+        return "/output"
+
+
+
+
     @dash_app.callback(
         Output("term-name-row", "style"),
         Input("classification-checkbox", "value"),
