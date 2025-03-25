@@ -1078,28 +1078,72 @@ def register_callbacks(dash_app):
 
         return current_rules, ''
 
+    @dash_app.callback(
+        [Output("rules-list", "children", allow_duplicate=True),
+        Output("delete-rule", "disabled"),
+        Output("selected-rule-id", "data")],
+        Input({"type": "rule-item", "index": ALL}, "n_clicks"),
+        State({"type": "rule-item", "index": ALL}, "id"),
+        State("rules-store", "data"),
+        prevent_initial_call=True
+    )
+    def select_rule(n_clicks, all_ids, rules_data):
+        selected_id = None
+        styles = []
+
+        if not n_clicks:
+            return dash.no_update, True, None
+
+        for idx, click in enumerate(n_clicks):
+            if click and click > 0:
+                selected_id = all_ids[idx]['index']
+                break
+
+        # Ricrea la lista con evidenziazione
+        rule_items = []
+        for rule in rules_data:
+            inputs = rule.get("inputs", [])
+            inputs_text = " AND ".join(
+                f"({inp['input_variable']} IS {inp['input_term']})" for inp in inputs
+            )
+            output_text = f"({rule['output_variable']} IS {rule['output_term']})"
+            rule_text = f"IF {inputs_text} THEN {output_text}"
+
+            style = {"cursor": "pointer"}
+            if rule["id"] == selected_id:
+                style["backgroundColor"] = "#d1ecf1"
+
+            rule_items.append(
+                dbc.ListGroupItem(
+                    rule_text,
+                    id={'type': 'rule-item', 'index': rule['id']},
+                    n_clicks=0,
+                    style=style
+                )
+            )
+
+        return rule_items, selected_id is None, selected_id
+
 
     @dash_app.callback(
-    Output('rules-list', 'children',  allow_duplicate=True),
-    Input('delete-rule', 'n_clicks'),
-    [State('rules-list', 'children')],
-    prevent_initial_call=True
+        Output("rules-store", "data", allow_duplicate=True),
+        Input("delete-rule", "n_clicks"),
+        State("selected-rule-id", "data"),
+        State("rules-store", "data"),
+        prevent_initial_call=True
     )
-    def delete_rule(n_clicks, current_rules):
-        if n_clicks is None or not current_rules:
-            return current_rules
+    def delete_selected_rule(n_clicks, selected_rule_id, rules_data):
+        if not selected_rule_id:
+            raise dash.exceptions.PreventUpdate
 
-        # Ottieni l'ID della regola da eliminare (ad esempio, l'ultima regola)
-        rule_id = f"Rule{len(current_rules) - 1}"
+        response = requests.delete(f"http://127.0.0.1:5000/api/delete_rule/{selected_rule_id}")
+        if response.status_code != 200:
+            return dash.no_update
 
-        headers = {'Content-Type': 'application/json'}
-        response = requests.delete(f"http://127.0.0.1:5000/api/delete_rule/{rule_id}")
+        updated_rules = [r for r in rules_data if r["id"] != selected_rule_id]
+        return updated_rules
 
-        if response.status_code == 200:
-            # Rimuovi la regola dalla lista visualizzata
-            return current_rules[:-1]
 
-        return current_rules
                 
     @dash_app.callback(
         [Output("rules-store", "data"),
@@ -1142,7 +1186,12 @@ def register_callbacks(dash_app):
             rule_text = f"IF {inputs_text} THEN {output_text}"
 
             rules_display.append(
-                html.P(rule_text, className="rule-item", style={"fontSize": "0.9em"})
+                dbc.ListGroupItem(
+                    rule_text,
+                    id={'type': 'rule-item', 'index': rule['id']},
+                    n_clicks=0,
+                    style={"cursor": "pointer"}
+                )
             )
         return rules_display
 

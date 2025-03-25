@@ -414,6 +414,20 @@ def create_rule():
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
+@bp.route('/delete_rule/<rule_id>', methods=['DELETE'])
+def delete_rule(rule_id):
+    try:
+        rules_data = load_rule()
+
+        if rule_id in rules_data:
+            del rules_data[rule_id]
+            save_terms(rules_data)
+            return jsonify({"message": "Regola eliminata con successo"}), 200
+        else:
+            return jsonify({"error": "Regola non trovata"}), 404
+
+    except Exception as e:
+        return jsonify({"error": f"Errore durante l'eliminazione: {str(e)}"}), 500
 
     
 @bp.route('/infer', methods=['POST'])

@@ -9,6 +9,7 @@ def layout() -> html.Div:
         dcc.Store(id='input-variables', data=[]),  
         dcc.Store(id='input-count', data=0),       
         dcc.Store(id='variables-data', data={}),
+        dcc.Store(id="selected-rule-id", data=None),
 
         html.Div(
             id="main-content",
