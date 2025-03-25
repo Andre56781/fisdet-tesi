@@ -33,7 +33,7 @@ def layout() -> html.Div:
                             ),
                             html.Div(
                                 dbc.Button(
-                                    [html.I(className="fas fa-plus", style={"marginRight": "8px"}), "Aggiungi Input"],
+                                    [html.I(className="fas fa-plus", style={"marginRight": "8px"}), "Add Input"],
                                     id="add-input",
                                     color="primary",
                                     className="action-btn"
@@ -106,7 +106,18 @@ def layout() -> html.Div:
                                     className="action-btn"
                                 ),
                                 className="d-flex justify-content-center pt-3"
-                            )
+                            ),
+                            dbc.Modal(
+                                id="error-modal",
+                                is_open=False,
+                                size="md",
+                                children=[
+                                    dbc.ModalHeader("Errore"),
+                                    dbc.ModalBody(id="error-modal-body"),
+                                ],
+                                centered=True,
+                                backdrop="static"
+                            ),
                         ])
                     ]),
                     dbc.CardFooter(

@@ -11,7 +11,6 @@ def layout() -> html.Div:
         dcc.Store(id='open-type'),
         dcc.Store(id='selected-term'),
         dcc.Store(id='defuzzy-type', data="default_value"),
-        dcc.Store(id="error-message-store"),
 
         Modal(
             id="variable-modal",
@@ -201,7 +200,17 @@ def layout() -> html.Div:
                         ], className="mt-4"),
 
                         # MESSAGGI
-                        html.Div(id='message', className="alert-message")
+                    dbc.Modal(
+                                id="error-modal",
+                                is_open=False,
+                                size="md",
+                                children=[
+                                    dbc.ModalHeader("Errore"),
+                                    dbc.ModalBody(id="error-modal-body"),
+                                ],
+                                centered=True,
+                                backdrop="static"
+                            ),
                     ]),
                     
                     dbc.CardFooter(

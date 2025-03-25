@@ -36,9 +36,9 @@ def register_callbacks(dash_app):
                         ""
                     )
                 else:
-                    return dash.no_update, "Errore export"
+                    return dash.no_update, "Error export"
             except Exception as e:
-                print(f"Errore esportazione: {e}")
+                print(f"Error export: {e}")
                 return dash.no_update, ""
         return dash.no_update, ""
 
@@ -65,9 +65,9 @@ def register_callbacks(dash_app):
                 if response.status_code == 200:
                     return uploaded_data, dbc.Alert("Importazione completata!", color="success", dismissable=True)
                 else:
-                    return dash.no_update, dbc.Alert(f"Errore: {response.json().get('error', 'Errore sconosciuto')}", color="danger", dismissable=True)
+                    return dash.no_update, dbc.Alert(f"{response.json().get('error', 'Unknown error')}", color="danger", dismissable=True)
             except Exception as e:
-                return dash.no_update, dbc.Alert(f"Errore durante l'import: {e}", color="danger", dismissable=True)
+                return dash.no_update, dbc.Alert(f"Error during import: {e}", color="danger", dismissable=True)
         return dash.no_update, dash.no_update
 
 
@@ -118,7 +118,7 @@ def register_callbacks(dash_app):
         try:
             current_index = int(current_index)
         except (ValueError, TypeError):
-            return "Errore: Indice della variabile non valido."
+            return "Invalid variable index."
 
         return f"Creation of  {var_type} Variables {current_index + 1} of {num_vars}"
 
@@ -208,10 +208,10 @@ def register_callbacks(dash_app):
             ))
 
         if function_type == 'Triangolare':
-            params.append(dbc.Label("Parametro a:"))
+            params.append(dbc.Label("Parameter a:"))
             params.append(dbc.Input(id='param-a', type='number', value='', required=True))
             
-            params.append(dbc.Label("Parametro b:"))
+            params.append(dbc.Label("Parameter b:"))
             if open_type == 'left':  
                 params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
             elif open_type == 'right':
@@ -219,7 +219,7 @@ def register_callbacks(dash_app):
             elif open_type is None:
                 params.append(dbc.Input(id='param-b', type='number', value='', required=True))
                 
-            params.append(dbc.Label("Parametro c:"))
+            params.append(dbc.Label("Parameter c:"))
             params.append(dbc.Input(id='param-c', type='number', value='', required=True))
             
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
@@ -227,9 +227,9 @@ def register_callbacks(dash_app):
             params.append(dbc.Input(id='param-sigma', style={'display': 'none'}))
 
         elif function_type == 'Gaussian':
-            params.append(dbc.Label("Parametro Mean:"))
+            params.append(dbc.Label("Parameter Mean:"))
             params.append(dbc.Input(id='param-mean', type='number', value='', required=True))
-            params.append(dbc.Label("Parametro Sigma:"))
+            params.append(dbc.Label("Parameter Sigma:"))
             params.append(dbc.Input(id='param-sigma', type='number', value='', required=True))
 
             params.append(dbc.Input(id='param-b', style={'display': 'none'}))
@@ -237,22 +237,22 @@ def register_callbacks(dash_app):
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
 
         elif function_type == 'Trapezoidale':
-            params.append(dbc.Label("Parametro a:"))
+            params.append(dbc.Label("Parameter a:"))
             params.append(dbc.Input(id='param-a', type='number', value='', required=True))
             
-            params.append(dbc.Label("Parametro b:"))
+            params.append(dbc.Label("Parameter b:"))
             if open_type == 'left':  
                 params.append(dbc.Input(id='param-b', type='number', value='', disabled=True))
             else:
                 params.append(dbc.Input(id='param-b', type='number', value='', required=True))
             
-            params.append(dbc.Label("Parametro c:"))
+            params.append(dbc.Label("Parameter c:"))
             if open_type == 'right':  
                 params.append(dbc.Input(id='param-c', type='number', value='', disabled=True))
             else:
                 params.append(dbc.Input(id='param-c', type='number', value='', required=True))
                 
-            params.append(dbc.Label("Parametro d:"))
+            params.append(dbc.Label("Parameter d:"))
             params.append(dbc.Input(id='param-d', type='number', value='', required=True))
 
             params.append(dbc.Input(id='param-mean', style={'display': 'none'}))
@@ -275,7 +275,8 @@ def register_callbacks(dash_app):
     @dash_app.callback(
         [
             Output('terms-list', 'children', allow_duplicate=True),
-            Output('message', 'children'),
+            Output("error-modal", "is_open"),
+            Output("error-modal-body", "children"),
             Output('graph', 'figure', allow_duplicate=True),
             Output('term-name', 'value', allow_duplicate=True),  
             Output('param-a', 'value', allow_duplicate=True),     
@@ -334,53 +335,44 @@ def register_callbacks(dash_app):
 
         if isinstance(open_type, str) and ('left' in open_type or 'right' in open_type):
             function_type = f"{function_type}-open"
-        
-        if var_type not in ['input', 'output']:
-            return [dash.no_update,
-                    "Errore: var_type deve essere 'input' o 'output'",
-                    dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                    dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                    'Crea Termine']
 
         if triggered_id == 'create-term-btn.n_clicks':             
-            if button_label == 'Salva Modifica':
-                terms_list, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
+            if button_label == 'Save change':
+                terms_list, is_error, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
                                                         function_type, term_name, param_a, param_b,
                                                         param_c, param_d, param_mean, param_sigma,
                                                         defuzzy_type)  
                 terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-                return (terms_list, message, figure,
-                        '', '', '', '', '', '', '', 'Crea Termine')
+                return (terms_list,is_error, message, figure,
+                        '', '', '', '', '', '', '', 'Create term')
             else:
-                terms_list, message, figure = create_term(open_type, var_type, variable_name, domain_min, domain_max,
-                                                        function_type, term_name, param_a, param_b,
-                                                        param_c, param_d, param_mean, param_sigma,
-                                                        defuzzy_type)  
-                if message == "Termine creato con successo!":
-                    return (terms_list, message, figure,
-                            '', '', '', '', '', '', '', 'Crea Termine')
-                return (terms_list, message, figure,
+                terms_list, is_error, message, figure = create_term(open_type, var_type, variable_name, domain_min, domain_max,
+                                                                    function_type, term_name, param_a, param_b,
+                                                                    param_c, param_d, param_mean, param_sigma,
+                                                                    defuzzy_type)
+                if message == "Term successfully created!":
+                    return (terms_list, False, "", figure,
+                            '', '', '', '', '', '', '', 'Create term')
+                return (terms_list, is_error, message, dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update, 'Crea Termine')
-
+                        dash.no_update, dash.no_update, dash.no_update, 'Create term')
+                
         elif triggered_id == 'delete-term-btn.n_clicks':
             if not selected_term:
-                return (dash.no_update,
-                        "Nessun termine selezionato",
-                        dash.no_update,
+                return (dash.no_update, True, "No term selected",
                         dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, 'Crea Termine')
-            return delete_term(variable_name, selected_term, var_type) + ('Crea Termine',)
+                        dash.no_update, dash.no_update, 'Create term')
+            return delete_term(variable_name, selected_term, var_type) + ('Create term',)
+
 
         elif triggered_id == 'modify-term-btn.n_clicks':
             if not selected_term:
-                return (dash.no_update,
-                        "Nessun termine selezionato",
-                        dash.no_update,
+                return (dash.no_update, True, "No term selected",
                         dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, 'Crea Termine')
+                        dash.no_update, dash.no_update, 'Crea Termine')
+
             url = f'http://127.0.0.1:5000/api/get_term/{variable_name}/{selected_term}'
             headers = {'Content-Type': 'application/json'}
             response = requests.get(url)
@@ -390,6 +382,7 @@ def register_callbacks(dash_app):
                 return (dash.no_update,
                         dash.no_update,
                         dash.no_update,
+                        dash.no_update, 
                         term_data.get('term_name', ''),
                         term_params.get('a', ''),
                         term_params.get('b', ''),
@@ -397,14 +390,15 @@ def register_callbacks(dash_app):
                         term_params.get('d', ''),
                         term_params.get('mean', ''),
                         term_params.get('sigma', ''),
-                        'Salva Modifica')
+                        'Save change')
+
             else:
-                return (dash.no_update,
-                        "Errore nel caricamento dei dati del termine.",
+                return (dash.no_update, True,
+                        "Error loading term data.",
                         dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update,
                         dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, 'Crea Termine')
+                        dash.no_update, 'Create term')
 
         return [dash.no_update] * 11
 
@@ -458,7 +452,7 @@ def register_callbacks(dash_app):
                 else:
                     return (
                         ["Classification"],
-                        f"Errore: {response.json().get('error', 'Errore sconosciuto')}",
+                        f"{response.json().get('error', 'Unknown error')}",
                         dash.no_update,
                         dash.no_update,
                         False,
@@ -467,7 +461,7 @@ def register_callbacks(dash_app):
             except Exception as e:
                 return (
                     ["Classification"],
-                    f"Errore di connessione al backend: {e}",
+                    f"Error connecting to the backend: {e}",
                     dash.no_update,
                     dash.no_update,
                     False,
@@ -571,10 +565,10 @@ def register_callbacks(dash_app):
             a, b, c = params.get('a'), params.get('b'), params.get('c')
             
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
-                return False, "Error: parameters a, b, c shall be between the minimum and maximum domains."
+                return False, "Parameters a, b, c shall be between the minimum and maximum domains."
             
             if not (a <= b <= c):
-                return False, "Error: parameters shall respect the order <= b <= c."
+                return False, "Parameters shall respect the order <= b <= c."
             
         elif function_type == 'Triangolare-open':
             if open_type == "left":
@@ -583,35 +577,35 @@ def register_callbacks(dash_app):
                 a, b, c = params.get('a'), params.get('c'), params.get('c')
             
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
-                return False, "Error: parameters a,b,c shall be between the maximum and minimum domains"
+                return False, "parameters a,b,c shall be between the maximum and minimum domains"
             
             if not (a <= b <= c):
-                return False, "Error: Parameters must respect the order a <= b <= c."
+                return False, "Parameters must respect the order a <= b <= c."
         
         elif function_type == 'Gaussian':
             mean, sigma = params.get('mean'), params.get('sigma')
             
             if not (domain_min <= mean <= domain_max):
-                return False, "Error: The mean parameter must be between the minimum and maximum domains."
+                return False, "The mean parameter must be between the minimum and maximum domains."
             
             if sigma <= 0:
-                return False, "Error: The sigma parameter must be greater than zero."
+                return False, "The sigma parameter must be greater than zero."
             
         elif function_type == 'Gaussian-open':
             mean, sigma = params.get('mean'), params.get('sigma')
             
             if not (domain_min <= mean <= domain_max):
-                return False, "Error: The mean parameter must be between the minimum and maximum domains."
+                return False, "The mean parameter must be between the minimum and maximum domains."
             
         
         elif function_type == 'Trapezoidale':
             a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
             
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
-                return False, "Error: Parameters a, b, c, d must be between the minimum and maximum domains."
+                return False, "Parameters a, b, c, d must be between the minimum and maximum domains."
             
             if not (a <= b <= c <= d):
-                return False, "Error: Parameters must respect the order a <= b <= c <= d."
+                return False, "Parameters must respect the order a <= b <= c <= d."
         
         elif function_type == 'Trapezoidale-open':
             if open_type == "left":
@@ -619,10 +613,10 @@ def register_callbacks(dash_app):
             if open_type == "right":
                 a, b, c, d = params.get('a'), params.get('b'), params.get('d'), params.get('d')
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
-                return False, "Error: Parameters a, b, c, d must be between the minimum and maximum domains."
+                return False, "Parameters a, b, c, d must be between the minimum and maximum domains."
             
             if not (a <= b <= c <= d):
-                return False, "Error: Parameters must respect the order a <= b <= c <= d."
+                return False, "Parameters must respect the order a <= b <= c <= d."
             
         return True, ""
 
@@ -632,13 +626,14 @@ def register_callbacks(dash_app):
             domain_min = int(domain_min)
             domain_max = int(domain_max)
         except (ValueError, TypeError):
-            return dash.no_update, "Error: Domain values must be numbers.", dash.no_update
+            return dash.no_update, True, "The Domain values must be numbers.", dash.no_update
 
         if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
-            return dash.no_update, "Error: The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update
+            return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update
 
         if domain_min > domain_max:
-            return dash.no_update, "Error: The minimum domain cannot be greater than the maximum domain.", dash.no_update
+            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.",dash.no_update
+
 
         params = {}
         if function_type == 'Triangolare':
@@ -668,7 +663,7 @@ def register_callbacks(dash_app):
 
         is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
         if not is_valid:
-            return dash.no_update, error_message, dash.no_update
+            return dash.no_update, True, error_message, dash.no_update
 
         payload = {
             'var_type': var_type,
@@ -691,10 +686,10 @@ def register_callbacks(dash_app):
 
         if response.status_code == 201:
             terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, "Term successfully created!", figure
+            return terms_list, True, "Term successfully created!", figure
         else:
-            error_message = response.json().get('error', 'Errore sconosciuto')
-            return dash.no_update, f"Errore: {error_message}", dash.no_update
+            error_message = response.json().get('error', 'Unknown error')
+            return dash.no_update, True, f"{error_message}", dash.no_update
 
     @dash_app.callback(
         [
@@ -750,9 +745,9 @@ def register_callbacks(dash_app):
 
         if response.status_code == 200:
             terms_list, figure = update_terms_list_and_figure(variable_name,var_type)
-            return terms_list, f"Term '{term_name}' successfully eliminated!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return terms_list, False, f"Term '{term_name}' successfully eliminated!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         else:
-            return dash.no_update, f"Error in term deletion: {response.json().get('error', 'Unknown Error')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return dash.no_update, True, f"Error in term deletion: {response.json().get('error', 'Unknown Error')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
         """Modifica un termine fuzzy esistente e aggiorna grafico e lista.""" 
@@ -760,10 +755,10 @@ def register_callbacks(dash_app):
             domain_min = int(domain_min)
             domain_max = int(domain_max)
         except (ValueError, TypeError):
-            return dash.no_update, "Error: Domain values must be numbers.", dash.no_update
+            return dash.no_update, True, "Domain values must be numbers.", dash.no_update
 
         if domain_min > domain_max:
-            return dash.no_update, "Error: The minimum domain cannot be greater than the maximum domain.", dash.no_update
+            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.", dash.no_update
 
         params = {}
         if function_type == 'Triangolare':
@@ -779,7 +774,7 @@ def register_callbacks(dash_app):
             params = {'mean': param_mean, 'sigma': param_sigma}
             
         elif function_type == 'Gaussian-open':
-                params = {'mean': param_mean, 'sigma': param_sigma}
+            params = {'mean': param_mean, 'sigma': param_sigma}
 
         if function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
@@ -792,7 +787,7 @@ def register_callbacks(dash_app):
 
         is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
         if not is_valid:
-            return dash.no_update, error_message, dash.no_update
+            return dash.no_update, True, error_message, dash.no_update
 
         payload = {
             'term_name': term_name,
@@ -804,17 +799,18 @@ def register_callbacks(dash_app):
         }
 
         if var_type == "input":
-                payload['defuzzy_type'] = defuzzy_type
+            payload['defuzzy_type'] = defuzzy_type
 
         headers = {'Content-Type': 'application/json'}
         response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{term_name}', json=payload)
 
         if response.status_code == 201:
             terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, "Term successfully modified", figure
+            return terms_list, False, "Term successfully modified", figure
         else:
             error_message = response.json().get('error', 'Unknown Error')
-            return dash.no_update, f"Error: {error_message}", dash.no_update
+            return dash.no_update, True, f"{error_message}", dash.no_update
+
         
     def update_terms_list_and_figure(variable_name, var_type):
         """Recupera i termini fuzzy e costruisce il grafico corrispondente.""" 
@@ -1004,7 +1000,7 @@ def register_callbacks(dash_app):
             return input_options_list, if_term_options, then_dropdown_options, then_dropdown_value, then_terms
 
         except Exception as e:
-            print(f"Errore in update_dropdowns: {e}")
+            print(f"Error in update_dropdowns: {e}")
             return [[]] * len(all_input_values), [[]] * len(all_input_values), [], None, []
 
 
@@ -1012,9 +1008,10 @@ def register_callbacks(dash_app):
 
     @dash_app.callback(
         [
-            Output('rules-list', 'children', allow_duplicate=True),
-            Output('rules-store', 'data', allow_duplicate=True),
-            Output('error-message', 'children')
+                Output('rules-list', 'children', allow_duplicate=True),
+                Output('rules-store', 'data', allow_duplicate=True),
+                Output("error-modal", "is_open", allow_duplicate=True),
+                Output("error-modal-body", "children", allow_duplicate=True)
         ],
         Input('create-rule', 'n_clicks'),
         [
@@ -1030,10 +1027,13 @@ def register_callbacks(dash_app):
     def create_rule(n_clicks, input_vars, input_terms, output_variable, output_term, current_rules, rules_data):
         """Crea una regola fuzzy e la salva nel backend.""" 
         if n_clicks is None:
-            return current_rules, rules_data, ''
+            return current_rules, rules_data, False, ''
+
 
         if not all(input_vars) or not all(input_terms) or not output_variable or not output_term:
-            return current_rules, rules_data, 'Error: fill in all fields!'
+            return current_rules, rules_data, True, 'Error fill in all fields!'
+
+
 
         inputs = [{"input_variable": var, "input_term": term} for var, term in zip(input_vars, input_terms)]
 
@@ -1042,7 +1042,7 @@ def register_callbacks(dash_app):
 
         existing_rules_texts = [rule['props']['children'] if isinstance(rule, dict) else rule.children for rule in current_rules]
         if rule_text in existing_rules_texts:
-            return current_rules, rules_data, 'Error: this rule already exists!'
+            return current_rules, rules_data, True, 'Error this rule already exists!'
 
         response = requests.post(
             "http://127.0.0.1:5000/api/create_rule",
@@ -1069,9 +1069,9 @@ def register_callbacks(dash_app):
                 style={"cursor": "pointer"}
             )
 
-            return current_rules + [new_rule], rules_data, ''
+            return current_rules + [new_rule], rules_data, False, ''
 
-        return current_rules, rules_data, 'Error while saving the rule'
+        return current_rules, rules_data, True, 'Error while saving the rule'
 
 
     @dash_app.callback(
@@ -1301,8 +1301,9 @@ def register_callbacks(dash_app):
             return result, rules_display, membership_display
 
         except Exception as e:
-            print(f"Errore inferenza: {e}")
+            print(f"Inference error: {e}")
             return dash.no_update, [html.Div("Error during the inference process", className="text-danger")], []
+
 
 
 #Report_page callbakcs

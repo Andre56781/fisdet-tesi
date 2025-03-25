@@ -57,7 +57,7 @@ def create_term():
             existing_variables = list(terms_data[var_type].keys())
             if existing_variables and variable_name not in existing_variables:
                 return jsonify({
-                    "error": f"È possibile inserire solo una variabile {var_type}. Esiste già '{existing_variables[0]}'."
+                    "error": f"Only one variable can be entered {var_type}. It already exists {existing_variables[0]}'."
                 }), 400
 
         # Se la variabile non esiste, creala
@@ -70,12 +70,12 @@ def create_term():
         variable_data = terms_data[var_type][variable_name]
 
         if variable_data['domain'] != [domain_min, domain_max]:
-            return jsonify({"error": "Dominio incoerente per la variabile esistente"}), 400
+            return jsonify({"error": "Inconsistent domain for the existing variable"}), 400
 
         # Controlla duplicazione del termine
         existing_term = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
         if existing_term:
-            return jsonify({"error": "Il termine esiste già per questa variabile"}), 400
+            return jsonify({"error": "The term already exists for this variable"}), 400
 
         new_term = {
             "term_name": term_name,
@@ -93,7 +93,7 @@ def create_term():
         return jsonify(new_term), 201
 
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 
@@ -104,7 +104,7 @@ def get_terms():
         terms_data = load_terms()
 
         if not terms_data:
-            return jsonify({"message": "Nessun termine trovato"}), 404
+            return jsonify({"message": "No terms found"}), 404
     
         computed_terms = {"input": {}, "output": {}}
         for var_type, variables in terms_data.items():
@@ -150,7 +150,7 @@ def get_terms():
         return jsonify(computed_terms), 200
 
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
     
 def open_trimf(x, a, b, c):
     """Versione 'open' di una funzione triangolare: forza y=0 fuori da [a, c]."""  
@@ -189,10 +189,10 @@ def get_term(variable_name, term_name):
                 if term_to_get:
                     return jsonify(term_to_get), 200
 
-        return jsonify({"error": "Termine non trovato."}), 404
+        return jsonify({"error": "No terms found trovato."}), 404
 
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @bp.route('/delete_term/<term_name>', methods=['POST'])
 def delete_term(term_name):
@@ -206,12 +206,12 @@ def delete_term(term_name):
                 if term_to_delete:
                     variable_data['terms'].remove(term_to_delete)
                     save_terms(terms_data)
-                    return jsonify({"message": "Termine eliminato con successo!"}), 200
+                    return jsonify({"message": "Term successfully deleted!"}), 200
 
-        return jsonify({"error": "Termine non trovato."}), 404
+        return jsonify({"error": "No terms found trovato."}), 404
 
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @bp.route('/modify_term/<term_name>', methods=['PUT'])
 def modify_term(term_name):
@@ -219,7 +219,7 @@ def modify_term(term_name):
     try:
         data = request.get_json()
         if not isinstance(data, dict):
-            return jsonify({"error": "Formato dati non valido. Deve essere un oggetto JSON."}), 400
+            return jsonify({"error": "Invalid data format. Must be a JSON object."}), 400
         
         variable_name = data.get('variable_name')
         domain_min = data.get('domain_min')
@@ -238,14 +238,14 @@ def modify_term(term_name):
         if not params: missing_fields.append("params")
 
         if missing_fields and open_type != None:
-            return jsonify({"error": f"Dati incompleti: {', '.join(missing_fields)}"}), 400
+            return jsonify({"error": f"Incomplete data: {', '.join(missing_fields)}"}), 400
 
         # Validazioni dei parametri in base al tipo di funzione
         if function_type == 'Triangolare':
             if not all(key in params for key in ['a', 'b', 'c']):
-                return jsonify({"error": "Parametri mancanti per la funzione triangolare."}), 400
+                return jsonify({"error": "Missing parameters for the triangular function."}), 400
             if params['a'] > params['b'] or params['b'] > params['c']:
-                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c."}), 400
+                return jsonify({"error": "The parameters must respect the order a <= b <= c."}), 400
 
         elif function_type == 'Triangolare-open':
             if open_type == 'left':
@@ -253,21 +253,21 @@ def modify_term(term_name):
             elif open_type == 'right':
                 params['b'] = params['c']
             if not all(key in params for key in ['a', 'b', 'c']):
-                return jsonify({"error": "Parametri mancanti per la funzione triangolare aperta."}), 400
+                return jsonify({"error": "Missing parameters for the open triangular function."}), 400
             if params['a'] > params['b'] or params['b'] > params['c']:
-                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c."}), 400
+                return jsonify({"error": "The parameters must respect the order a <= b <= c."}), 400
 
         elif function_type == 'Gaussian':
             if not all(key in params for key in ['mean', 'sigma']):
-                return jsonify({"error": "Parametri mancanti per la funzione gaussiana."}), 400
+                return jsonify({"error": "Missing parameters for the Gaussian function.."}), 400
             if params['sigma'] <= 0:
-                return jsonify({"error": "Il parametro sigma deve essere maggiore di zero."}), 400
+                return jsonify({"error": "The sigma parameter must be greater than zero."}), 400
 
         elif function_type == 'Trapezoidale':
             if not all(key in params for key in ['a', 'b', 'c', 'd']):
-                return jsonify({"error": "Parametri mancanti per la funzione trapezoidale."}), 400
+                return jsonify({"error": "Missing parameters for the trapezoidal function."}), 400
             if params['a'] > params['b'] or params['b'] > params['c'] or params['c'] > params['d']:
-                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c <= d."}), 400
+                return jsonify({"error": "Parameters must respect the order a <= b <= c <= d."}), 400
 
         elif function_type == 'Trapezoidale-open':
             if open_type == 'left':
@@ -275,9 +275,9 @@ def modify_term(term_name):
             elif open_type == 'right':
                 params['c'] = params['d']
             if not all(key in params for key in ['a', 'b', 'c', 'd']):
-                return jsonify({"error": "Parametri mancanti per la funzione trapezoidale aperta."}), 400
+                return jsonify({"error": "Missing parameters for the open trapezoidal function."}), 400
             if params['a'] > params['b'] or params['b'] > params['c'] or params['c'] > params['d']:
-                return jsonify({"error": "I parametri devono rispettare l'ordine a <= b <= c <= d."}), 400
+                return jsonify({"error": "Parameters must respect the order a <= b <= c <= d."}), 400
 
         # Carica i dati esistenti
         terms_data = load_terms()
@@ -305,12 +305,12 @@ def modify_term(term_name):
                     # Salva i dati aggiornati
                     save_terms(terms_data)
 
-                    return jsonify({"message": "Termine modificato con successo!", "term": term_to_modify}), 201
+                    return jsonify({"message": "Term successfully modified!", "term": term_to_modify}), 201
 
-        return jsonify({"error": "Termine non trovato."}), 404
+        return jsonify({"error": "No terms found trovato."}), 404
 
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
     
 """ @bp.route('/clear_output', methods=['POST']) #Per la classificazione
 def clear_output():
@@ -359,7 +359,7 @@ def get_variables_and_terms():
 
     except Exception as e:
         logging.error(f"Errore in get_variables_and_terms: {e}")
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
 
@@ -385,7 +385,7 @@ def get_rules():
         return jsonify(rules), 200
 
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @bp.route('create_rule', methods=['POST'])
 def create_rule():
@@ -393,7 +393,7 @@ def create_rule():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({"error": "Nessun dato fornito"}), 400
+            return jsonify({"error": "No data provided"}), 400
 
         inputs = data.get('inputs')  
         output_variable = data.get('output_variable')
@@ -401,7 +401,7 @@ def create_rule():
 
         # Valida i dati
         if not all([inputs, output_variable, output_term]):
-            return jsonify({"error": "Dati incompleti"}), 400
+            return jsonify({"error": "Incomplete data"}), 400
 
         # Carica le regole esistenti
         rules_data = load_rule()
@@ -421,10 +421,10 @@ def create_rule():
         # Salva le regole aggiornate
         save_terms(rules_data)
 
-        return jsonify({"message": "Regola creata con successo!", "rule_id": rule_id}), 201
+        return jsonify({"message": "Rule created successfully!", "rule_id": rule_id}), 201
 
     except Exception as e:
-        return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
+        return jsonify({"error": f" {str(e)}"}), 500
     
 @bp.route('/delete_rule/<rule_id>', methods=['DELETE'])
 def delete_rule(rule_id):
@@ -435,12 +435,12 @@ def delete_rule(rule_id):
         if rule_id in rules_data:
             del rules_data[rule_id]
             save_terms(rules_data)
-            return jsonify({"message": "Regola eliminata con successo"}), 200
+            return jsonify({"message": "Rule successfully deleted"}), 200
         else:
-            return jsonify({"error": "Regola non trovata"}), 404
+            return jsonify({"error": "Rule not found"}), 404
 
     except Exception as e:
-        return jsonify({"error": f"Errore durante l'eliminazione: {str(e)}"}), 500
+        return jsonify({"error": f"Error during deletion: {str(e)}"}), 500
 
     
 @bp.route('/infer', methods=['POST'])
@@ -578,7 +578,7 @@ def aggregate_and_defuzzify(terms_data, rule_outputs):
         try:
             result = fuzz.defuzz(x, agg_y, defuzzy_method) if np.sum(agg_y) > 0 else 0
         except Exception as e:
-            print(f"[ERRORE defuzzificazione] Variabile '{var_name}', metodo '{defuzzy_method}':", e)
+            print(f"[ERROR defuzzification] Variable '{var_name}', method '{defuzzy_method}':", e)
             result = 0
 
         results[var_name] = result
@@ -593,7 +593,7 @@ def export_json():
         data = load_data()
         return jsonify(data), 200
     except Exception as e:
-        return jsonify({"error": f"Errore durante export: {str(e)}"}), 500
+        return jsonify({"error": f"Error during export: {str(e)}"}), 500
 
 @bp.route("/import_json", methods=["POST"])
 def import_json():
@@ -602,14 +602,14 @@ def import_json():
         data = request.get_json()
 
         if not isinstance(data, dict):
-            return jsonify({"error": "Formato non valido"}), 400
+            return jsonify({"error": "Invalid format"}), 400
 
         # Salva direttamente come file di sessione
         save_data(data)
 
-        return jsonify({"message": "Importazione completata"}), 200
+        return jsonify({"message": "Import completed"}), 200
 
     except Exception as e:
-        print(f"Errore import:", e)
-        return jsonify({"error": f"Errore durante import: {str(e)}"}), 500
+        print(f"Error import:", e)
+        return jsonify({"error": f"Error during import: {str(e)}"}), 500
 

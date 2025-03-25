@@ -34,7 +34,7 @@ def layout() -> html.Div:
             dbc.Col(
                 dbc.Card([
                     dbc.CardHeader(
-                        f"Risultato {var_name}",
+                        f"Result {var_name}",
                         className="bg-primary text-white fw-medium py-2"
                     ),
                     dbc.CardBody(
@@ -64,8 +64,8 @@ def layout() -> html.Div:
                         dbc.Card([
                             dbc.CardHeader(
                                 [
-                                    html.H4("Test Inferenza Fuzzy", className="card-title mb-0"),
-                                    dbc.Badge("Simulazione", color="warning", className="ml-2")
+                                    html.H4("Test Inference Fuzzy", className="card-title mb-0"),
+                                    dbc.Badge("Simulation", color="warning", className="ml-2")
                                 ],
                                 className="card-header-gradient d-flex justify-content-between align-items-center"
                             ),
@@ -79,7 +79,7 @@ def layout() -> html.Div:
                                     ),
                                     html.Div(
                                         dbc.Button(
-                                            [html.I(className="fas fa-calculator mr-2"), " Calcola Inferenza"],
+                                            [html.I(className="fas fa-calculator mr-2"), " Calculate Inference"],
                                             id="start-inference",
                                             color="primary",
                                             className="action-btn",
@@ -90,7 +90,7 @@ def layout() -> html.Div:
                                     html.Div(
                                     id="rule-membership-section",
                                     children=[
-                                        html.H5("Attivazione delle Regole", className="mb-3 text-center", style={"color": "#2c3e50"}),
+                                        html.H5("Activation of Rules", className="mb-3 text-center", style={"color": "#2c3e50"}),
                                         dbc.Row([
                                             dbc.Col(
                                                 html.Div(id="rules-list-membership", className="rule-membership-container"),

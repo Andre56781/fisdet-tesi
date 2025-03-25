@@ -168,7 +168,18 @@ def layout() -> html.Div:
                         ], md=4)
                     ], className="mt-4"),
 
-                    html.Div(id='message', className="alert-message")
+                    dbc.Modal(
+                                id="error-modal",
+                                is_open=False,
+                                size="md",
+                                children=[
+                                    dbc.ModalHeader("Errore"),
+                                    dbc.ModalBody(id="error-modal-body"),
+                                ],
+                                centered=True,
+                                backdrop="static"
+                            ),
+                
                 ])
             ])
         ])
