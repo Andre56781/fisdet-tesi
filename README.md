@@ -1,7 +1,7 @@
 # FISDeT
 <p align="center">
     <a href="#" target="_blank">
-        <img src="https://raw.githubusercontent.com/Andre56781/fisdet-tesi/main/flaskr/assets/images/LogoInt.png" width="400" alt="FISDeT logo">
+        <img src="https://raw.githubusercontent.com/Andre56781/fisdet-tesi/main/flaskr/assets/images/LogoInt.png" width="250" alt="FISDeT logo">
     </a>
 </p>
 
