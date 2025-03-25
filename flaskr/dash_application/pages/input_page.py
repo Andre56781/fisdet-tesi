@@ -1,5 +1,5 @@
 from dash import dcc, html, Input, Output, State
-from dash_bootstrap_components import Modal, themes, ModalHeader, ModalBody
+from dash_bootstrap_components import Modal, ModalHeader, ModalBody
 import dash_bootstrap_components as dbc
 
 def layout() -> html.Div:
@@ -11,6 +11,7 @@ def layout() -> html.Div:
         dcc.Store(id='open-type'),
         dcc.Store(id='selected-term'),
         dcc.Store(id='defuzzy-type', data="default_value"),
+        dcc.Store(id="error-message-store"),
 
         # Modal per numero variabili
         Modal(
@@ -75,7 +76,6 @@ def layout() -> html.Div:
             className="content",
             style={"display": "none", "position": "relative"},
             children=[
-                
                 dbc.Card([
                     dbc.CardHeader(
                         [
@@ -84,7 +84,6 @@ def layout() -> html.Div:
                         ],
                         className="card-header-gradient d-flex justify-content-between align-items-center"
                     ),
-                    
                     dbc.CardBody([
                         dbc.Form([
                             # PRIMO GRUPPO DI CAMPI
@@ -101,7 +100,6 @@ def layout() -> html.Div:
                                         required=True
                                     )
                                 ], md=6),
-                                
                                 dbc.Col([
                                     dbc.Label("Domain", className="form-label mb-0"),
                                     dbc.InputGroup([
@@ -143,7 +141,6 @@ def layout() -> html.Div:
                                         clearable=False
                                     )
                                 ], md=6),
-                                
                                 dbc.Col([
                                     dbc.Label("Fuzzy Term Name", className="mb-0"),
                                     dbc.Input(
@@ -178,7 +175,7 @@ def layout() -> html.Div:
                                     color="success",
                                     className="action-btn"
                                 ),
-                                className="d-flex justify-content-center pt-2",
+                                className="d-flex justify-content-center pt-2"
                             ),
                         ]),
                         
@@ -188,7 +185,6 @@ def layout() -> html.Div:
                             dbc.Col([
                                 dcc.Graph(id='graph', className="custom-graph")
                             ], md=8),
-
                             # Lista dei termini a destra
                             dbc.Col([
                                 dbc.Card([
@@ -210,10 +206,20 @@ def layout() -> html.Div:
                                 ])
                             ], md=4)
                         ], className="mt-4"),
-
-                        # MESSAGGI
-                        html.Div(id='message', className="alert-message")
                     ]),
+
+                        dbc.Modal(
+                        id="error-modal",
+                        is_open=False,
+                        centered=True,
+                        children=[
+                            dbc.ModalHeader("Errore"),
+                            dbc.ModalBody(id="error-modal-body"),
+                            dbc.ModalFooter(
+                                dbc.Button("Chiudi", id="close-error-modal", className="ml-auto", n_clicks=0)
+                            ),
+                        ],
+                        ),
                     
                     # FOOTER CON I PULSANTI ALLINEATI A DESTRA
                     dbc.CardFooter(

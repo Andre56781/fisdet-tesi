@@ -13,6 +13,7 @@ from dash.exceptions import PreventUpdate
 
 
 def register_callbacks(dash_app):
+
     """Registra tutti i callback necessari all'app Dash per la gestione delle variabili fuzzy, regole e inferenza."""
     @dash_app.callback(
         Output("download-json", "data"),
@@ -570,10 +571,10 @@ def register_callbacks(dash_app):
             a, b, c = params.get('a'), params.get('b'), params.get('c')
             
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
-                return False, "Errore: I parametri a, b, c devono essere compresi tra il dominio minimo e massimo."
+                return False, "Error: parameters a, b, c shall be between the minimum and maximum domains."
             
             if not (a <= b <= c):
-                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
+                return False, "Error: parameters shall respect the order <= b <= c."
             
         elif function_type == 'Triangolare-open':
             if open_type == "left":
@@ -582,35 +583,35 @@ def register_callbacks(dash_app):
                 a, b, c = params.get('a'), params.get('c'), params.get('c')
             
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
-                return False, "Errore: I parametri a, b, c devono essere compresi tra il dominio minimo e massimo."
+                return False, "Error: parameters a,b,c shall be between the maximum and minimum domains"
             
             if not (a <= b <= c):
-                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c."
+                return False, "Error: Parameters must respect the order a <= b <= c."
         
         elif function_type == 'Gaussian':
             mean, sigma = params.get('mean'), params.get('sigma')
             
             if not (domain_min <= mean <= domain_max):
-                return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
+                return False, "Error: The mean parameter must be between the minimum and maximum domains."
             
             if sigma <= 0:
-                return False, "Errore: Il parametro sigma deve essere maggiore di zero."
+                return False, "Error: The sigma parameter must be greater than zero."
             
         elif function_type == 'Gaussian-open':
             mean, sigma = params.get('mean'), params.get('sigma')
             
             if not (domain_min <= mean <= domain_max):
-                return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
+                return False, "Error: The mean parameter must be between the minimum and maximum domains."
             
         
         elif function_type == 'Trapezoidale':
             a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
             
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
-                return False, "Errore: I parametri a, b, c, d devono essere compresi tra il dominio minimo e massimo."
+                return False, "Error: Parameters a, b, c, d must be between the minimum and maximum domains."
             
             if not (a <= b <= c <= d):
-                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
+                return False, "Error: Parameters must respect the order a <= b <= c <= d."
         
         elif function_type == 'Trapezoidale-open':
             if open_type == "left":
@@ -618,10 +619,10 @@ def register_callbacks(dash_app):
             if open_type == "right":
                 a, b, c, d = params.get('a'), params.get('b'), params.get('d'), params.get('d')
             if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
-                return False, "Errore: I parametri a, b, c, d devono essere compresi tra il dominio minimo e massimo."
+                return False, "Error: Parameters a, b, c, d must be between the minimum and maximum domains."
             
             if not (a <= b <= c <= d):
-                return False, "Errore: I parametri devono rispettare l'ordine a <= b <= c <= d."
+                return False, "Error: Parameters must respect the order a <= b <= c <= d."
             
         return True, ""
 
@@ -631,13 +632,13 @@ def register_callbacks(dash_app):
             domain_min = int(domain_min)
             domain_max = int(domain_max)
         except (ValueError, TypeError):
-            return dash.no_update, "Errore: I valori del dominio devono essere numeri.", dash.no_update
+            return dash.no_update, "Error: Domain values must be numbers.", dash.no_update
 
         if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
-            return dash.no_update, "Errore: Il nome del termine è vuoto o contiene caratteri non validi. Usa solo lettere, numeri, trattini e sottolineature.", dash.no_update
+            return dash.no_update, "Error: The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update
 
         if domain_min > domain_max:
-            return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo.", dash.no_update
+            return dash.no_update, "Error: The minimum domain cannot be greater than the maximum domain.", dash.no_update
 
         params = {}
         if function_type == 'Triangolare':
@@ -690,7 +691,7 @@ def register_callbacks(dash_app):
 
         if response.status_code == 201:
             terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, "Termine creato con successo!", figure
+            return terms_list, "Term successfully created!", figure
         else:
             error_message = response.json().get('error', 'Errore sconosciuto')
             return dash.no_update, f"Errore: {error_message}", dash.no_update
@@ -749,9 +750,9 @@ def register_callbacks(dash_app):
 
         if response.status_code == 200:
             terms_list, figure = update_terms_list_and_figure(variable_name,var_type)
-            return terms_list, f"Termine '{term_name}' eliminato con successo!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return terms_list, f"Term '{term_name}' successfully eliminated!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
         else:
-            return dash.no_update, f"Errore nell'eliminazione del termine: {response.json().get('error', 'Errore sconosciuto')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return dash.no_update, f"Error in term deletion: {response.json().get('error', 'Unknown Error')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
         """Modifica un termine fuzzy esistente e aggiorna grafico e lista.""" 
@@ -759,10 +760,10 @@ def register_callbacks(dash_app):
             domain_min = int(domain_min)
             domain_max = int(domain_max)
         except (ValueError, TypeError):
-            return dash.no_update, "Errore: I valori del dominio devono essere numeri.", dash.no_update
+            return dash.no_update, "Error: Domain values must be numbers.", dash.no_update
 
         if domain_min > domain_max:
-            return dash.no_update, "Errore: Il dominio minimo non può essere maggiore del dominio massimo.", dash.no_update
+            return dash.no_update, "Error: The minimum domain cannot be greater than the maximum domain.", dash.no_update
 
         params = {}
         if function_type == 'Triangolare':
@@ -810,10 +811,10 @@ def register_callbacks(dash_app):
 
         if response.status_code == 201:
             terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, "Termine modificato con successo!", figure
+            return terms_list, "Term successfully modified", figure
         else:
-            error_message = response.json().get('error', 'Errore sconosciuto')
-            return dash.no_update, f"Errore: {error_message}", dash.no_update
+            error_message = response.json().get('error', 'Unknown Error')
+            return dash.no_update, f"Error: {error_message}", dash.no_update
         
     def update_terms_list_and_figure(variable_name, var_type):
         """Recupera i termini fuzzy e costruisce il grafico corrispondente.""" 
@@ -921,9 +922,9 @@ def register_callbacks(dash_app):
 
                     return terms_list, combined_figure
                 else:
-                    return [html.Li("Errore nel recupero dei termini.")], dash.no_update
+                    return [html.Li("Error during the recovery of terms.")], dash.no_update
             except Exception as e:
-                return [html.Li(f"Errore durante il recupero dei dati: {str(e)}")], dash.no_update
+                return [html.Li(f"Error during data recovery: {str(e)}")], dash.no_update
         else:
             return [], dash.no_update
 
@@ -1032,7 +1033,7 @@ def register_callbacks(dash_app):
             return current_rules, rules_data, ''
 
         if not all(input_vars) or not all(input_terms) or not output_variable or not output_term:
-            return current_rules, rules_data, 'Errore: compila tutti i campi!'
+            return current_rules, rules_data, 'Error: fill in all fields!'
 
         inputs = [{"input_variable": var, "input_term": term} for var, term in zip(input_vars, input_terms)]
 
@@ -1041,7 +1042,7 @@ def register_callbacks(dash_app):
 
         existing_rules_texts = [rule['props']['children'] if isinstance(rule, dict) else rule.children for rule in current_rules]
         if rule_text in existing_rules_texts:
-            return current_rules, rules_data, 'Errore: questa regola esiste già!'
+            return current_rules, rules_data, 'Error: this rule already exists!'
 
         response = requests.post(
             "http://127.0.0.1:5000/api/create_rule",
@@ -1070,7 +1071,7 @@ def register_callbacks(dash_app):
 
             return current_rules + [new_rule], rules_data, ''
 
-        return current_rules, rules_data, 'Errore durante il salvataggio della regola'
+        return current_rules, rules_data, 'Error while saving the rule'
 
 
     @dash_app.callback(
@@ -1161,7 +1162,7 @@ def register_callbacks(dash_app):
             return rules, input_vars
 
         except Exception as e:
-            print(f"Errore nel caricamento delle regole o variabili: {e}")
+            print(f"Error loading rules or variables: {e}")
             return [], []
 
         
@@ -1259,7 +1260,7 @@ def register_callbacks(dash_app):
 
             response = requests.post("http://127.0.0.1:5000/api/infer", json={"inputs": inputs_dict})
             if response.status_code != 200:
-                return dash.no_update, [html.Div("Errore nell'inferenza", className="text-danger")], []
+                return dash.no_update, [html.Div("Error in inference", className="text-danger")], []
 
             result = response.json()
             rule_outputs = result.get("rule_outputs", [])
@@ -1301,23 +1302,7 @@ def register_callbacks(dash_app):
 
         except Exception as e:
             print(f"Errore inferenza: {e}")
-            return dash.no_update, [html.Div("Errore durante l'inferenza", className="text-danger")], []
-
-    @dash_app.callback(
-        Output({"type": "output", "variable": MATCH}, "children"),
-        Input("inference-data", "data"),
-        State({"type": "output", "variable": MATCH}, "id"),
-        prevent_initial_call=True
-    )
-    def update_output_value(data, matched_id):
-        """Aggiorna il valore visualizzato per ogni variabile di output dopo l'inferenza.""" 
-        if not data:
-            raise PreventUpdate
-
-        var_name = matched_id["variable"]
-        value = data.get("results", {}).get(var_name, 0)
-
-        return str(round(value, 2))
+            return dash.no_update, [html.Div("Error during the inference process", className="text-danger")], []
 
 
 #Report_page callbakcs

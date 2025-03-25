@@ -17,10 +17,13 @@ def layout() -> html.Div:
             style={"display": "block", "position": "relative"},
             children=[
                 dbc.Card([
-                    dbc.CardHeader([
-                        html.H4("Creation of Rules", className="card-title"),
-                        dbc.Badge("Fuzzy Rules", color="info", className="ml-2")
-                    ], className="card-header-gradient d-flex justify-content-between align-items-center"),
+                    dbc.CardHeader(
+                        [
+                            html.H4("Creation of Rules", className="card-title"),
+                            dbc.Badge("Fuzzy Rules", color="info", className="ml-2")
+                        ],
+                        className="card-header-gradient d-flex justify-content-between align-items-center"
+                    ),
                     dbc.CardBody([
                         dbc.Form([
                             html.Div(
@@ -30,7 +33,7 @@ def layout() -> html.Div:
                             ),
                             html.Div(
                                 dbc.Button(
-                                    [html.I(className="fas fa-plus mr-2"), " Aggiungi Input"],
+                                    [html.I(className="fas fa-plus", style={"marginRight": "8px"}), "Aggiungi Input"],
                                     id="add-input",
                                     color="primary",
                                     className="action-btn"
@@ -47,7 +50,7 @@ def layout() -> html.Div:
                                         value=None,
                                         disabled=True,
                                         className="custom-dropdown mb-2",
-                                        style={"width": "300px"}  
+                                        style={"width": "300px"}
                                     ),
                                     dbc.Label("THEN Term", html_for="then-term-dropdown", className="w-100 text-center mb-0"),
                                     dcc.Dropdown(
@@ -55,29 +58,50 @@ def layout() -> html.Div:
                                         options=[],
                                         placeholder="Select Term",
                                         className="custom-dropdown",
-                                        style={"width": "300px"}  
+                                        style={"width": "300px"}
                                     ),
-                                ], md=6, className="d-flex flex-column align-items-center ps-2"),  
+                                ], md=6, className="d-flex flex-column align-items-center ps-2"),
                             ], className="mb-3 g-3"),
-
-
+                            
                             html.Div(
                                 dbc.Button(
-                                    [html.I(className="fas fa-plus mr-2"), " Create Rule"],
+                                    [html.I(className="fas fa-plus", style={"marginRight": "8px"}), "Create Rule"],
                                     id="create-rule",
                                     color="success",
                                     className="action-btn"
                                 ),
                                 className="d-flex justify-content-center pt-1"
                             ),
-
-                            html.Div(id="rules-list", children=[], style={"border": "1px solid #ccc", "minHeight": "100px", "padding": "10px", "marginTop": "20px", "backgroundColor": "#fff", "width": "80%", "maxWidth": "800px", "marginLeft": "auto", "marginRight": "auto"}),
-
-                            html.Div(id="error-message", style={"color": "red", "fontWeight": "bold", "textAlign": "center", "marginTop": "10px"}),
-
+                            
+                            html.Div(
+                                id="rules-list", 
+                                children=[], 
+                                style={
+                                    "border": "1px solid #ccc", 
+                                    "minHeight": "100px", 
+                                    "padding": "10px", 
+                                    "marginTop": "20px", 
+                                    "backgroundColor": "#fff", 
+                                    "width": "80%", 
+                                    "maxWidth": "800px", 
+                                    "marginLeft": "auto", 
+                                    "marginRight": "auto"
+                                }
+                            ),
+                            
+                            html.Div(
+                                id="error-message", 
+                                style={
+                                    "color": "red", 
+                                    "fontWeight": "bold", 
+                                    "textAlign": "center", 
+                                    "marginTop": "10px"
+                                }
+                            ),
+                            
                             html.Div(
                                 dbc.Button(
-                                    [html.I(className="fas fa-trash mr-2"), "Delete Rule"],
+                                    [html.I(className="fas fa-trash", style={"marginRight": "8px"}), "Delete Rule"],
                                     id="delete-rule",
                                     color="danger",
                                     className="action-btn"
@@ -85,7 +109,28 @@ def layout() -> html.Div:
                                 className="d-flex justify-content-center pt-3"
                             )
                         ])
-                    ])
+                    ]),
+                    dbc.CardFooter(
+                        className="d-flex justify-content-center gap-3",
+                        children=[
+                            dbc.Button(
+                                [html.I(className="fas fa-list-check mr-2", style={"marginRight": "8px"}), "Test"],
+                                href="/test",
+                                color="primary",
+                                size="lg",
+                                style={"minWidth": "150px", "minHeight": "50px"},
+                                className="footer-btn"
+                            ),
+                            dbc.Button(
+                                [html.I(className="fas fa-chart-bar mr-2", style={"marginRight": "8px"}), "Report"],
+                                href="/report",
+                                color="info",
+                                size="lg",
+                                style={"minWidth": "150px", "minHeight": "50px"},
+                                className="footer-btn"
+                            )
+                        ]
+                    )
                 ], className="main-card mx-auto")
             ]
         )
