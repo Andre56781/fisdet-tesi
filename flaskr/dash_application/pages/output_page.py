@@ -116,10 +116,10 @@ def layout() -> html.Div:
                                 ], md=6),
 
                                 dbc.Col([
-                                    dbc.Label("Classification", className="mb-0 d-block text-end"),
+                                    #dbc.Label("Classification", className="mb-0 d-block text-end"), MOMENTANEO
                                     dbc.Checklist(
                                         id='classification-checkbox',
-                                        options=[{'label': '', 'value': 'Classification'}],
+                                        #options=[{'label': '', 'value': 'Classification'}], MOMENTANEO
                                         value=[],
                                         inline=True,
                                         switch=False,

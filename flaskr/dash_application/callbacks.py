@@ -603,9 +603,6 @@ def register_callbacks(dash_app):
             if not (domain_min <= mean <= domain_max):
                 return False, "Errore: Il parametro mean deve essere compreso tra il dominio minimo e massimo."
             
-            # Controllo che sigma sia positivo (opzionale, se necessario)
-            if sigma <= 0:
-                return False, "Errore: Il parametro sigma deve essere maggiore di zero."
         
         elif function_type == 'Trapezoidale':
             a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
@@ -634,6 +631,7 @@ def register_callbacks(dash_app):
         return True, ""
 
     def create_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
+        
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
@@ -660,9 +658,6 @@ def register_callbacks(dash_app):
             params = {'mean': param_mean, 'sigma': param_sigma}
             
         elif function_type == 'Gaussian-open':
-            if open_type == 'left':
-                params = {'mean': param_mean, 'sigma': param_sigma}
-            elif open_type == 'right':
                 params = {'mean': param_mean, 'sigma': param_sigma}
 
         if function_type == 'Trapezoidale':
@@ -688,6 +683,10 @@ def register_callbacks(dash_app):
             'function_type': function_type,
             'params': params
         }
+
+        # Aggiungi open_type SOLO se è una funzione open
+        if 'open' in function_type and open_type:
+            payload['open_type'] = open_type
 
         # Aggiungi defuzzy_type solo se siamo nella pagina di output
         if var_type == "output" and defuzzy_type:
@@ -786,9 +785,6 @@ def register_callbacks(dash_app):
             params = {'mean': param_mean, 'sigma': param_sigma}
             
         elif function_type == 'Gaussian-open':
-            if open_type == 'left':
-                params = {'mean': param_mean, 'sigma': param_sigma}
-            elif open_type == 'right':
                 params = {'mean': param_mean, 'sigma': param_sigma}
 
         if function_type == 'Trapezoidale':

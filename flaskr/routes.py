@@ -127,11 +127,12 @@ def get_terms():
                     elif function_type == 'Trapezoidale':
                         y = fuzz.trapmf(x, [params['a'], params['b'], params['c'], params['d']])
                     elif function_type == 'Triangolare-open':
-                        y = closed_trimf(x, params['a'], params['b'], params['c'])
+                        y = open_trimf(x, params['a'], params['b'], params['c'])
                     elif function_type == 'Gaussian-open':
-                        y = closed_gaussmf(x, params['mean'], params['sigma'], domain_min, domain_max)
+                        open_type = params.pop('open_type', 'left')  # rimuove e NON salva
+                        y = open_gaussmf(x, params['mean'], params['sigma'], domain_min, domain_max, open_type)
                     elif function_type == 'Trapezoidale-open':
-                        y = closed_trapmf(x, params['a'], params['b'], params['c'], params['d'])
+                        y = open_trapmf(x, params['a'], params['b'], params['c'], params['d'])
 
                     else:
                         continue
@@ -146,18 +147,23 @@ def get_terms():
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
-def closed_trimf(x, a, b, c):
+def open_trimf(x, a, b, c):
     # Usa la funzione triangolare e forzala a essere 0 fuori dall'intervallo [a, c]
     y = fuzz.trimf(x, [a, b, c])
     y[x < a] = 0
     y[x > c] = 0
     return y
-def closed_gaussmf(x, mean, sigma, min_val, max_val):
+def open_gaussmf(x, mean, sigma, min_val, max_val, open_type):
     y = fuzz.gaussmf(x, mean, sigma)
-    y[x < min_val] = 0
-    y[x > max_val] = 0
+    
+    if open_type == 'left':
+        y[x < min_val] = 0  # Forza la coda sinistra a 0
+    elif open_type == 'right':
+        y[x > max_val] = 0  # Forza la coda destra a 0
+    
     return y
-def closed_trapmf(x, a, b, c, d):
+
+def open_trapmf(x, a, b, c, d):
     y = fuzz.trapmf(x, [a, b, c, d])
     y[x < a] = 0
     y[x > d] = 0
