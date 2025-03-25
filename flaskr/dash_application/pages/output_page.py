@@ -41,8 +41,6 @@ def layout() -> html.Div:
             
                 dbc.CardBody([
                     dbc.Form([
-
-                        # Riga dinamica: Variable Name + (Domain o Term Name)
                         dbc.Row([
                             dbc.Col([
                                 dbc.Label("Variable Name", html_for="variable-name", className="mb-0"),

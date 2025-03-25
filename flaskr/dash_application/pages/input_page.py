@@ -12,7 +12,6 @@ def layout() -> html.Div:
         dcc.Store(id='selected-term'),
         dcc.Store(id='defuzzy-type', data="default_value"),
 
-        # Modal per numero variabili
         Modal(
             id="variable-modal",
             className="custom-modal",
@@ -69,7 +68,6 @@ def layout() -> html.Div:
             ]
         ),
         
-        # Contenuto principale
         html.Div(
             id="main-content",
             className="content",
@@ -87,7 +85,6 @@ def layout() -> html.Div:
                     
                     dbc.CardBody([
                         dbc.Form([
-                            # PRIMO GRUPPO DI CAMPI
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Variable Name", html_for="variable-name", className="mb-0"),
@@ -127,7 +124,6 @@ def layout() -> html.Div:
                                 ], md=6)
                             ], className="mb-1"),
 
-                            # SECONDO GRUPPO DI CAMPI
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("Fuzzy Function Type", className="mb-0"),
@@ -158,7 +154,6 @@ def layout() -> html.Div:
                                 ], md=6)
                             ], className="mb-3"), 
 
-                            # Contenitore parametri aggiuntivi
                             html.Div(id='params-container', className="params-container", children=[
                                 dbc.RadioItems(
                                     id='open-type-radio', 
@@ -170,7 +165,6 @@ def layout() -> html.Div:
                                 )
                             ]),
                             
-                            # BOTTONE "CREA TERMINE"
                             html.Div(
                                 dbc.Button(
                                     [html.I(className="fas fa-plus mr-2"), " Create Term"],
@@ -182,14 +176,11 @@ def layout() -> html.Div:
                             ),
                         ]),
                         
-                        # GRAFICO (a sinistra) E LISTA TERMINI (a destra)
                         dbc.Row([
-                            # Grafico a sinistra
                             dbc.Col([
                                 dcc.Graph(id='graph', className="custom-graph")
                             ], md=8),
 
-                            # Lista dei termini a destra
                             dbc.Col([
                                 dbc.Card([
                                     dbc.CardHeader("Terms List"),
@@ -211,11 +202,9 @@ def layout() -> html.Div:
                             ], md=4)
                         ], className="mt-4"),
 
-                        # MESSAGGI
                         html.Div(id='message', className="alert-message")
                     ]),
                     
-                    # FOOTER CON I PULSANTI ALLINEATI A DESTRA
                     dbc.CardFooter(
                         html.Div([
                             dbc.ButtonGroup([

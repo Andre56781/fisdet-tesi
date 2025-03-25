@@ -37,7 +37,6 @@ def layout() -> html.Div:
                                 ),
                                 className="d-flex justify-content-center pt-1"
                             ),
-                            # Sezione THEN (output)
                             dbc.Row([
                                 dbc.Col([
                                     dbc.Label("THEN Variable", html_for="then-dropdown", className="w-100 text-center mb-0"),

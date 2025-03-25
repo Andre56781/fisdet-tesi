@@ -10,7 +10,6 @@ def layout() -> html.Div:
 
     terms = data["terms"]
 
-    # Costruzione input
     input_controls = []
     for var_name, var_data in terms.get("input", {}).items():
         domain_min, domain_max = var_data["domain"]
@@ -29,8 +28,6 @@ def layout() -> html.Div:
                 )
             ], md=4, className="pe-2")
         )
-
-    # Costruzione output
     output_controls = []
     for var_name, var_data in terms.get("output", {}).items():
         output_controls.append(
@@ -94,8 +91,6 @@ def layout() -> html.Div:
                                     id="rule-membership-section",
                                     children=[
                                         html.H5("Attivazione delle Regole", className="mb-3 text-center", style={"color": "#2c3e50"}),
-
-                                        # Regole centrate
                                         dbc.Row([
                                             dbc.Col(
                                                 html.Div(id="rules-list-membership", className="rule-membership-container"),
@@ -103,8 +98,6 @@ def layout() -> html.Div:
                                                 className="mx-auto"
                                             )
                                         ], className="justify-content-center mb-4", style={"minHeight": "150px"}),
-
-                                        # Valori di output sotto
                                         dbc.Row([
                                             dbc.Col(
                                                 html.Div(id="membership-values", className="membership-values-container"),

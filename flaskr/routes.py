@@ -14,6 +14,7 @@ bp = Blueprint("api", __name__, url_prefix="/api")
 # Salva i dati dell'utente
 @bp.route("/save", methods=["POST"])
 def save():
+    """Salva i dati inviati dal frontend come file di sessione."""  
     data = request.json
     save_data(data)
     return jsonify({"status": "success"})
@@ -21,6 +22,7 @@ def save():
 # Carica i dati dell'utente
 @bp.route("/load", methods=["GET"])
 def load():
+    """Carica i dati di sessione dell’utente."""  
     data = load_data()
     return jsonify(data)
 
@@ -29,6 +31,7 @@ def load():
 
 @bp.route('/create_term', methods=['POST'])
 def create_term():
+    """Crea un nuovo termine fuzzy e lo salva nel file dei termini."""  
     try:
         data = request.get_json()
 
@@ -96,6 +99,7 @@ def create_term():
 
 @bp.route('/get_terms', methods=['GET'])
 def get_terms():
+    """Restituisce tutti i termini fuzzy con le coordinate x-y per calcolare il grafico."""  
     try:
         terms_data = load_terms()
 
@@ -107,7 +111,7 @@ def get_terms():
             for variable_name, variable_data in variables.items():
                 # Verifica che 'domain' sia presente prima di procedere
                 if 'domain' not in variable_data:
-                    continue  # Salta questa variabile
+                    continue 
 
                 domain_min, domain_max = variable_data['domain']
                 x = np.linspace(domain_min, domain_max, 100)
@@ -149,12 +153,13 @@ def get_terms():
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
 def open_trimf(x, a, b, c):
-    # Usa la funzione triangolare e forzala a essere 0 fuori dall'intervallo [a, c]
+    """Versione 'open' di una funzione triangolare: forza y=0 fuori da [a, c]."""  
     y = fuzz.trimf(x, [a, b, c])
     y[x < a] = 0
     y[x > c] = 0
     return y
 def open_gaussmf(x, mean, sigma, min_val, max_val, open_type):
+    """Versione 'open' di una gaussiana: forza y=0 alle estremità del dominio."""  
     y = fuzz.gaussmf(x, mean, sigma)
     
     if open_type == 'left':
@@ -165,6 +170,7 @@ def open_gaussmf(x, mean, sigma, min_val, max_val, open_type):
     return y
 
 def open_trapmf(x, a, b, c, d):
+    """Versione 'open' di una trapezoidale: forza y=0 fuori da [a, d]."""  
     y = fuzz.trapmf(x, [a, b, c, d])
     y[x < a] = 0
     y[x > d] = 0
@@ -172,6 +178,7 @@ def open_trapmf(x, a, b, c, d):
 
 @bp.route('/get_term/<variable_name>/<term_name>', methods=['GET'])
 def get_term(variable_name, term_name):
+    """Restituisce i parametri di un singolo termine fuzzy."""  
     try:
         terms_data = load_terms()
         
@@ -189,6 +196,7 @@ def get_term(variable_name, term_name):
 
 @bp.route('/delete_term/<term_name>', methods=['POST'])
 def delete_term(term_name):
+    """Elimina un termine fuzzy dal file in base al nome."""  
     try:
         terms_data = load_terms()
         
@@ -207,6 +215,7 @@ def delete_term(term_name):
 
 @bp.route('/modify_term/<term_name>', methods=['PUT'])
 def modify_term(term_name):
+    """Modifica un termine fuzzy esistente con i nuovi parametri."""  
     try:
         data = request.get_json()
         if not isinstance(data, dict):
@@ -303,7 +312,7 @@ def modify_term(term_name):
     except Exception as e:
         return jsonify({"error": f"Si è verificato un errore: {str(e)}"}), 500
     
-@bp.route('/clear_output', methods=['POST'])
+""" @bp.route('/clear_output', methods=['POST']) #Per la classificazione
 def clear_output():
     try:
         data = load_data()
@@ -325,13 +334,14 @@ def clear_output():
         return jsonify({"message": "Sezione output e regole associate rimosse con successo."}), 200
     except Exception as e:
         return jsonify({"error": f"Errore durante la cancellazione dell'output: {str(e)}"}), 500
-
+""" 
 
 
 
 #Creazione Regole
 @bp.route('/get_variables_and_terms', methods=['GET'])
 def get_variables_and_terms():
+    """Restituisce variabili input/output e i relativi termini per la creazione delle regole."""  
     try:
         terms_data = load_rule()
         if not terms_data or not isinstance(terms_data, dict):
@@ -355,6 +365,7 @@ def get_variables_and_terms():
 
 @bp.route('get_rules', methods=['GET'])
 def get_rules():
+    """Restituisce tutte le regole fuzzy salvate."""  
     try:
         rules_data = load_rule()
 
@@ -378,6 +389,7 @@ def get_rules():
 
 @bp.route('create_rule', methods=['POST'])
 def create_rule():
+    """Crea una nuova regola fuzzy e la salva nei dati persistenti."""  
     try:
         data = request.get_json()
         if not data:
@@ -416,6 +428,7 @@ def create_rule():
     
 @bp.route('/delete_rule/<rule_id>', methods=['DELETE'])
 def delete_rule(rule_id):
+    """Elimina una regola fuzzy in base al suo ID."""  
     try:
         rules_data = load_rule()
 
@@ -432,6 +445,7 @@ def delete_rule(rule_id):
     
 @bp.route('/infer', methods=['POST'])
 def infer():
+    """Esegue l'inferenza fuzzy sui valori di input forniti."""  
     try:
         inputs = request.json.get("inputs")
         terms_data = load_terms()
@@ -466,6 +480,7 @@ def infer():
         return jsonify({"error": str(e)}), 500
     
 def fuzzify_input(terms_data, inputs):
+    """Fuzzifica i valori di input rispetto ai termini fuzzy delle variabili."""  
     fuzzified = {}
     for var_name, value in inputs.items():
         variable = terms_data["input"].get(var_name)
@@ -510,6 +525,7 @@ def fuzzify_input(terms_data, inputs):
 
 
 def apply_rules(fuzzified_inputs, rules):
+    """Applica le regole fuzzy calcolando l'attivazione per ciascuna."""  
     rule_outputs = []
 
     for rule in rules:
@@ -529,6 +545,7 @@ def apply_rules(fuzzified_inputs, rules):
 
 
 def aggregate_and_defuzzify(terms_data, rule_outputs):
+    """Aggrega i risultati delle regole attivate e defuzzifica l'output."""  
     results = {}
 
     for var_name in terms_data["output"]:
@@ -571,6 +588,7 @@ def aggregate_and_defuzzify(terms_data, rule_outputs):
 #IMPORT/EXPORT
 @bp.route("/export_json", methods=["GET"])
 def export_json():
+    """Esporta tutti i dati della sessione corrente in formato JSON."""  
     try:
         data = load_data()
         return jsonify(data), 200
@@ -579,6 +597,7 @@ def export_json():
 
 @bp.route("/import_json", methods=["POST"])
 def import_json():
+    """Importa un file JSON come nuova sessione utente."""  
     try:
         data = request.get_json()
 
