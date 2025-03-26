@@ -4,8 +4,12 @@ import dash_bootstrap_components as dbc
 def layout() -> html.Div:
     return html.Div([
         dcc.Store(id='classification-term-count', data=0),
+        dcc.Store(id='classification-confirmed'),
+        dcc.Store(id='var-type-store', data='output'),
         dcc.Store(id="classification-confirmed"),
-
+        dcc.Store(id='selected-term'),
+        dcc.Location(id='url-classification'), 
+        
         dbc.Card([
             dbc.CardHeader([
                 html.H4("Classification Mode", className="card-title")
@@ -67,7 +71,7 @@ def layout() -> html.Div:
                 dbc.Row([
                     dbc.Col([
                         html.Div(id="graph-container", children=[
-                            dcc.Graph(id='graph', className="custom-graph")
+                            dcc.Graph(id='graph', className="custom-graph", style={"display": "none"})
                         ])
                     ], md=8),
 
@@ -103,7 +107,22 @@ def layout() -> html.Div:
                     ],
                     centered=True,
                     backdrop="static"
-                )
+                ),
+
+                html.Div([
+                    dcc.Input(id='param-a', type='number', style={'display': 'none'}),
+                    dcc.Input(id='param-b', type='number', style={'display': 'none'}),
+                    dcc.Input(id='param-c', type='number', style={'display': 'none'}),
+                    dcc.Input(id='param-d', type='number', style={'display': 'none'}),
+                    dcc.Input(id='param-mean', type='number', style={'display': 'none'}),
+                    dcc.Input(id='param-sigma', type='number', style={'display': 'none'}),
+                    dcc.Input(id='domain-min', type='number', value='0', style={'display': 'none'}),
+                    dcc.Input(id='domain-max', type='number', value='1', style={'display': 'none'}),
+                    dcc.Dropdown(id='defuzzy-type', options=[], style={'display': 'none'}),
+                    dcc.RadioItems(id='open-type-radio', options=[], style={'display': 'none'}),
+                    dcc.Dropdown(id='function-type', options=['Classification'],value='Classification',  style={'display': 'none'}),
+                    dcc.Dropdown(id='open-type', options=[], style={'display': 'none'}),
+                ], style={'display': 'none'})
             ])
         ])
     ])

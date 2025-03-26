@@ -11,6 +11,7 @@ def layout() -> html.Div:
         dcc.Store(id='selected-rule-index', data=None),
         dcc.Store(id='selected-term'),
         dcc.Store(id='classification-confirmed'),
+        dcc.Store(id='classification-term-count'),
 
         dbc.Modal(
             id="classification-warning-modal",

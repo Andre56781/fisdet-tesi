@@ -107,11 +107,25 @@ def get_terms():
             return jsonify({"message": "No terms found"}), 404
     
         computed_terms = {"input": {}, "output": {}}
+
         for var_type, variables in terms_data.items():
             for variable_name, variable_data in variables.items():
-                # Verifica che 'domain' sia presente prima di procedere
+                terms = variable_data.get('terms', [])
+
+                # Se i termini sono di tipo Classification, non serve dominio
+                if terms and terms[0]['function_type'] == 'Classification':
+                    computed_terms[var_type][variable_name] = {
+                        "terms": []
+                    }
+                    for term in terms:
+                        computed_terms[var_type][variable_name]['terms'].append({
+                            "term_name": term['term_name']
+                        })
+                    continue  # Skip il resto per le Classification
+
+                # Per tutti gli altri serve il dominio
                 if 'domain' not in variable_data:
-                    continue 
+                    continue
 
                 domain_min, domain_max = variable_data['domain']
                 x = np.linspace(domain_min, domain_max, 100)
@@ -120,7 +134,7 @@ def get_terms():
                     "terms": []
                 }
 
-                for term in variable_data['terms']:
+                for term in terms:
                     term_name = term['term_name']
                     function_type = term['function_type']
                     params = term['params']
@@ -138,7 +152,6 @@ def get_terms():
                         y = open_gaussmf(x, params['mean'], params['sigma'], domain_min, domain_max, open_type)
                     elif function_type == 'Trapezoidale-open':
                         y = open_trapmf(x, params['a'], params['b'], params['c'], params['d'])
-
                     else:
                         continue
 
@@ -147,10 +160,12 @@ def get_terms():
                         "x": x.tolist(),
                         "y": y.tolist()
                     })
+
         return jsonify(computed_terms), 200
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
     
 def open_trimf(x, a, b, c):
     """Versione 'open' di una funzione triangolare: forza y=0 fuori da [a, c]."""  
@@ -189,7 +204,7 @@ def get_term(variable_name, term_name):
                 if term_to_get:
                     return jsonify(term_to_get), 200
 
-        return jsonify({"error": "No terms found trovato."}), 404
+        return jsonify({"error": "No terms found."}), 404
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
@@ -208,20 +223,21 @@ def delete_term(term_name):
                     save_terms(terms_data)
                     return jsonify({"message": "Term successfully deleted!"}), 200
 
-        return jsonify({"error": "No terms found trovato."}), 404
+        return jsonify({"error": "No terms found."}), 404
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
-@bp.route('/modify_term/<term_name>', methods=['PUT'])
-def modify_term(term_name):
-    """Modifica un termine fuzzy esistente con i nuovi parametri."""  
+@bp.route('/modify_term/<old_term_name>', methods=['PUT'])
+def modify_term(old_term_name):
+    """Modifica un termine fuzzy esistente con i nuovi parametri (e anche il nome)."""  
     try:
         data = request.get_json()
         if not isinstance(data, dict):
             return jsonify({"error": "Invalid data format. Must be a JSON object."}), 400
-        
+
         variable_name = data.get('variable_name')
+        new_term_name = data.get('term_name')
         domain_min = data.get('domain_min')
         domain_max = data.get('domain_max')
         function_type = data.get('function_type')
@@ -229,18 +245,18 @@ def modify_term(term_name):
         defuzzy_type = data.get('defuzzy_type')
         open_type = data.get('open_type')
 
-        # Verifica che tutti i campi obbligatori siano presenti
+        # Verifica campi obbligatori
         missing_fields = []
         if not variable_name: missing_fields.append("variable_name")
         if domain_min is None: missing_fields.append("domain_min")
         if domain_max is None: missing_fields.append("domain_max")
         if not function_type: missing_fields.append("function_type")
-        if not params: missing_fields.append("params")
+        if params is None: missing_fields.append("params")
 
-        if missing_fields and open_type != None:
+        if missing_fields and open_type is not None:
             return jsonify({"error": f"Incomplete data: {', '.join(missing_fields)}"}), 400
 
-        # Validazioni dei parametri in base al tipo di funzione
+        # Validazioni per tipo funzione
         if function_type == 'Triangolare':
             if not all(key in params for key in ['a', 'b', 'c']):
                 return jsonify({"error": "Missing parameters for the triangular function."}), 400
@@ -259,7 +275,7 @@ def modify_term(term_name):
 
         elif function_type == 'Gaussian':
             if not all(key in params for key in ['mean', 'sigma']):
-                return jsonify({"error": "Missing parameters for the Gaussian function.."}), 400
+                return jsonify({"error": "Missing parameters for the Gaussian function."}), 400
             if params['sigma'] <= 0:
                 return jsonify({"error": "The sigma parameter must be greater than zero."}), 400
 
@@ -279,38 +295,48 @@ def modify_term(term_name):
             if params['a'] > params['b'] or params['b'] > params['c'] or params['c'] > params['d']:
                 return jsonify({"error": "Parameters must respect the order a <= b <= c <= d."}), 400
 
+        elif function_type == 'Classification':
+            pass  # Nessuna validazione sui parametri
+
         # Carica i dati esistenti
         terms_data = load_terms()
 
-        # Trova il termine da modificare
+        # Trova la variabile
         for var_type, variables in terms_data.items():
             if variable_name in variables:
                 variable_data = variables[variable_name]
-                term_to_modify = next((t for t in variable_data['terms'] if t['term_name'] == term_name), None)
+                terms = variable_data.get("terms", [])
+
+                # Trova il termine da modificare
+                term_to_modify = next((t for t in terms if t['term_name'] == old_term_name), None)
+
                 if term_to_modify:
-                    # Aggiorna i dettagli del termine
+                    # Verifica se il nuovo nome è già usato da un altro termine
+                    if new_term_name != old_term_name:
+                        if any(t['term_name'] == new_term_name for t in terms):
+                            return jsonify({"error": f"The new term name '{new_term_name}' already exists."}), 400
+
+                    # Modifica i dati
+                    term_to_modify['term_name'] = new_term_name
                     term_to_modify['function_type'] = function_type
                     term_to_modify['params'] = params
 
-                    # Gestione del defuzzy_type
+                    # Solo output: gestisci defuzzy_type
                     if var_type == 'output':
-                        if defuzzy_type is None:
-                            # Se defuzzy_type è None, rimuovilo
-                            if 'defuzzy_type' in term_to_modify:
-                                del term_to_modify['defuzzy_type']
-                        else:
-                            # Altrimenti, aggiorna il defuzzy_type
+                        if defuzzy_type is None and 'defuzzy_type' in term_to_modify:
+                            del term_to_modify['defuzzy_type']
+                        elif defuzzy_type:
                             term_to_modify['defuzzy_type'] = defuzzy_type
 
-                    # Salva i dati aggiornati
                     save_terms(terms_data)
-
                     return jsonify({"message": "Term successfully modified!", "term": term_to_modify}), 201
 
-        return jsonify({"error": "No terms found trovato."}), 404
+        return jsonify({"error": "No terms found."}), 404
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
     
 @bp.route('/clear_output', methods=['POST']) 
 def clear_output():
@@ -331,9 +357,9 @@ def clear_output():
             del data[rule_key]
         save_data(data)
         
-        return jsonify({"message": "Sezione output e regole associate rimosse con successo."}), 200
+        return jsonify({"message": "Output section and associated rules successfully removed."}), 200
     except Exception as e:
-        return jsonify({"error": f"Errore durante la cancellazione dell'output: {str(e)}"}), 500
+        return jsonify({"error": f"Error while deleting output: {str(e)}"}), 500
 
 
 

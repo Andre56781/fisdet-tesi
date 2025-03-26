@@ -151,23 +151,6 @@ def register_callbacks(dash_app):
         return selected_value
 
     @dash_app.callback(
-        [Output('defuzzy-type', 'value'),  
-        Output('defuzzy-type', 'disabled')],  
-        Input('classification-checkbox', 'value')  
-    )
-    def toggle_defuzzy_visibility(classification_value):
-        default_value = 'centroid'
-        
-        if classification_value is None:
-            return default_value, False 
-        
-        if 'Classification' in classification_value:
-            return "Classification", True 
-        else:
-            return default_value, False  
-
-
-    @dash_app.callback(
         Output('params-container', 'children'),
         [
             Input('var-type-store', 'data'),
@@ -247,8 +230,6 @@ def register_callbacks(dash_app):
 
         return params
 
-
-
     @dash_app.callback(
     Output('defuzzy-type', 'invalid'),
     Input('defuzzy-type', 'value'),
@@ -271,7 +252,8 @@ def register_callbacks(dash_app):
             Output('param-c', 'value', allow_duplicate=True),     
             Output('param-d', 'value', allow_duplicate=True),     
             Output('param-mean', 'value', allow_duplicate=True),  
-            Output('param-sigma', 'value', allow_duplicate=True), 
+            Output('param-sigma', 'value', allow_duplicate=True),
+            Output('classification-term-count', 'data', allow_duplicate=True), 
             Output('create-term-btn', 'children')
         ],
         [
@@ -307,58 +289,117 @@ def register_callbacks(dash_app):
         ctx = dash.ctx
 
         if not ctx.triggered:
-            return [dash.no_update] * 11
+            return [dash.no_update] * 13
 
         triggered_id = ctx.triggered[0]['prop_id']
 
         if var_type == "input":
             defuzzy_type = None
-            
+
         if var_type == "output":
             open_type = None
-        
+
         if open_type is None:
             open_type = []
 
         if isinstance(open_type, str) and ('left' in open_type or 'right' in open_type):
             function_type = f"{function_type}-open"
 
+        # === CREAZIONE / MODIFICA ===
         if triggered_id == 'create-term-btn.n_clicks':             
             if button_label == 'Save change':
-                terms_list, is_error, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
-                                                        function_type, term_name, param_a, param_b,
-                                                        param_c, param_d, param_mean, param_sigma,
-                                                        defuzzy_type)  
-                terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-                return (terms_list,is_error, message, figure,
-                        '', '', '', '', '', '', '', 'Create term')
+                # Verifica che il nuovo nome sia valido
+                if not term_name:
+                    return (
+                        dash.no_update, True, "Please enter a valid term name.",
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        'Create term'
+                    )
+
+                terms_list, is_error, message, figure, count = modify_term(
+                    open_type, var_type, variable_name, domain_min, domain_max,
+                    function_type, term_name, param_a, param_b,
+                    param_c, param_d, param_mean, param_sigma,
+                    defuzzy_type, selected_term
+                )
+
+                terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+
+                return (
+                    terms_list, is_error, message, figure,
+                    '', '', '', '', '', '', '',
+                    count,
+                    'Create term'
+                )
             else:
-                terms_list, is_error, message, figure = create_term(open_type, var_type, variable_name, domain_min, domain_max,
-                                                                    function_type, term_name, param_a, param_b,
-                                                                    param_c, param_d, param_mean, param_sigma,
-                                                                    defuzzy_type)
+                terms_list, is_error, message, figure, count = create_term(
+                    open_type, var_type, variable_name, domain_min, domain_max,
+                    function_type, term_name, param_a, param_b,
+                    param_c, param_d, param_mean, param_sigma,
+                    defuzzy_type
+                )
+
                 if message == "Term successfully created!":
-                    return (terms_list, False, "", figure,
-                            '', '', '', '', '', '', '', 'Create term')
-                return (terms_list, is_error, message, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update, 'Create term')
-                
+                    terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+                    return (
+                        terms_list, False, "", figure,
+                        '', '', '', '', '', '', '',
+                        count,
+                        'Create term'
+                    )
+
+                return (
+                    terms_list, is_error, message, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update,
+                    'Create term'
+                )
+
+        # === ELIMINAZIONE ===
         elif triggered_id == 'delete-term-btn.n_clicks':
             if not selected_term:
-                return (dash.no_update, True, "No term selected",
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, 'Create term')
-            return delete_term(variable_name, selected_term, var_type) + ('Create term',)
+                return (
+                    dash.no_update, True, "No term selected",
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update,
+                    'Create term'
+                )
+
+            delete_response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{selected_term}')
+
+            if delete_response.status_code == 200:
+                terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+                return (
+                    terms_list, False, f"Term '{selected_term}' successfully eliminated!", figure,
+                    '', '', '', '', '', '', '',
+                    count,
+                    'Create term'
+                )
+            else:
+                error_message = delete_response.json().get('error', 'Unknown Error')
+                return (
+                    dash.no_update, True, f"Error in term deletion: {error_message}", dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update,
+                    'Create term'
+                )
 
 
+        # === PREPARA LA MODIFICA ===
         elif triggered_id == 'modify-term-btn.n_clicks':
             if not selected_term:
-                return (dash.no_update, True, "No term selected",
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, 'Crea Termine')
+                return (
+                    dash.no_update, True, "No term selected",
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    'Create term'
+                )
 
             url = f'http://127.0.0.1:5000/api/get_term/{variable_name}/{selected_term}'
             headers = {'Content-Type': 'application/json'}
@@ -366,43 +407,423 @@ def register_callbacks(dash_app):
             if response.status_code == 200:
                 term_data = response.json()
                 term_params = term_data.get('params', {})
-                return (dash.no_update,
-                        dash.no_update,
-                        dash.no_update,
-                        dash.no_update, 
-                        term_data.get('term_name', ''),
-                        term_params.get('a', ''),
-                        term_params.get('b', ''),
-                        term_params.get('c', ''),
-                        term_params.get('d', ''),
-                        term_params.get('mean', ''),
-                        term_params.get('sigma', ''),
-                        'Save change')
-
+                return (
+                    dash.no_update,
+                    dash.no_update,
+                    dash.no_update,
+                    dash.no_update, 
+                    term_data.get('term_name', ''),
+                    term_params.get('a', ''),
+                    term_params.get('b', ''),
+                    term_params.get('c', ''),
+                    term_params.get('d', ''),
+                    term_params.get('mean', ''),
+                    term_params.get('sigma', ''),
+                    dash.no_update,
+                    'Save change'
+                )
             else:
-                return (dash.no_update, True,
-                        "Error loading term data.",
-                        dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, 'Create term')
+                return (
+                    dash.no_update, True,
+                    "Error loading term data.",
+                    dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update,
+                    'Create term'
+                )
 
-        return [dash.no_update] * 11
+        return [dash.no_update] * 13
 
+
+
+    def validate_params(open_type, params, domain_min, domain_max, function_type):
+        """Valida i parametri di un termine fuzzy rispetto al dominio e al tipo di funzione.""" 
+        if function_type == 'Triangolare':
+            a, b, c = params.get('a'), params.get('b'), params.get('c')
+            
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
+                return False, "Parameters a, b, c shall be between the minimum and maximum domains."
+            
+            if not (a <= b <= c):
+                return False, "Parameters shall respect the order <= b <= c."
+            
+        elif function_type == 'Triangolare-open':
+            if open_type == "left":
+                a, b, c = params.get('a'), params.get('a'), params.get('c')
+            if open_type == "right":
+                a, b, c = params.get('a'), params.get('c'), params.get('c')
+            
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
+                return False, "parameters a,b,c shall be between the maximum and minimum domains"
+            
+            if not (a <= b <= c):
+                return False, "Parameters must respect the order a <= b <= c."
+        
+        elif function_type == 'Gaussian':
+            mean, sigma = params.get('mean'), params.get('sigma')
+            
+            if not (domain_min <= mean <= domain_max):
+                return False, "The mean parameter must be between the minimum and maximum domains."
+            
+            if sigma <= 0:
+                return False, "The sigma parameter must be greater than zero."
+            
+        elif function_type == 'Gaussian-open':
+            mean, sigma = params.get('mean'), params.get('sigma')
+            
+            if not (domain_min <= mean <= domain_max):
+                return False, "The mean parameter must be between the minimum and maximum domains."
+            
+        
+        elif function_type == 'Trapezoidale':
+            a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
+            
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
+                return False, "Parameters a, b, c, d must be between the minimum and maximum domains."
+            
+            if not (a <= b <= c <= d):
+                return False, "Parameters must respect the order a <= b <= c <= d."
+        
+        elif function_type == 'Trapezoidale-open':
+            if open_type == "left":
+                a, b, c, d = params.get('a'), params.get('a'), params.get('c'), params.get('d')
+            if open_type == "right":
+                a, b, c, d = params.get('a'), params.get('b'), params.get('d'), params.get('d')
+            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
+                return False, "Parameters a, b, c, d must be between the minimum and maximum domains."
+            
+            if not (a <= b <= c <= d):
+                return False, "Parameters must respect the order a <= b <= c <= d."
+            
+        return True, ""
+
+    def create_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
+        """Crea un nuovo termine fuzzy e aggiorna grafico e lista."""
+        try:
+            domain_min = int(domain_min)
+            domain_max = int(domain_max)
+        except (ValueError, TypeError):
+            return dash.no_update, True, "The Domain values must be numbers.", dash.no_update, dash.no_update
+
+        if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
+            return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update, dash.no_update
+
+        if domain_min > domain_max:
+            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.", dash.no_update, dash.no_update
+
+        params = {}
+        if function_type == 'Triangolare':
+            params = {'a': param_a, 'b': param_b, 'c': param_c}
+        elif function_type == 'Triangolare-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_c, 'c': param_c}
+        elif function_type == 'Gaussian':
+            params = {'mean': param_mean, 'sigma': param_sigma}
+        elif function_type == 'Gaussian-open':
+            params = {'mean': param_mean, 'sigma': param_sigma}
+        elif function_type == 'Trapezoidale':
+            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
+        elif function_type == 'Trapezoidale-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
+        elif function_type == 'Classification':
+            params = {}  
+        is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
+        if not is_valid:
+            return dash.no_update, True, error_message, dash.no_update, dash.no_update
+
+        payload = {
+            'var_type': var_type,
+            'term_name': term_name,
+            'variable_name': variable_name,
+            'domain_min': domain_min,
+            'domain_max': domain_max,
+            'function_type': function_type,
+            'params': params
+        }
+
+        if function_type and 'open' in function_type and open_type:
+            payload['open_type'] = open_type
+
+        if var_type == "output" and defuzzy_type:
+            payload['defuzzy_type'] = defuzzy_type
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post('http://127.0.0.1:5000/api/create_term', json=payload)
+
+        if response.status_code == 201:
+            terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+            return terms_list, True, "Term successfully created!", figure, count
+        else:
+            error_message = response.json().get('error', 'Unknown error')
+            return dash.no_update, True, f"{error_message}", dash.no_update, dash.no_update
+
+
+    @dash_app.callback(
+        [
+            Output('selected-term', 'data'),
+            Output({'type': 'term-item', 'index': dash.ALL}, 'style')
+        ],
+        Input({'type': 'term-item', 'index': dash.ALL}, 'n_clicks'),
+        State({'type': 'term-item', 'index': dash.ALL}, 'id')
+    )
+    def update_selected_term_and_styles(n_clicks_list, ids):
+        """Aggiorna il termine selezionato e applica lo stile evidenziato.""" 
+        default_style = {'cursor': 'pointer'}
+        if not n_clicks_list or all(nc is None for nc in n_clicks_list):
+            return dash.no_update, [default_style for _ in ids]
+
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return dash.no_update, [default_style for _ in ids]
+
+        triggered_prop = ctx.triggered[0]['prop_id']
+        triggered_id_str = triggered_prop.split('.')[0]
+        try:
+            triggered_id = json.loads(triggered_id_str)
+        except Exception:
+            return dash.no_update, [default_style for _ in ids]
+
+        selected_term = triggered_id.get('index')
+        styles = []
+        for item in ids:
+            if item.get('index') == selected_term:
+                styles.append({'cursor': 'pointer', 'backgroundColor': '#cce5ff'})
+            else:
+                styles.append(default_style)
+        return selected_term, styles
+
+    @dash_app.callback(
+        [
+            Output('modify-term-btn', 'disabled'),
+            Output('delete-term-btn', 'disabled')
+        ],
+        Input('selected-term', 'data')
+    )
+    def update_buttons(selected_term):
+        """Abilita o disabilita i pulsanti di modifica/eliminazione in base alla selezione.""" 
+        if selected_term:
+            return False, False
+        return True, True
+
+
+    def delete_term(variable_name, term_name, var_type):
+        """Elimina un termine fuzzy esistente.""" 
+        response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{term_name}')
+
+        if response.status_code == 200:
+            terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+            return (
+                terms_list, False, f"Term '{term_name}' successfully eliminated!", figure,
+                dash.no_update, dash.no_update, dash.no_update,
+                dash.no_update, dash.no_update, dash.no_update,
+                count
+            )
+        else:
+            return (
+                dash.no_update, True,
+                f"Error in term deletion: {response.json().get('error', 'Unknown Error')}",
+                dash.no_update, dash.no_update, dash.no_update,
+                dash.no_update, dash.no_update, dash.no_update,
+                dash.no_update, dash.no_update
+            )
+
+    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None, selected_term=None):
+        """Modifica un termine fuzzy esistente e aggiorna grafico e lista.""" 
+        try:
+            domain_min = int(domain_min)
+            domain_max = int(domain_max)
+        except (ValueError, TypeError):
+            return dash.no_update, True, "The Domain values must be numbers.", dash.no_update, dash.no_update
+
+        if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
+            return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update, dash.no_update
+
+        if domain_min > domain_max:
+            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.", dash.no_update, dash.no_update
+
+        params = {}
+        if function_type == 'Triangolare':
+            params = {'a': param_a, 'b': param_b, 'c': param_c}
+        elif function_type == 'Triangolare-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_c, 'c': param_c}
+        elif function_type == 'Gaussian':
+            params = {'mean': param_mean, 'sigma': param_sigma}
+        elif function_type == 'Gaussian-open':
+            params = {'mean': param_mean, 'sigma': param_sigma}
+        elif function_type == 'Trapezoidale':
+            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
+        elif function_type == 'Trapezoidale-open':
+            if open_type == 'left':
+                params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
+            elif open_type == 'right':
+                params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
+        elif function_type == 'Classification':
+            params = {}
+
+        if function_type != 'Classification':
+            is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
+            if not is_valid:
+                return dash.no_update, True, error_message, dash.no_update, dash.no_update
+
+        payload = {
+            'term_name': term_name,
+            'variable_name': variable_name,
+            'domain_min': domain_min,
+            'domain_max': domain_max,
+            'function_type': function_type,
+            'params': params
+        }
+
+        if function_type and 'open' in function_type and open_type:
+            payload['open_type'] = open_type
+
+        if var_type == "output" and defuzzy_type:
+            payload['defuzzy_type'] = defuzzy_type
+
+        headers = {'Content-Type': 'application/json'}
+        response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{selected_term}', json=payload)
+
+        if response.status_code == 201:
+            terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+            return terms_list, False, "Term successfully modified!", figure, count
+        else:
+            error_message = response.json().get('error', 'Unknown error')
+            return dash.no_update, True, f"{error_message}", dash.no_update, dash.no_update
+
+
+        
+    def update_terms_list_and_figure(variable_name, var_type):
+        """Recupera i termini fuzzy e costruisce il grafico corrispondente.""" 
+        if variable_name and var_type:
+            try:
+                headers = {'Content-Type': 'application/json'}
+                response = requests.get('http://127.0.0.1:5000/api/get_terms')
+                if response.status_code == 200:
+                    terms_data = response.json()
+                    terms_list = []
+                    input_data = []
+                    output_data = []
+
+                    input_variables = terms_data.get('input', {})
+                    output_variables = terms_data.get('output', {})
+
+                    if var_type == 'input' and variable_name in input_variables:
+                        variable_data = input_variables[variable_name]
+                        for term in variable_data['terms']:
+                            term_name = term.get('term_name', '')
+                            x = term.get('x')
+                            y = term.get('y')
+                            
+                            terms_list.append(
+                                dbc.ListGroupItem(
+                                    term_name,
+                                    id={'type': 'term-item', 'index': term_name},
+                                    n_clicks=0,
+                                    style={'cursor': 'pointer'}
+                                )
+                            )
+                            if x is not None and y is not None:
+                                input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+
+                    elif var_type == 'output' and variable_name in output_variables:
+                        variable_data = output_variables[variable_name]
+                        for term in variable_data['terms']:
+                            term_name = term.get('term_name', '')
+                            x = term.get('x')
+                            y = term.get('y')
+
+                            terms_list.append(
+                                dbc.ListGroupItem(
+                                    term_name,
+                                    id={'type': 'term-item', 'index': term_name},
+                                    n_clicks=0,
+                                    style={'cursor': 'pointer'}
+                                )
+                            )
+                            if x is not None and y is not None:
+                                output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+
+                    if var_type == 'input':
+                        combined_figure = {
+                            'data': input_data,
+                            'layout': go.Layout(
+                                title=f'Fuzzy set for {variable_name} (Input)',
+                                xaxis={
+                                    'title': 'Domain',
+                                    'showgrid': True, 
+                                    'gridwidth': 1,   
+                                    'gridcolor': 'lightgray', 
+                                    'dtick': 5  
+                                },
+                                yaxis={
+                                    'title': 'Degree of membership',
+                                    'showgrid': True,  
+                                    'gridwidth': 1,    
+                                    'gridcolor': 'lightgray', 
+                                    'dtick': 0.1  
+                                }
+                            )
+                        }
+                    elif var_type == 'output':
+                        combined_figure = {
+                            'data': output_data,
+                            'layout': go.Layout(
+                                title=f'Fuzzy set for {variable_name} (Output)',
+                                xaxis={
+                                    'title': 'Domain',
+                                    'showgrid': True,  
+                                    'gridwidth': 1,    
+                                    'gridcolor': 'lightgray',  
+                                    'dtick': 5  
+                                },
+                                yaxis={
+                                    'title': 'Degree of membership',
+                                    'showgrid': True,  
+                                    'gridwidth': 1,    
+                                    'gridcolor': 'lightgray',  
+                                    'dtick': 0.1  
+                                }
+                            )
+                        }
+                    else:
+                        combined_figure = {
+                            'data': [],
+                            'layout': go.Layout(
+                                title=f'No valid data for {variable_name}',
+                                xaxis={'title': 'Domain'},
+                                yaxis={'title': 'Degree of membership'}
+                            )
+                        }
+
+                    return terms_list, combined_figure, len(variable_data['terms'])
+                else:
+                    return [html.Li("Error during the recovery of terms.")], dash.no_update, 0
+            except Exception as e:
+                return [html.Li(f"Error during data recovery: {str(e)}")], dash.no_update, 0
+        else:
+            return [], dash.no_update, 0
+
+
+    #Classificazione
     @dash_app.callback(
         Output("classification-warning-modal", "is_open"),
         Input("classification-checkbox", "value"),
         State("classification-confirmed", "data")
     )
     def show_classification_modal(value, confirmed):
-        print(f"[DEBUG] Modal check → checkbox: {value}, confirmed: {confirmed}")
         if value and "Classification" in value:
             if not confirmed or confirmed is None:
                 return True
         return False
-
-    
-
 
     @dash_app.callback(
         Output("classification-confirmed", "data"),
@@ -495,396 +916,61 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def handle_classification_redirect(checkbox_value, confirmed):
-        print(f"[DEBUG] Redirect → checkbox: {checkbox_value}, confirmed: {confirmed}")
-
         if checkbox_value and "Classification" in checkbox_value:
             if confirmed:
                 return "/classification"
             else:
                 raise dash.exceptions.PreventUpdate 
         return "/output"
-
-
-
-
+    
     @dash_app.callback(
-        Output("term-name-row", "style"),
-        Input("classification-checkbox", "value"),
+        Output("terms-list", "children"),
+        Output("classification-term-count", "data"),
+        Output("variable-name", "value"),
+        Input("url", "pathname"),
         prevent_initial_call=True
     )
-    def toggle_term_name_row(classification_value):
-        """Mostra o nasconde la riga del nome del termine in base alla modalità Classification.""" 
-        if classification_value and "Classification" in classification_value:
-            return {"display": "none"}
-        return {"display": "block"}
+    def load_terms_on_classification(pathname):
+        if pathname != "/classification":
+            raise dash.exceptions.PreventUpdate
 
-
-
-    def validate_params(open_type, params, domain_min, domain_max, function_type):
-        """Valida i parametri di un termine fuzzy rispetto al dominio e al tipo di funzione.""" 
-        if function_type == 'Triangolare':
-            a, b, c = params.get('a'), params.get('b'), params.get('c')
-            
-            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
-                return False, "Parameters a, b, c shall be between the minimum and maximum domains."
-            
-            if not (a <= b <= c):
-                return False, "Parameters shall respect the order <= b <= c."
-            
-        elif function_type == 'Triangolare-open':
-            if open_type == "left":
-                a, b, c = params.get('a'), params.get('a'), params.get('c')
-            if open_type == "right":
-                a, b, c = params.get('a'), params.get('c'), params.get('c')
-            
-            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max):
-                return False, "parameters a,b,c shall be between the maximum and minimum domains"
-            
-            if not (a <= b <= c):
-                return False, "Parameters must respect the order a <= b <= c."
-        
-        elif function_type == 'Gaussian':
-            mean, sigma = params.get('mean'), params.get('sigma')
-            
-            if not (domain_min <= mean <= domain_max):
-                return False, "The mean parameter must be between the minimum and maximum domains."
-            
-            if sigma <= 0:
-                return False, "The sigma parameter must be greater than zero."
-            
-        elif function_type == 'Gaussian-open':
-            mean, sigma = params.get('mean'), params.get('sigma')
-            
-            if not (domain_min <= mean <= domain_max):
-                return False, "The mean parameter must be between the minimum and maximum domains."
-            
-        
-        elif function_type == 'Trapezoidale':
-            a, b, c, d = params.get('a'), params.get('b'), params.get('c'), params.get('d')
-            
-            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
-                return False, "Parameters a, b, c, d must be between the minimum and maximum domains."
-            
-            if not (a <= b <= c <= d):
-                return False, "Parameters must respect the order a <= b <= c <= d."
-        
-        elif function_type == 'Trapezoidale-open':
-            if open_type == "left":
-                a, b, c, d = params.get('a'), params.get('a'), params.get('c'), params.get('d')
-            if open_type == "right":
-                a, b, c, d = params.get('a'), params.get('b'), params.get('d'), params.get('d')
-            if not (domain_min <= a <= domain_max and domain_min <= b <= domain_max and domain_min <= c <= domain_max and domain_min <= d <= domain_max):
-                return False, "Parameters a, b, c, d must be between the minimum and maximum domains."
-            
-            if not (a <= b <= c <= d):
-                return False, "Parameters must respect the order a <= b <= c <= d."
-            
-        return True, ""
-
-    def create_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
-        """Crea un nuovo termine fuzzy e aggiorna grafico e lista.""" 
         try:
-            domain_min = int(domain_min)
-            domain_max = int(domain_max)
-        except (ValueError, TypeError):
-            return dash.no_update, True, "The Domain values must be numbers.", dash.no_update
+            response = requests.get("http://127.0.0.1:5000/api/get_terms")
+            if response.status_code != 200:
+                return [dbc.ListGroupItem("Error loading terms", style={"textAlign": "center"})], 0, ""
 
-        if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
-            return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update
+            data = response.json()
+            output_data = data.get("output", {})
 
-        if domain_min > domain_max:
-            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.",dash.no_update
+            if not output_data:
+                return [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})], 0, ""
 
+            # Prendi il nome della variabile output (ce n’è solo una in Classification)
+            variable_name = next(iter(output_data))
+            terms = output_data[variable_name].get("terms", [])
+            count = len(terms)
 
-        params = {}
-        if function_type == 'Triangolare':
-            params = {'a': param_a, 'b': param_b, 'c': param_c}
-            
-        if function_type == 'Triangolare-open':
-            if open_type == 'left':
-                params = {'a': param_a, 'b': param_a, 'c': param_c}
-            elif open_type == 'right':
-                params = {'a': param_a, 'b': param_c, 'c': param_c}
+            if not terms:
+                return [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})], 0, variable_name
 
-        if function_type == 'Gaussian':
-            params = {'mean': param_mean, 'sigma': param_sigma}
-            
-        elif function_type == 'Gaussian-open':
-                params = {'mean': param_mean, 'sigma': param_sigma}
+            term_items = [
+                dbc.ListGroupItem(
+                    term["term_name"],
+                    id={'type': 'term-item', 'index': term["term_name"]},
+                    n_clicks=0,
+                    style={'cursor': 'pointer'}
+                )
+                for term in terms
+            ]
 
-        if function_type == 'Trapezoidale':
-            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-            
-        elif function_type == 'Trapezoidale-open':
-            if open_type == 'left':
-                params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
-            elif open_type == 'right':
-                params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
+            return term_items, count, variable_name
+
+        except Exception as e:
+            return [dbc.ListGroupItem(f"Error: {e}", style={"textAlign": "center"})], 0, ""
 
 
-        is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
-        if not is_valid:
-            return dash.no_update, True, error_message, dash.no_update
 
-        payload = {
-            'var_type': var_type,
-            'term_name': term_name,
-            'variable_name': variable_name,
-            'domain_min': domain_min,
-            'domain_max': domain_max,
-            'function_type': function_type,
-            'params': params
-        }
-
-        if 'open' in function_type and open_type:
-            payload['open_type'] = open_type
-
-        if var_type == "output" and defuzzy_type:
-            payload['defuzzy_type'] = defuzzy_type
-
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post('http://127.0.0.1:5000/api/create_term', json=payload)
-
-        if response.status_code == 201:
-            terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, True, "Term successfully created!", figure
-        else:
-            error_message = response.json().get('error', 'Unknown error')
-            return dash.no_update, True, f"{error_message}", dash.no_update
-
-    @dash_app.callback(
-        [
-            Output('selected-term', 'data'),
-            Output({'type': 'term-item', 'index': dash.ALL}, 'style')
-        ],
-        Input({'type': 'term-item', 'index': dash.ALL}, 'n_clicks'),
-        State({'type': 'term-item', 'index': dash.ALL}, 'id')
-    )
-    def update_selected_term_and_styles(n_clicks_list, ids):
-        """Aggiorna il termine selezionato e applica lo stile evidenziato.""" 
-        default_style = {'cursor': 'pointer'}
-        if not n_clicks_list or all(nc is None for nc in n_clicks_list):
-            return dash.no_update, [default_style for _ in ids]
-
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return dash.no_update, [default_style for _ in ids]
-
-        triggered_prop = ctx.triggered[0]['prop_id']
-        triggered_id_str = triggered_prop.split('.')[0]
-        try:
-            triggered_id = json.loads(triggered_id_str)
-        except Exception:
-            return dash.no_update, [default_style for _ in ids]
-
-        selected_term = triggered_id.get('index')
-        styles = []
-        for item in ids:
-            if item.get('index') == selected_term:
-                styles.append({'cursor': 'pointer', 'backgroundColor': '#cce5ff'})
-            else:
-                styles.append(default_style)
-        return selected_term, styles
-
-    @dash_app.callback(
-        [
-            Output('modify-term-btn', 'disabled'),
-            Output('delete-term-btn', 'disabled')
-        ],
-        Input('selected-term', 'data')
-    )
-    def update_buttons(selected_term):
-        """Abilita o disabilita i pulsanti di modifica/eliminazione in base alla selezione.""" 
-        if selected_term:
-            return False, False
-        return True, True
-
-
-    def delete_term(variable_name, term_name, var_type):
-        """Elimina un termine fuzzy esistente.""" 
-        response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{term_name}')
-
-        if response.status_code == 200:
-            terms_list, figure = update_terms_list_and_figure(variable_name,var_type)
-            return terms_list, False, f"Term '{term_name}' successfully eliminated!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-        else:
-            return dash.no_update, True, f"Error in term deletion: {response.json().get('error', 'Unknown Error')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
-
-    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
-        """Modifica un termine fuzzy esistente e aggiorna grafico e lista.""" 
-        try:
-            domain_min = int(domain_min)
-            domain_max = int(domain_max)
-        except (ValueError, TypeError):
-            return dash.no_update, True, "Domain values must be numbers.", dash.no_update
-
-        if domain_min > domain_max:
-            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.", dash.no_update
-
-        params = {}
-        if function_type == 'Triangolare':
-            params = {'a': param_a, 'b': param_b, 'c': param_c}
-            
-        if function_type == 'Triangolare-open':
-            if open_type == 'left':
-                params = {'a': param_a, 'b': param_a, 'c': param_c}
-            elif open_type == 'right':
-                params = {'a': param_a, 'b': param_c, 'c': param_c}
-
-        if function_type == 'Gaussian':
-            params = {'mean': param_mean, 'sigma': param_sigma}
-            
-        elif function_type == 'Gaussian-open':
-            params = {'mean': param_mean, 'sigma': param_sigma}
-
-        if function_type == 'Trapezoidale':
-            params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-            
-        elif function_type == 'Trapezoidale-open':
-            if open_type == 'left':
-                params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
-            elif open_type == 'right':
-                params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
-
-        is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
-        if not is_valid:
-            return dash.no_update, True, error_message, dash.no_update
-
-        payload = {
-            'term_name': term_name,
-            'variable_name': variable_name,
-            'domain_min': domain_min,
-            'domain_max': domain_max,
-            'function_type': function_type,
-            'params': params
-        }
-
-        if var_type == "input":
-            payload['defuzzy_type'] = defuzzy_type
-
-        headers = {'Content-Type': 'application/json'}
-        response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{term_name}', json=payload)
-
-        if response.status_code == 201:
-            terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, False, "Term successfully modified", figure
-        else:
-            error_message = response.json().get('error', 'Unknown Error')
-            return dash.no_update, True, f"{error_message}", dash.no_update
-
-        
-    def update_terms_list_and_figure(variable_name, var_type):
-        """Recupera i termini fuzzy e costruisce il grafico corrispondente.""" 
-        if variable_name and var_type:
-            try:
-                headers = {'Content-Type': 'application/json'}
-                response = requests.get('http://127.0.0.1:5000/api/get_terms')
-                if response.status_code == 200:
-                    terms_data = response.json()
-                    terms_list = []
-                    input_data = []
-                    output_data = []
-
-                    input_variables = terms_data.get('input', {})
-                    output_variables = terms_data.get('output', {})
-
-                    if var_type == 'input' and variable_name in input_variables:
-                        variable_data = input_variables[variable_name]
-                        for term in variable_data['terms']:
-                            term_name = term['term_name']
-                            x = term['x']
-                            y = term['y']
-                            terms_list.append(
-                                dbc.ListGroupItem(
-                                    term_name,
-                                    id={'type': 'term-item', 'index': term_name},
-                                    n_clicks=0,
-                                    style={
-                                        'cursor': 'pointer',
-                                    }
-                                )
-                            )
-                            input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
-
-                    elif var_type == 'output' and variable_name in output_variables:
-                        variable_data = output_variables[variable_name]
-                        for term in variable_data['terms']:
-                            term_name = term['term_name']
-                            x = term['x']
-                            y = term['y']
-                            terms_list.append(
-                                dbc.ListGroupItem(
-                                    term_name,
-                                    id={'type': 'term-item', 'index': term_name},
-                                    n_clicks=0,
-                                    style={
-                                        'cursor': 'pointer',
-                                    }
-                                )
-                            )
-                            output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
-
-                    if var_type == 'input':
-                        combined_figure = {
-                            'data': input_data,
-                            'layout': go.Layout(
-                                title=f'Fuzzy set for {variable_name} (Input)',
-                                xaxis={
-                                    'title': 'Domain',
-                                    'showgrid': True, 
-                                    'gridwidth': 1,   
-                                    'gridcolor': 'lightgray', 
-                                    'dtick': 5  
-                                },
-                                yaxis={
-                                    'title': 'Degree of membership',
-                                    'showgrid': True,  
-                                    'gridwidth': 1,    
-                                    'gridcolor': 'lightgray', 
-                                    'dtick': 0.1  
-                                }
-                            )
-                        }
-                    elif var_type == 'output':
-                        combined_figure = {
-                            'data': output_data,
-                            'layout': go.Layout(
-                                title=f'Fuzzy set for {variable_name} (Output)',
-                                xaxis={
-                                    'title': 'Domain',
-                                    'showgrid': True,  
-                                    'gridwidth': 1,    
-                                    'gridcolor': 'lightgray',  
-                                    'dtick': 5  
-                                },
-                                yaxis={
-                                    'title': 'Degree of membership',
-                                    'showgrid': True,  
-                                    'gridwidth': 1,    
-                                    'gridcolor': 'lightgray',  
-                                    'dtick': 0.1  
-
-                                }
-                            )
-                        }
-                    else:
-                        combined_figure = {
-                            'data': [],
-                            'layout': go.Layout(
-                                title=f'No valid data for {variable_name}',
-                                xaxis={'title': 'Domain'},
-                                yaxis={'title': 'Degree of membership'}
-                            )
-                        }
-
-                    return terms_list, combined_figure
-                else:
-                    return [html.Li("Error during the recovery of terms.")], dash.no_update
-            except Exception as e:
-                return [html.Li(f"Error during data recovery: {str(e)}")], dash.no_update
-        else:
-            return [], dash.no_update
-
+#Rules
     @dash_app.callback(
         Output("rules-container", "children"),
         Input("create-rule", "n_clicks"),
