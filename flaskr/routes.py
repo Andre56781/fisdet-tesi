@@ -96,7 +96,6 @@ def create_term():
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 
-
 @bp.route('/get_terms', methods=['GET'])
 def get_terms():
     """Restituisce tutti i termini fuzzy con le coordinate x-y per calcolare il grafico."""  
@@ -105,25 +104,34 @@ def get_terms():
 
         if not terms_data:
             return jsonify({"message": "No terms found"}), 404
-    
-        computed_terms = {"input": {}, "output": {}}
 
-        for var_type, variables in terms_data.items():
+        computed_terms = {"input": {}, "output": {}}
+        
+        for var_type in ["input", "output"]:
+            variables = terms_data.get(var_type, {})
+            if not isinstance(variables, dict):
+                continue
+
             for variable_name, variable_data in variables.items():
+                if not isinstance(variable_data, dict):
+                    continue
+
                 terms = variable_data.get('terms', [])
 
-                # Se i termini sono di tipo Classification, non serve dominio
-                if terms and terms[0]['function_type'] == 'Classification':
+                # === Gestione Classification ===
+                if terms and terms[0].get('function_type') == 'Classification':
                     computed_terms[var_type][variable_name] = {
-                        "terms": []
+                        "domain": [0, 1],  # dominio dummy per compatibilità
+                        "terms": [
+                            {
+                                "term_name": term['term_name'],
+                                "function_type": "Classification"
+                            } for term in terms
+                        ]
                     }
-                    for term in terms:
-                        computed_terms[var_type][variable_name]['terms'].append({
-                            "term_name": term['term_name']
-                        })
-                    continue  # Skip il resto per le Classification
+                    continue
 
-                # Per tutti gli altri serve il dominio
+                # === Gestione normale ===
                 if 'domain' not in variable_data:
                     continue
 
@@ -148,7 +156,7 @@ def get_terms():
                     elif function_type == 'Triangolare-open':
                         y = open_trimf(x, params['a'], params['b'], params['c'])
                     elif function_type == 'Gaussian-open':
-                        open_type = params.pop('open_type', 'left')  
+                        open_type = params.get('open_type', 'left')
                         y = open_gaussmf(x, params['mean'], params['sigma'], domain_min, domain_max, open_type)
                     elif function_type == 'Trapezoidale-open':
                         y = open_trapmf(x, params['a'], params['b'], params['c'], params['d'])
@@ -158,13 +166,15 @@ def get_terms():
                     computed_terms[var_type][variable_name]['terms'].append({
                         "term_name": term_name,
                         "x": x.tolist(),
-                        "y": y.tolist()
+                        "y": y.tolist(),
+                        "function_type": function_type
                     })
 
         return jsonify(computed_terms), 200
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
 
     
 def open_trimf(x, a, b, c):
@@ -473,9 +483,26 @@ def delete_rule(rule_id):
 def infer():
     """Esegue l'inferenza fuzzy sui valori di input forniti."""  
     try:
+        def compute_membership_y(term, x):
+            func = term.get("function_type")
+            params = term.get("params", {})
+
+            if func == "Triangolare":
+                a, b, c = params["a"], params["b"], params["c"]
+                return fuzz.trimf(x, [a, b, c])
+            elif func == "Trapezoidale":
+                a, b, c, d = params["a"], params["b"], params["c"], params["d"]
+                return fuzz.trapmf(x, [a, b, c, d])
+            elif func == "Gaussian":
+                mean, sigma = params["mean"], params["sigma"]
+                return fuzz.gaussmf(x, mean, sigma)
+
+            return np.zeros_like(x)
+
         inputs = request.json.get("inputs")
         terms_data = load_terms()
         rules_data = load_rule()
+
         rules = [
             {
                 "inputs": rule["inputs"],
@@ -485,8 +512,19 @@ def infer():
             for key, rule in rules_data.items() if key.startswith("Rule")
         ]
 
+        for var_name, output_var in terms_data["output"].items():
+            domain_min, domain_max = output_var["domain"]
+            x = np.linspace(domain_min, domain_max, 1000)
+            for term in output_var["terms"]:
+                term["x"] = x.tolist()
+                term["y"] = compute_membership_y(term, x).tolist()
+
         fuzzified = fuzzify_input(terms_data, inputs)
         rule_outputs = apply_rules(fuzzified, rules)
+
+        for rule_out, original_rule in zip(rule_outputs, rules):
+            rule_out["inputs"] = original_rule["inputs"]
+
         results = aggregate_and_defuzzify(terms_data, rule_outputs)
 
         full_result = {
@@ -503,7 +541,10 @@ def infer():
         return jsonify(full_result)
 
     except Exception as e:
+        print(f"Error during /infer: {e}")
         return jsonify({"error": str(e)}), 500
+
+
     
 def fuzzify_input(terms_data, inputs):
     """Fuzzifica i valori di input rispetto ai termini fuzzy delle variabili."""  
@@ -571,45 +612,53 @@ def apply_rules(fuzzified_inputs, rules):
 
 
 def aggregate_and_defuzzify(terms_data, rule_outputs):
-    """Aggrega i risultati delle regole attivate e defuzzifica l'output."""  
     results = {}
+    output_terms_by_var = {}
 
-    for var_name in terms_data["output"]:
-        domain_min, domain_max = terms_data["output"][var_name]["domain"]
-        x = np.linspace(domain_min, domain_max, 100)
-        agg_y = np.zeros_like(x)
+    for rule in rule_outputs:
+        var_name = rule["output_variable"]
+        term_name = rule["output_term"]
+        activation = rule["activation"]
 
-        for ro in rule_outputs:
-            if ro["output_variable"] != var_name:
-                continue
+        if var_name not in output_terms_by_var:
+            output_terms_by_var[var_name] = {}
 
-            for term in terms_data["output"][var_name]["terms"]:
-                if term["term_name"] == ro["output_term"]:
-                    ftype = term["function_type"]
-                    p = term["params"]
+        if term_name not in output_terms_by_var[var_name]:
+            output_terms_by_var[var_name][term_name] = 0.0
 
-                    if ftype == "Triangolare":
-                        y = fuzz.trimf(x, [p["a"], p["b"], p["c"]])
-                    elif ftype == "Gaussian":
-                        y = fuzz.gaussmf(x, p["mean"], p["sigma"])
-                    elif ftype == "Trapezoidale":
-                        y = fuzz.trapmf(x, [p["a"], p["b"], p["c"], p["d"]])
-                    else:
-                        continue
+        output_terms_by_var[var_name][term_name] = max(
+            output_terms_by_var[var_name][term_name],
+            activation
+        )
 
-                    agg_y = np.fmax(agg_y, np.fmin(ro["activation"], y))
+    for var_name, terms in output_terms_by_var.items():
+        term_defs = terms_data["output"][var_name]["terms"]
+        is_classification = term_defs[0].get("function_type") == "Classification"
 
-        defuzzy_method = terms_data["output"][var_name].get("defuzzy_type", "centroid")
+        if is_classification:
+            best_term = max(terms.items(), key=lambda x: x[1])[0]
+            results[var_name] = best_term
+        else:
+            domain_min, domain_max = terms_data["output"][var_name]["domain"]
+            x = np.linspace(domain_min, domain_max, 1000)
+            aggregated = np.zeros_like(x)
 
-        try:
-            result = fuzz.defuzz(x, agg_y, defuzzy_method) if np.sum(agg_y) > 0 else 0
-        except Exception as e:
-            print(f"[ERROR defuzzification] Variable '{var_name}', method '{defuzzy_method}':", e)
-            result = 0
+            for term_def in term_defs:
+                term_name = term_def["term_name"]
+                y = np.array(term_def["y"])
+                weight = terms.get(term_name, 0.0)
+                aggregated = np.fmax(aggregated, np.fmin(weight, y))
 
-        results[var_name] = result
+            if aggregated.sum() == 0:
+                results[var_name] = 0
+            else:
+                result = fuzz.defuzz(x, aggregated, 'centroid')
+                results[var_name] = result
 
     return results
+
+
+
 
 #IMPORT/EXPORT
 @bp.route("/export_json", methods=["GET"])

@@ -25,7 +25,7 @@ def save_data(data):
         with open(file_path, "w") as f:
             json.dump(data, f, indent=4)
     except Exception as e:
-        print(f"Errore durante il salvataggio dei dati: {e}")
+        print(f"Error while saving data: {e}")
         raise
 
 def load_data():
@@ -36,7 +36,7 @@ def load_data():
             with open(file_path, "r") as f:
                 return json.load(f)
     except Exception as e:
-        print(f"Errore durante il caricamento dei dati: {e}")
+        print(f"Error while loading data: {e}")
     return {}  
 
 def load_terms():

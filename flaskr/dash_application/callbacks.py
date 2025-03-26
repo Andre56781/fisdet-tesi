@@ -41,7 +41,16 @@ def register_callbacks(dash_app):
                 return dash.no_update, ""
         return dash.no_update, ""
 
-
+    @dash_app.callback(
+    Output('url', 'pathname', allow_duplicate=True),
+    Input('upload-fis', 'contents'),
+    prevent_initial_call=True
+    )
+    def handle_upload(contents):
+        if contents:
+            return '/report'
+        return dash.no_update
+    
     @dash_app.callback(
         Output('session-store', 'data'),
         Output('import-feedback', 'children'),
@@ -50,7 +59,6 @@ def register_callbacks(dash_app):
         prevent_initial_call=True
     )
     def handle_json_import(contents, filename):
-        """Importa un file JSON e aggiorna lo store di sessione."""
         if contents:
             try:
                 content_type, content_string = contents.split(',')
@@ -64,12 +72,15 @@ def register_callbacks(dash_app):
                 if response.status_code == 200:
                     return uploaded_data, dbc.Alert("Importazione completata!", color="success", dismissable=True)
                 else:
-                    return dash.no_update, dbc.Alert(f"{response.json().get('error', 'Unknown error')}", color="danger", dismissable=True)
+                    return dash.no_update, dbc.Alert(f"Errore: {response.json().get('error', 'Errore sconosciuto')}", color="danger", dismissable=True)
             except Exception as e:
-                return dash.no_update, dbc.Alert(f"Error during import: {e}", color="danger", dismissable=True)
+                return dash.no_update, dbc.Alert(f"Errore durante l'import: {e}", color="danger", dismissable=True)
         return dash.no_update, dash.no_update
 
 
+
+
+    
     @dash_app.callback(
             [Output("variable-modal", "is_open"),
             Output("main-content", "style"),
@@ -201,7 +212,8 @@ def register_callbacks(dash_app):
             params.append(dbc.Input(id='param-mean', type='number', value='', required=True))
             params.append(dbc.Label("Parameter Sigma:"))
             params.append(dbc.Input(id='param-sigma', type='number', value='', required=True))
-
+            
+            params.append(dbc.Input(id='param-a', style={'display': 'none'}))
             params.append(dbc.Input(id='param-b', style={'display': 'none'}))
             params.append(dbc.Input(id='param-c', style={'display': 'none'}))
             params.append(dbc.Input(id='param-d', style={'display': 'none'}))
@@ -1283,6 +1295,7 @@ def register_callbacks(dash_app):
 
         current_inputs.append(new_input)
         return current_inputs, input_count + 1
+    
 
 
     #Regole
@@ -1290,12 +1303,14 @@ def register_callbacks(dash_app):
         Output("inference-data", "data"),
         Output("rules-list-membership", "children"),
         Output("membership-values", "children"),
+        Output("winner-term-store", "data"),
         Input("start-inference", "n_clicks"),
         State("inference-inputs", "children"),
+        State("is-classification", "data"),
         prevent_initial_call=True
     )
-    def run_inference(n_clicks, input_children):
-        """Esegue l'inferenza fuzzy sui valori inseriti e mostra attivazioni e output.""" 
+    def run_inference(n_clicks, input_children, is_classification):
+        """Esegue l'inferenza fuzzy sui valori inseriti e mostra attivazioni e output."""
         try:
             inputs_dict = {}
             for col in input_children[0]["props"]["children"]:
@@ -1303,32 +1318,35 @@ def register_callbacks(dash_app):
                 input_value = col["props"]["children"][1]["props"]["value"]
                 var_name = input_id.replace("-input", "")
                 if input_value is not None:
-                    inputs_dict[var_name] = float(input_value)
+                    try:
+                        inputs_dict[var_name] = float(input_value)
+                    except ValueError:
+                        continue
 
             response = requests.post("http://127.0.0.1:5000/api/infer", json={"inputs": inputs_dict})
             if response.status_code != 200:
-                return dash.no_update, [html.Div("Error in inference", className="text-danger")], []
+                return dash.no_update, [html.Div("Error in inference", className="text-danger")], [], {}
 
             result = response.json()
             rule_outputs = result.get("rule_outputs", [])
             outputs = result.get("results", {})
 
-            rule_map = {
-                (rule["output_variable"], rule["output_term"]): rule
-                for key, rule in result.items()
-                if key.startswith("Rule") and isinstance(rule, dict)
-            }
-
             rules_display = []
-            for rule in rule_outputs:
-                key = (rule["output_variable"], rule["output_term"])
-                rule_data = rule_map.get(key)
+            membership_values_display = []
 
-                if rule_data and "inputs" in rule_data:
-                    inputs = rule_data["inputs"]
+            for rule in rule_outputs:
+                inputs = rule.get("inputs", [])
+                if_part = " AND ".join([f"({inp['input_variable']} IS {inp['input_term']})" for inp in inputs])
+                output_var = rule.get("output_variable", "?")
+                output_term = rule.get("output_term", "?")
+                activation = rule.get("activation", 0.0)
+                rule_text = f"IF {if_part} THEN ({output_var} IS {output_term}) → {activation:.3f}"
+
+                inputs_text = ""
+                if 'inputs' in rule and rule['inputs']:
                     inputs_text = " AND ".join(
                         f"({inp['input_variable']} IS {inp['input_term']})"
-                        for inp in inputs
+                        for inp in rule['inputs']
                     )
                     output_text = f"({rule['output_variable']} IS {rule['output_term']})"
                     rule_text = f"IF {inputs_text} THEN {output_text} → {round(rule['activation'], 3)}"
@@ -1340,16 +1358,59 @@ def register_callbacks(dash_app):
                     html.P(rule_text, className="rule-inference text-center", style={"fontSize": "0.9em"})
                 )
 
-            membership_display = [
-                html.P(f"{k}: {round(v, 2)}", className="fw-bold text-center")
-                for k, v in outputs.items()
-            ]
 
-            return result, rules_display, membership_display
+            winner_term_store = {}
+
+            if is_classification:
+                for var_name, result_value in outputs.items():
+                    winner_term_store[var_name] = result_value
+
+            return result, rules_display, membership_values_display, winner_term_store
 
         except Exception as e:
             print(f"Inference error: {e}")
-            return dash.no_update, [html.Div("Error during the inference process", className="text-danger")], []
+            return dash.no_update, [html.Div("Error during the inference process", className="text-danger")], [], {}
+
+
+    @dash_app.callback(
+        Output({"type": "classification-output", "variable": ALL}, "children"),
+        Input("winner-term-store", "data"),
+        prevent_initial_call=True
+    )
+    def update_classification_results(winner_term_store):
+        outputs = []
+        ctx = callback_context
+
+        for output in ctx.outputs_list:
+            var_name = output["id"]["variable"]
+            winner_class = winner_term_store.get(var_name, "N/A")
+            outputs.append(winner_class)
+
+        return outputs
+    
+    @dash_app.callback(
+        Output({"type": "output", "variable": ALL}, "children"),
+        Input("inference-data", "data"),
+        prevent_initial_call=True
+    )
+    def update_numeric_outputs(inference_data):
+        if not inference_data:
+            raise dash.exceptions.PreventUpdate
+
+        outputs = inference_data.get("results", {})
+
+        result = []
+        for var_id in ctx.outputs_list:
+            try:
+                variable_name = var_id["id"]["variable"]
+                value = outputs.get(variable_name, 0)
+                result.append(f"{value:.2f}")
+            except Exception as e:
+                result.append("0.00")
+
+        return result
+
+
 
 
 
@@ -1357,8 +1418,8 @@ def register_callbacks(dash_app):
 def fetch_data():
     """Recupera dati da backend per la pagina report.""" 
     try:
-        response_terms = requests.get(f"http://127.0.0.1:5000/api/get_terms")
-        response_rules = requests.get(f"http://127.0.0.1:5000/api/get_rules")
+        response_terms = requests.get("http://127.0.0.1:5000/api/get_terms")
+        response_rules = requests.get("http://127.0.0.1:5000/api/get_rules")
 
         if response_terms.status_code == 200 and response_rules.status_code == 200:
             terms_data = response_terms.json()
@@ -1369,6 +1430,7 @@ def fetch_data():
     except Exception as e:
         print(f"Error while loading data: {e}")
         return None
+
 
 def generate_variable_section(variables, var_type):
     """Genera le card per visualizzare le variabili (input/output) nel report.""" 

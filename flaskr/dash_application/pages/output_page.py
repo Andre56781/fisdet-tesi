@@ -115,7 +115,7 @@ def layout() -> html.Div:
                                 ], md=6),
 
                                 dbc.Col([
-                                    dbc.Label("Vai alla modalità Classification", className="mb-0 d-block text-end"),
+                                    dbc.Label("Go to Classification mode", className="mb-0 d-block text-end"),
                                     dbc.Checklist(
                                         id='classification-checkbox',
                                         options=[{'label': '', 'value': 'Classification'}],
