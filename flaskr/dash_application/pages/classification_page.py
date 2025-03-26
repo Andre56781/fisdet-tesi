@@ -9,6 +9,7 @@ def layout() -> html.Div:
         dcc.Store(id="classification-confirmed"),
         dcc.Store(id='selected-term'),
         dcc.Location(id='url-classification'), 
+        dcc.Store(id='open-type'),
         dcc.Input(id='param-a', type='number', style={'display': 'none'}),
         dcc.Input(id='param-b', type='number', style={'display': 'none'}),
         dcc.Input(id='param-c', type='number', style={'display': 'none'}),
