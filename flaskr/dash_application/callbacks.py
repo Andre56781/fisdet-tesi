@@ -568,7 +568,7 @@ def register_callbacks(dash_app):
                 return False, "Parameters a, b, c shall be between the minimum and maximum domains."
             
             if not (a <= b <= c):
-                return False, "Parameters shall respect the order <= b <= c."
+                return False, "Parameters shall respect the order a <= b <= c."
             
         elif function_type == 'Triangolare-open':
             if open_type == "left":

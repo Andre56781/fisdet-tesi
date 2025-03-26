@@ -201,16 +201,16 @@ def layout() -> html.Div:
 
                         # MESSAGGI
                     dbc.Modal(
-                                id="error-modal",
-                                is_open=False,
-                                size="md",
-                                children=[
-                                    dbc.ModalHeader("Errore"),
-                                    dbc.ModalBody(id="error-modal-body"),
-                                ],
-                                centered=True,
-                                backdrop="static"
-                            ),
+                            id="error-modal",
+                            is_open=False,
+                            size="md",
+                            children=[
+                                dbc.ModalHeader("Error!"),
+                                dbc.ModalBody(id="error-modal-body"),
+                            ],
+                            centered=True,
+                            backdrop="static"
+                        ),
                     ]),
                     
                     dbc.CardFooter(

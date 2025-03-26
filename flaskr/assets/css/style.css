@@ -156,6 +156,7 @@ body {
   transition: margin 0.3s ease;
   position: relative;
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
 }
 
@@ -310,13 +311,6 @@ body {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Hover effect
-.main-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 30px rgba(0,0,0,0.12);
-}
-*/
-
 .card-header-gradient {
   background: linear-gradient(135deg, #52b2cf, #7fd9ff);
   color: white;
@@ -461,6 +455,62 @@ body {
   padding: 1rem;
 }
 
+/* ==================== ERRORMODAL ==================== */
+#error-modal .modal-dialog {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Bordo rosso e aspetto generale del contenuto del modal */
+#error-modal .modal-content {
+  border: 2px solid #dc3545;       /* Rosso Bootstrap “danger” */
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(220, 53, 69, 0.3);
+  background-color: #f8d7da;       /* Sfondo chiaro di errore */
+}
+
+/* Header rosso con testo bianco */
+#error-modal .modal-header {
+  background-color: #dc3545;
+  color: #fff;
+  border-bottom: 2px solid #bb2d3b;
+}
+
+/* Titolo in evidenza */
+#error-modal .modal-title {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+/* Corpo con sfondo chiaro e testo rosso scuro */
+#error-modal .modal-body {
+  color: #721c24;
+  background-color: #f8d7da;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  border-radius: 0 0 6px 6px;
+}
+
+/* Icona di avvertimento all'inizio del messaggio */
+#error-modal .modal-body::before {
+  content: "⚠️";
+  margin-right: 12px;
+  font-size: 1.8rem;
+}
+
+/* Pulsante di chiusura con icona invertita (per visibilità su sfondo rosso) */
+#error-modal .btn-close {
+  filter: invert(1);
+}
+
+/* Definizione dell'animazione "shake" */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(5px); }
+  50% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+}
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
   .sidebar {
