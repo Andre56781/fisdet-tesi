@@ -11,7 +11,6 @@ from datetime import datetime
 import re
 from dash.exceptions import PreventUpdate
 
-
 def register_callbacks(dash_app):
 
     """Registra tutti i callback necessari all'app Dash per la gestione delle variabili fuzzy, regole e inferenza."""
@@ -69,18 +68,6 @@ def register_callbacks(dash_app):
             except Exception as e:
                 return dash.no_update, dbc.Alert(f"Error during import: {e}", color="danger", dismissable=True)
         return dash.no_update, dash.no_update
-
-
-    @dash_app.callback(
-    Output('url', 'pathname'),
-    Input('upload-fis', 'contents'),
-    prevent_initial_call=True
-    )
-    def handle_upload(contents):
-        """Reindirizza alla pagina /report dopo l'upload del file."""
-        if contents:
-            return '/report'
-        return dash.no_update
 
 
     @dash_app.callback(
@@ -164,23 +151,6 @@ def register_callbacks(dash_app):
         return selected_value
 
     @dash_app.callback(
-        [Output('defuzzy-type', 'value'),  
-        Output('defuzzy-type', 'disabled')],  
-        Input('classification-checkbox', 'value')  
-    )
-    def toggle_defuzzy_visibility(classification_value):
-        default_value = 'centroid'
-        
-        if classification_value is None:
-            return default_value, False 
-        
-        if 'Classification' in classification_value:
-            return "Classification", True 
-        else:
-            return default_value, False  
-
-
-    @dash_app.callback(
         Output('params-container', 'children'),
         [
             Input('var-type-store', 'data'),
@@ -260,8 +230,6 @@ def register_callbacks(dash_app):
 
         return params
 
-
-
     @dash_app.callback(
     Output('defuzzy-type', 'invalid'),
     Input('defuzzy-type', 'value'),
@@ -284,7 +252,8 @@ def register_callbacks(dash_app):
             Output('param-c', 'value', allow_duplicate=True),     
             Output('param-d', 'value', allow_duplicate=True),     
             Output('param-mean', 'value', allow_duplicate=True),  
-            Output('param-sigma', 'value', allow_duplicate=True), 
+            Output('param-sigma', 'value', allow_duplicate=True),
+            Output('classification-term-count', 'data', allow_duplicate=True), 
             Output('create-term-btn', 'children')
         ],
         [
@@ -320,58 +289,117 @@ def register_callbacks(dash_app):
         ctx = dash.ctx
 
         if not ctx.triggered:
-            return [dash.no_update] * 11
+            return [dash.no_update] * 13
 
         triggered_id = ctx.triggered[0]['prop_id']
 
         if var_type == "input":
             defuzzy_type = None
-            
+
         if var_type == "output":
             open_type = None
-        
+
         if open_type is None:
             open_type = []
 
         if isinstance(open_type, str) and ('left' in open_type or 'right' in open_type):
             function_type = f"{function_type}-open"
 
+        # === CREAZIONE / MODIFICA ===
         if triggered_id == 'create-term-btn.n_clicks':             
             if button_label == 'Save change':
-                terms_list, is_error, message, figure = modify_term(open_type, var_type, variable_name, domain_min, domain_max,
-                                                        function_type, term_name, param_a, param_b,
-                                                        param_c, param_d, param_mean, param_sigma,
-                                                        defuzzy_type)  
-                terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-                return (terms_list,is_error, message, figure,
-                        '', '', '', '', '', '', '', 'Create term')
+                # Verifica che il nuovo nome sia valido
+                if not term_name:
+                    return (
+                        dash.no_update, True, "Please enter a valid term name.",
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        dash.no_update, dash.no_update, dash.no_update,
+                        'Create term'
+                    )
+
+                terms_list, is_error, message, figure, count = modify_term(
+                    open_type, var_type, variable_name, domain_min, domain_max,
+                    function_type, term_name, param_a, param_b,
+                    param_c, param_d, param_mean, param_sigma,
+                    defuzzy_type, selected_term
+                )
+
+                terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+
+                return (
+                    terms_list, is_error, message, figure,
+                    '', '', '', '', '', '', '',
+                    count,
+                    'Create term'
+                )
             else:
-                terms_list, is_error, message, figure = create_term(open_type, var_type, variable_name, domain_min, domain_max,
-                                                                    function_type, term_name, param_a, param_b,
-                                                                    param_c, param_d, param_mean, param_sigma,
-                                                                    defuzzy_type)
+                terms_list, is_error, message, figure, count = create_term(
+                    open_type, var_type, variable_name, domain_min, domain_max,
+                    function_type, term_name, param_a, param_b,
+                    param_c, param_d, param_mean, param_sigma,
+                    defuzzy_type
+                )
+
                 if message == "Term successfully created!":
-                    return (terms_list, False, "", figure,
-                            '', '', '', '', '', '', '', 'Create term')
-                return (terms_list, is_error, message, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update, 'Create term')
-                
+                    terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+                    return (
+                        terms_list, False, "", figure,
+                        '', '', '', '', '', '', '',
+                        count,
+                        'Create term'
+                    )
+
+                return (
+                    terms_list, is_error, message, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update,
+                    'Create term'
+                )
+
+        # === ELIMINAZIONE ===
         elif triggered_id == 'delete-term-btn.n_clicks':
             if not selected_term:
-                return (dash.no_update, True, "No term selected",
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, 'Create term')
-            return delete_term(variable_name, selected_term, var_type) + ('Create term',)
+                return (
+                    dash.no_update, True, "No term selected",
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update,
+                    'Create term'
+                )
+
+            delete_response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{selected_term}')
+
+            if delete_response.status_code == 200:
+                terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+                return (
+                    terms_list, False, f"Term '{selected_term}' successfully eliminated!", figure,
+                    '', '', '', '', '', '', '',
+                    count,
+                    'Create term'
+                )
+            else:
+                error_message = delete_response.json().get('error', 'Unknown Error')
+                return (
+                    dash.no_update, True, f"Error in term deletion: {error_message}", dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update,
+                    'Create term'
+                )
 
 
+        # === PREPARA LA MODIFICA ===
         elif triggered_id == 'modify-term-btn.n_clicks':
             if not selected_term:
-                return (dash.no_update, True, "No term selected",
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, 'Crea Termine')
+                return (
+                    dash.no_update, True, "No term selected",
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    'Create term'
+                )
 
             url = f'http://127.0.0.1:5000/api/get_term/{variable_name}/{selected_term}'
             headers = {'Content-Type': 'application/json'}
@@ -379,183 +407,33 @@ def register_callbacks(dash_app):
             if response.status_code == 200:
                 term_data = response.json()
                 term_params = term_data.get('params', {})
-                return (dash.no_update,
-                        dash.no_update,
-                        dash.no_update,
-                        dash.no_update, 
-                        term_data.get('term_name', ''),
-                        term_params.get('a', ''),
-                        term_params.get('b', ''),
-                        term_params.get('c', ''),
-                        term_params.get('d', ''),
-                        term_params.get('mean', ''),
-                        term_params.get('sigma', ''),
-                        'Save change')
-
-            else:
-                return (dash.no_update, True,
-                        "Error loading term data.",
-                        dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, dash.no_update, dash.no_update,
-                        dash.no_update, 'Create term')
-
-        return [dash.no_update] * 11
-
-    @dash_app.callback(
-        Output("classification-warning-modal", "is_open"),
-        Input("classification-checkbox", "value"),
-        State("classification-confirmed", "data")
-    )
-    def show_classification_modal(value, confirmed):
-        """Mostra un modal di conferma quando si attiva la modalità Classification.""" 
-        if value and "Classification" in value and not confirmed:
-            return True
-        return False
-
-
-    @dash_app.callback(
-    [
-        Output("classification-checkbox", "value", allow_duplicate=True),
-        Output("message", "children", allow_duplicate=True),
-        Output("terms-list", "children", allow_duplicate=True),
-        Output("graph", "figure", allow_duplicate=True),
-        Output("classification-warning-modal", "is_open", allow_duplicate=True),
-        Output("classification-confirmed", "data", allow_duplicate=True)  
-    ],
-    [
-        Input("confirm-classification", "n_clicks"),
-        Input("cancel-classification", "n_clicks")
-    ],
-    prevent_initial_call=True
-    )
-    def handle_classification_change(confirm_click, cancel_click):
-        """Gestisce la conferma o l'annullamento della modalità Classification.""" 
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            raise dash.exceptions.PreventUpdate
-
-        triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-        if triggered_id == "confirm-classification":
-            try:
-                response = requests.post("http://127.0.0.1:5000/api/clear_output")
-                if response.status_code == 200:
-                    return (
-                        ["Classification"],  
-                        "Output data has been cleared.",
-                        [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})],
-                        {},  
-                        False,  
-                        True   
-                    )
-                else:
-                    return (
-                        ["Classification"],
-                        f"{response.json().get('error', 'Unknown error')}",
-                        dash.no_update,
-                        dash.no_update,
-                        False,
-                        False
-                    )
-            except Exception as e:
                 return (
-                    ["Classification"],
-                    f"Error connecting to the backend: {e}",
                     dash.no_update,
                     dash.no_update,
-                    False,
-                    False
+                    dash.no_update,
+                    dash.no_update, 
+                    term_data.get('term_name', ''),
+                    term_params.get('a', ''),
+                    term_params.get('b', ''),
+                    term_params.get('c', ''),
+                    term_params.get('d', ''),
+                    term_params.get('mean', ''),
+                    term_params.get('sigma', ''),
+                    dash.no_update,
+                    'Save change'
+                )
+            else:
+                return (
+                    dash.no_update, True,
+                    "Error loading term data.",
+                    dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update, dash.no_update,
+                    dash.no_update, dash.no_update,
+                    'Create term'
                 )
 
-        elif triggered_id == "cancel-classification":
-            return (
-                [], "", dash.no_update, dash.no_update, False, False
-            )
-
-        raise dash.exceptions.PreventUpdate
-
-
-
-    @dash_app.callback(
-        Output("graph-container", "style"),
-        Output("output-hideable-fields", "style"),
-        Input("classification-checkbox", "value"),
-        prevent_initial_call=True,
-        allow_duplicate=True
-    )
-    def toggle_fields_classification(classification_value):
-        """Mostra o nasconde i campi fuzzy in base alla modalità Classification.""" 
-        if classification_value and "Classification" in classification_value:
-            return {"display": "none"}, {"display": "none"}  
-        return {"display": "block"}, {"display": "block"}  
-
-    @dash_app.callback(
-        Output("classification-counter", "style"),
-        Output("classification-counter", "children"),
-        Input("classification-checkbox", "value"),
-        Input("classification-term-count", "data")
-    )
-    def update_classification_counter(classification_value, term_count):
-        """Aggiorna e mostra il contatore dei termini in modalità Classification.""" 
-        if classification_value and "Classification" in classification_value:
-            return {"display": "block"}, f"Classification Terms Created: {term_count}"
-        return {"display": "none"}, ""
-
-    @dash_app.callback(
-    Output("dynamic-right-column", "children"),
-    Input("classification-checkbox", "value"),
-    prevent_initial_call="initial_duplicate"
-    )
-    def switch_right_column_content(classification_value):
-        """Cambia i campi mostrati nella colonna destra in base alla modalità Classification.""" 
-        if classification_value and "Classification" in classification_value:
-            return html.Div([
-                dbc.Label("Fuzzy Term Name", className="mb-0"),
-                dbc.Input(
-                    id='term-name',
-                    type='text',
-                    value='',
-                    pattern="^[a-zA-Z0-9]*$",
-                    className="input-field",
-                    debounce=True,
-                    required=True
-                )
-            ])
-        else:
-            return html.Div([
-                dbc.Label("Domain", className="form-label mb-0"),
-                dbc.InputGroup([
-                    dbc.Input(
-                        id='domain-min',
-                        type='number',
-                        className="input-field",
-                        value='0',
-                        placeholder="0",
-                        debounce=True,
-                        required=True
-                    ),
-                    dbc.Input(
-                        id='domain-max',
-                        type='number',
-                        className="input-field",
-                        value='',
-                        placeholder="100",
-                        debounce=True,
-                        required=True
-                    )
-                ], className="domain-input-group mb-3")
-            ])
-    @dash_app.callback(
-        Output("term-name-row", "style"),
-        Input("classification-checkbox", "value"),
-        prevent_initial_call=True
-    )
-    def toggle_term_name_row(classification_value):
-        """Mostra o nasconde la riga del nome del termine in base alla modalità Classification.""" 
-        if classification_value and "Classification" in classification_value:
-            return {"display": "none"}
-        return {"display": "block"}
+        return [dash.no_update] * 13
 
 
 
@@ -621,49 +499,43 @@ def register_callbacks(dash_app):
         return True, ""
 
     def create_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
-        """Crea un nuovo termine fuzzy e aggiorna grafico e lista.""" 
+        """Crea un nuovo termine fuzzy e aggiorna grafico e lista."""
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
         except (ValueError, TypeError):
-            return dash.no_update, True, "The Domain values must be numbers.", dash.no_update
+            return dash.no_update, True, "The Domain values must be numbers.", dash.no_update, dash.no_update
 
         if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
-            return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update
+            return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update, dash.no_update
 
         if domain_min > domain_max:
-            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.",dash.no_update
-
+            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.", dash.no_update, dash.no_update
 
         params = {}
         if function_type == 'Triangolare':
             params = {'a': param_a, 'b': param_b, 'c': param_c}
-            
-        if function_type == 'Triangolare-open':
+        elif function_type == 'Triangolare-open':
             if open_type == 'left':
                 params = {'a': param_a, 'b': param_a, 'c': param_c}
             elif open_type == 'right':
                 params = {'a': param_a, 'b': param_c, 'c': param_c}
-
-        if function_type == 'Gaussian':
+        elif function_type == 'Gaussian':
             params = {'mean': param_mean, 'sigma': param_sigma}
-            
         elif function_type == 'Gaussian-open':
-                params = {'mean': param_mean, 'sigma': param_sigma}
-
-        if function_type == 'Trapezoidale':
+            params = {'mean': param_mean, 'sigma': param_sigma}
+        elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-            
         elif function_type == 'Trapezoidale-open':
             if open_type == 'left':
                 params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
             elif open_type == 'right':
                 params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
-
-
+        elif function_type == 'Classification':
+            params = {}  
         is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
         if not is_valid:
-            return dash.no_update, True, error_message, dash.no_update
+            return dash.no_update, True, error_message, dash.no_update, dash.no_update
 
         payload = {
             'var_type': var_type,
@@ -675,7 +547,7 @@ def register_callbacks(dash_app):
             'params': params
         }
 
-        if 'open' in function_type and open_type:
+        if function_type and 'open' in function_type and open_type:
             payload['open_type'] = open_type
 
         if var_type == "output" and defuzzy_type:
@@ -685,11 +557,12 @@ def register_callbacks(dash_app):
         response = requests.post('http://127.0.0.1:5000/api/create_term', json=payload)
 
         if response.status_code == 201:
-            terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, True, "Term successfully created!", figure
+            terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+            return terms_list, True, "Term successfully created!", figure, count
         else:
             error_message = response.json().get('error', 'Unknown error')
-            return dash.no_update, True, f"{error_message}", dash.no_update
+            return dash.no_update, True, f"{error_message}", dash.no_update, dash.no_update
+
 
     @dash_app.callback(
         [
@@ -744,50 +617,62 @@ def register_callbacks(dash_app):
         response = requests.post(f'http://127.0.0.1:5000/api/delete_term/{term_name}')
 
         if response.status_code == 200:
-            terms_list, figure = update_terms_list_and_figure(variable_name,var_type)
-            return terms_list, False, f"Term '{term_name}' successfully eliminated!", figure, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+            return (
+                terms_list, False, f"Term '{term_name}' successfully eliminated!", figure,
+                dash.no_update, dash.no_update, dash.no_update,
+                dash.no_update, dash.no_update, dash.no_update,
+                count
+            )
         else:
-            return dash.no_update, True, f"Error in term deletion: {response.json().get('error', 'Unknown Error')}", dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+            return (
+                dash.no_update, True,
+                f"Error in term deletion: {response.json().get('error', 'Unknown Error')}",
+                dash.no_update, dash.no_update, dash.no_update,
+                dash.no_update, dash.no_update, dash.no_update,
+                dash.no_update, dash.no_update
+            )
 
-    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None):
+    def modify_term(open_type, var_type, variable_name, domain_min, domain_max, function_type, term_name, param_a, param_b, param_c, param_d, param_mean, param_sigma, defuzzy_type=None, selected_term=None):
         """Modifica un termine fuzzy esistente e aggiorna grafico e lista.""" 
         try:
             domain_min = int(domain_min)
             domain_max = int(domain_max)
         except (ValueError, TypeError):
-            return dash.no_update, True, "Domain values must be numbers.", dash.no_update
+            return dash.no_update, True, "The Domain values must be numbers.", dash.no_update, dash.no_update
+
+        if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
+            return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update, dash.no_update
 
         if domain_min > domain_max:
-            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.", dash.no_update
+            return dash.no_update, True, "The minimum domain cannot be greater than the maximum domain.", dash.no_update, dash.no_update
 
         params = {}
         if function_type == 'Triangolare':
             params = {'a': param_a, 'b': param_b, 'c': param_c}
-            
-        if function_type == 'Triangolare-open':
+        elif function_type == 'Triangolare-open':
             if open_type == 'left':
                 params = {'a': param_a, 'b': param_a, 'c': param_c}
             elif open_type == 'right':
                 params = {'a': param_a, 'b': param_c, 'c': param_c}
-
-        if function_type == 'Gaussian':
+        elif function_type == 'Gaussian':
             params = {'mean': param_mean, 'sigma': param_sigma}
-            
         elif function_type == 'Gaussian-open':
             params = {'mean': param_mean, 'sigma': param_sigma}
-
-        if function_type == 'Trapezoidale':
+        elif function_type == 'Trapezoidale':
             params = {'a': param_a, 'b': param_b, 'c': param_c, 'd': param_d}
-            
         elif function_type == 'Trapezoidale-open':
             if open_type == 'left':
                 params = {'a': param_a, 'b': param_a, 'c': param_c, 'd': param_d}
             elif open_type == 'right':
                 params = {'a': param_a, 'b': param_b, 'c': param_d, 'd': param_d}
+        elif function_type == 'Classification':
+            params = {}
 
-        is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
-        if not is_valid:
-            return dash.no_update, True, error_message, dash.no_update
+        if function_type != 'Classification':
+            is_valid, error_message = validate_params(open_type, params, domain_min, domain_max, function_type)
+            if not is_valid:
+                return dash.no_update, True, error_message, dash.no_update, dash.no_update
 
         payload = {
             'term_name': term_name,
@@ -798,18 +683,22 @@ def register_callbacks(dash_app):
             'params': params
         }
 
-        if var_type == "input":
+        if function_type and 'open' in function_type and open_type:
+            payload['open_type'] = open_type
+
+        if var_type == "output" and defuzzy_type:
             payload['defuzzy_type'] = defuzzy_type
 
         headers = {'Content-Type': 'application/json'}
-        response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{term_name}', json=payload)
+        response = requests.put(f'http://127.0.0.1:5000/api/modify_term/{selected_term}', json=payload)
 
         if response.status_code == 201:
-            terms_list, figure = update_terms_list_and_figure(variable_name, var_type)
-            return terms_list, False, "Term successfully modified", figure
+            terms_list, figure, count = update_terms_list_and_figure(variable_name, var_type)
+            return terms_list, False, "Term successfully modified!", figure, count
         else:
-            error_message = response.json().get('error', 'Unknown Error')
-            return dash.no_update, True, f"{error_message}", dash.no_update
+            error_message = response.json().get('error', 'Unknown error')
+            return dash.no_update, True, f"{error_message}", dash.no_update, dash.no_update
+
 
         
     def update_terms_list_and_figure(variable_name, var_type):
@@ -830,38 +719,38 @@ def register_callbacks(dash_app):
                     if var_type == 'input' and variable_name in input_variables:
                         variable_data = input_variables[variable_name]
                         for term in variable_data['terms']:
-                            term_name = term['term_name']
-                            x = term['x']
-                            y = term['y']
+                            term_name = term.get('term_name', '')
+                            x = term.get('x')
+                            y = term.get('y')
+                            
                             terms_list.append(
                                 dbc.ListGroupItem(
                                     term_name,
                                     id={'type': 'term-item', 'index': term_name},
                                     n_clicks=0,
-                                    style={
-                                        'cursor': 'pointer',
-                                    }
+                                    style={'cursor': 'pointer'}
                                 )
                             )
-                            input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+                            if x is not None and y is not None:
+                                input_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
 
                     elif var_type == 'output' and variable_name in output_variables:
                         variable_data = output_variables[variable_name]
                         for term in variable_data['terms']:
-                            term_name = term['term_name']
-                            x = term['x']
-                            y = term['y']
+                            term_name = term.get('term_name', '')
+                            x = term.get('x')
+                            y = term.get('y')
+
                             terms_list.append(
                                 dbc.ListGroupItem(
                                     term_name,
                                     id={'type': 'term-item', 'index': term_name},
                                     n_clicks=0,
-                                    style={
-                                        'cursor': 'pointer',
-                                    }
+                                    style={'cursor': 'pointer'}
                                 )
                             )
-                            output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
+                            if x is not None and y is not None:
+                                output_data.append(go.Scatter(x=x, y=y, mode='lines', name=term_name))
 
                     if var_type == 'input':
                         combined_figure = {
@@ -902,7 +791,6 @@ def register_callbacks(dash_app):
                                     'gridwidth': 1,    
                                     'gridcolor': 'lightgray',  
                                     'dtick': 0.1  
-
                                 }
                             )
                         }
@@ -916,14 +804,173 @@ def register_callbacks(dash_app):
                             )
                         }
 
-                    return terms_list, combined_figure
+                    return terms_list, combined_figure, len(variable_data['terms'])
                 else:
-                    return [html.Li("Error during the recovery of terms.")], dash.no_update
+                    return [html.Li("Error during the recovery of terms.")], dash.no_update, 0
             except Exception as e:
-                return [html.Li(f"Error during data recovery: {str(e)}")], dash.no_update
+                return [html.Li(f"Error during data recovery: {str(e)}")], dash.no_update, 0
         else:
-            return [], dash.no_update
+            return [], dash.no_update, 0
 
+
+    #Classificazione
+    @dash_app.callback(
+        Output("classification-warning-modal", "is_open"),
+        Input("classification-checkbox", "value"),
+        State("classification-confirmed", "data")
+    )
+    def show_classification_modal(value, confirmed):
+        if value and "Classification" in value:
+            if not confirmed or confirmed is None:
+                return True
+        return False
+
+    @dash_app.callback(
+        Output("classification-confirmed", "data"),
+        Input("url", "pathname"),
+        prevent_initial_call=True
+    )
+    def reset_classification_confirmation(pathname):
+        if pathname == "/output":
+            return False
+        raise dash.exceptions.PreventUpdate
+
+
+    @dash_app.callback(
+    [
+        Output("classification-checkbox", "value", allow_duplicate=True),
+        Output("message", "children", allow_duplicate=True),
+        Output("terms-list", "children", allow_duplicate=True),
+        Output("graph", "figure", allow_duplicate=True),
+        Output("classification-warning-modal", "is_open", allow_duplicate=True),
+        Output("classification-confirmed", "data", allow_duplicate=True)  
+    ],
+    [
+        Input("confirm-classification", "n_clicks"),
+        Input("cancel-classification", "n_clicks")
+    ],
+    prevent_initial_call=True
+    )
+    def handle_classification_change(confirm_click, cancel_click):
+        """Gestisce la conferma o l'annullamento della modalità Classification.""" 
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            raise dash.exceptions.PreventUpdate
+
+        triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
+
+        if triggered_id == "confirm-classification":
+            try:
+                response = requests.post("http://127.0.0.1:5000/api/clear_output")
+                if response.status_code == 200:
+                    return (
+                        ["Classification"],  
+                        "Output data has been cleared.",
+                        [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})],
+                        {},  
+                        False,  
+                        True   
+                    )
+                else:
+                    return (
+                        ["Classification"],
+                        f"{response.json().get('error', 'Unknown error')}",
+                        dash.no_update,
+                        dash.no_update,
+                        False,
+                        False
+                    )
+            except Exception as e:
+                return (
+                    ["Classification"],
+                    f"Error connecting to the backend: {e}",
+                    dash.no_update,
+                    dash.no_update,
+                    False,
+                    False
+                )
+
+        elif triggered_id == "cancel-classification":
+            return (
+                [], "", dash.no_update, dash.no_update, False, False
+            )
+
+        raise dash.exceptions.PreventUpdate
+
+    @dash_app.callback(
+        Output("classification-counter", "style"),
+        Output("classification-counter", "children"),
+        Input("classification-checkbox", "value"),
+        Input("classification-term-count", "data")
+    )
+    def update_classification_counter(classification_value, term_count):
+        """Aggiorna e mostra il contatore dei termini in modalità Classification.""" 
+        if classification_value and "Classification" in classification_value:
+            return {"display": "block"}, f"Classification Terms Created: {term_count}"
+        return {"display": "none"}, ""
+
+    @dash_app.callback(
+        Output('url', 'pathname'),
+        Input("classification-checkbox", "value"),
+        State("classification-confirmed", "data"),
+        prevent_initial_call=True
+    )
+    def handle_classification_redirect(checkbox_value, confirmed):
+        if checkbox_value and "Classification" in checkbox_value:
+            if confirmed:
+                return "/classification"
+            else:
+                raise dash.exceptions.PreventUpdate 
+        return "/output"
+    
+    @dash_app.callback(
+        Output("terms-list", "children"),
+        Output("classification-term-count", "data"),
+        Output("variable-name", "value"),
+        Input("url", "pathname"),
+        prevent_initial_call=True
+    )
+    def load_terms_on_classification(pathname):
+        if pathname != "/classification":
+            raise dash.exceptions.PreventUpdate
+
+        try:
+            response = requests.get("http://127.0.0.1:5000/api/get_terms")
+            if response.status_code != 200:
+                return [dbc.ListGroupItem("Error loading terms", style={"textAlign": "center"})], 0, ""
+
+            data = response.json()
+            output_data = data.get("output", {})
+
+            if not output_data:
+                return [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})], 0, ""
+
+            # Prendi il nome della variabile output (ce n’è solo una in Classification)
+            variable_name = next(iter(output_data))
+            terms = output_data[variable_name].get("terms", [])
+            count = len(terms)
+
+            if not terms:
+                return [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})], 0, variable_name
+
+            term_items = [
+                dbc.ListGroupItem(
+                    term["term_name"],
+                    id={'type': 'term-item', 'index': term["term_name"]},
+                    n_clicks=0,
+                    style={'cursor': 'pointer'}
+                )
+                for term in terms
+            ]
+
+            return term_items, count, variable_name
+
+        except Exception as e:
+            return [dbc.ListGroupItem(f"Error: {e}", style={"textAlign": "center"})], 0, ""
+
+
+
+#Rules
     @dash_app.callback(
         Output("rules-container", "children"),
         Input("create-rule", "n_clicks"),

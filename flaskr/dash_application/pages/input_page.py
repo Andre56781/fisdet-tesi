@@ -11,6 +11,7 @@ def layout() -> html.Div:
         dcc.Store(id='open-type'),
         dcc.Store(id='selected-term'),
         dcc.Store(id='defuzzy-type', data="default_value"),
+        dcc.Store(id='classification-term-count'),
 
         Modal(
             id="variable-modal",
