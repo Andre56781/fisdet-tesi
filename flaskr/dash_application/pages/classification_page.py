@@ -66,7 +66,7 @@ def layout() -> html.Div:
 
                     html.Div(
                         dbc.Button(
-                            [html.I(className="fas fa-plus mr-2"), " Create Term"],
+                            [html.I(className="fas fa-plus mr-2"), " Create Class"],
                             id='create-term-btn',
                             color="success",
                             className="action-btn"
@@ -89,7 +89,7 @@ def layout() -> html.Div:
 
                         dbc.Col([
                             dbc.Card([
-                                dbc.CardHeader("Terms List"),
+                                dbc.CardHeader("Class List"),
                                 dbc.CardBody(
                                     dbc.ListGroup(
                                         id='terms-list',

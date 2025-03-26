@@ -918,7 +918,7 @@ def register_callbacks(dash_app):
     def update_classification_counter(classification_value, term_count):
         """Aggiorna e mostra il contatore dei termini in modalità Classification.""" 
         if classification_value and "Classification" in classification_value:
-            return {"display": "block"}, f"Classification Terms Created: {term_count}"
+            return {"display": "block"}, f"Classification Class Created: {term_count}"
         return {"display": "none"}, ""
 
     @dash_app.callback(
