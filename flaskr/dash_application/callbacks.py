@@ -1410,8 +1410,86 @@ def register_callbacks(dash_app):
 
         return result
 
+#Plot Inferenza
+    @dash_app.callback(
+        Output("inference-plot-modal", "is_open"),
+        Output("inference-plot", "figure"),
+        Input("visualize-plot", "n_clicks"),
+        Input("close-inference-plot", "n_clicks"),
+        State("inference-plot-modal", "is_open"),
+        State("inference-inputs", "children"),
+        prevent_initial_call=True
+    )
+    def toggle_inference_modal(open_click, close_click, is_open, input_children):
+        if ctx.triggered_id == "close-inference-plot":
+            return False, ctx.no_update
 
+        inputs_dict = {}
 
+        row = input_children[0]
+        for col in row["props"]["children"]:
+            input_component = col["props"]["children"][1]
+            input_id = input_component["props"]["id"]
+            input_value = input_component["props"].get("value")
+            if input_value is not None:
+                var_name = input_id.replace("-input", "")
+                inputs_dict[var_name] = float(input_value)
+
+        if not inputs_dict:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="Nessun input fornito.",
+                xref="paper", yref="paper", showarrow=False,
+                font=dict(size=18, color="red")
+            )
+            return True, fig
+
+        response = requests.post("http://127.0.0.1:5000/api/infer", json={"inputs": inputs_dict})
+        if response.status_code != 200:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="Errore durante l'inferenza.",
+                xref="paper", yref="paper", showarrow=False,
+                font=dict(size=16, color="red")
+            )
+            return True, fig
+
+        data = response.json()
+        rule_outputs = data.get("rule_outputs", [])
+
+        if not rule_outputs:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="Nessun risultato di inferenza disponibile.",
+                xref="paper", yref="paper", showarrow=False,
+                font=dict(size=16)
+            )
+            return True, fig
+
+        # Organizza per output_variable
+        from collections import defaultdict
+        grouped = defaultdict(list)
+        for item in rule_outputs:
+            key = item["output_variable"]
+            grouped[key].append(item)
+
+        fig = go.Figure()
+
+        for output_var, terms in grouped.items():
+            x = [t["output_term"] for t in terms]
+            y = [t["activation"] for t in terms]
+            fig.add_trace(go.Bar(x=x, y=y, name=output_var))
+
+        fig.update_layout(
+            title="Attivazione dei Termini di Output",
+            xaxis_title="Termini di Output",
+            yaxis_title="Livello di Attivazione",
+            yaxis=dict(range=[0, 1]),
+            barmode='group',
+            template="plotly_white"
+        )
+
+        return True, fig
 
 
 #Report_page callbakcs

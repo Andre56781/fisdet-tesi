@@ -11,9 +11,9 @@ def layout() -> html.Div:
         return html.Div("Error: The key ‘terms’ is absent from the returned data.", className="text-danger")
 
     terms = data["terms"]
-    input_controls = []
+    inference_input_ids = [f"{var_name}-input" for var_name in terms.get("input", {})]
 
-    # Costruzione input
+    input_controls = []
     for var_name, var_data in terms.get("input", {}).items():
         domain = var_data.get("domain")
         if not domain:
@@ -45,52 +45,30 @@ def layout() -> html.Div:
         terms_list = var_data.get("terms", [])
         is_classification = terms_list and terms_list[0].get("function_type") == "Classification"
 
-        if is_classification:
-            output_controls.append(
-                dbc.Col(
-                    dbc.Card([
-                        dbc.CardHeader(
-                            f"Classification Result: {var_name}",
-                            className="bg-info text-white fw-medium py-2 text-center"  # Header centrato
+        output_controls.append(
+            dbc.Col(
+                dbc.Card([
+                    dbc.CardHeader(
+                        f"{'Classification Result' if is_classification else 'Result'}: {var_name}",
+                        className=f"{'bg-info text-white' if is_classification else 'bg-primary text-white'} fw-medium py-2 text-center"
+                    ),
+                    dbc.CardBody([
+                        html.H2(
+                            "Classe" if is_classification else "0",
+                            id={"type": "classification-output", "variable": var_name} if is_classification else {"type": "output", "variable": var_name},
+                            className=f"card-text text-center {'text-info' if is_classification else 'text-primary'} mb-0",
+                            style={"fontSize": "2.5rem"}
                         ),
-                        dbc.CardBody([
-                            html.H2(
-                                "Classe",
-                                id={"type": "classification-output", "variable": var_name},
-                                className="card-text text-center text-info mb-0",
-                                style={"fontSize": "2.5rem"}
-                            ),
-                            html.H4(
-                                id=f"winner-term-{var_name}",
-                                className="text-center text-dark mt-3"
-                            )
-                        ])
-                    ], className="variable-card h-100 mx-auto"),
-                    md=6,
-                    className="pe-2" if idx % 2 == 0 else "ps-2"
-                )
+                        html.H4(
+                            id=f"winner-term-{var_name}",
+                            className="text-center text-dark mt-3"
+                        ) if is_classification else None
+                    ])
+                ], className="variable-card h-100 mx-auto"),
+                md=6,
+                className="pe-2" if idx % 2 == 0 else "ps-2"
             )
-        else:
-            output_controls.append(
-                dbc.Col(
-                    dbc.Card([
-                        dbc.CardHeader(
-                            f"Result {var_name}",
-                            className="bg-primary text-white fw-medium py-2 text-center"  # Header centrato
-                        ),
-                        dbc.CardBody(
-                            html.H2(
-                                "0",
-                                id={"type": "output", "variable": var_name},
-                                className="card-text text-center text-primary mb-0",
-                                style={"fontSize": "2.5rem"}
-                            )
-                        )
-                    ], className="variable-card h-100 mx-auto"),  # Card centrata
-                    md=6,
-                    className="pe-2" if idx % 2 == 0 else "ps-2"
-                )
-            )
+        )
 
     is_classification_global = any(
         terms_list and terms_list[0].get("function_type") == "Classification"
@@ -102,6 +80,7 @@ def layout() -> html.Div:
         dcc.Store(id='rule-memberships', data={}),
         dcc.Store(id='is-classification', data=is_classification_global),
         dcc.Store(id="winner-term-store", data={}),
+        dcc.Store(id="inference-input-ids", data=[f"{var}-input" for var in terms.get("input", {})]),
 
         html.Div(
             id="inference-content",
@@ -114,8 +93,7 @@ def layout() -> html.Div:
                             dbc.CardHeader([
                                 html.H4("Test Inference Fuzzy", className="card-title mb-0"),
                                 dbc.Badge("Simulation", color="warning", className="ml-2")
-                            ],
-                            className="card-header-gradient d-flex justify-content-between align-items-center"),
+                            ], className="card-header-gradient d-flex justify-content-between align-items-center"),
                             dbc.CardBody([
                                 dbc.Form([
                                     html.Div(
@@ -125,29 +103,44 @@ def layout() -> html.Div:
                                     html.Div(
                                         dbc.Button([
                                             html.I(className="fas fa-calculator mr-2"), " Calculate Inference"
-                                            ],
-                                        id="start-inference",
-                                        color="primary",
-                                        className="action-btn",
-                                        style={"width": "290px"}),
+                                        ],
+                                            id="start-inference",
+                                            color="primary",
+                                            className="action-btn",
+                                            style={"width": "290px"}),
                                         className="d-flex justify-content-center mb-4"
                                     ),
                                     html.Div(
                                         dbc.Button([
                                             html.I(className="fas fa-chart-line mr-2"), " Visualize Plot"
-                                            ],
-                                        id="visualize-plot",
-                                        color="success",
-                                        className="action-btn",
-                                        style={"width": "250px"}),
+                                        ],
+                                            id="visualize-plot",
+                                            color="success",
+                                            className="action-btn",
+                                            style={"width": "250px"}),
                                         className="d-flex justify-content-center mb-4"
+                                    ),
+                                    dbc.Modal(
+                                        id="inference-plot-modal",
+                                        is_open=False,
+                                        size="xl",
+                                        centered=True,
+                                        children=[
+                                            dbc.ModalHeader("Inference Result"),
+                                            dbc.ModalBody(
+                                                dcc.Graph(id="inference-plot")
+                                            ),
+                                            dbc.ModalFooter(
+                                                dbc.Button("Close", id="close-inference-plot", color="secondary")
+                                            )
+                                        ]
                                     ),
                                     html.Div(
                                         id="rule-membership-section",
                                         children=[
                                             html.H5(
-                                                "Activation of Rules", 
-                                                className="mb-3 text-center", 
+                                                "Activation of Rules",
+                                                className="mb-3 text-center",
                                                 style={"color": "#2c3e50"}
                                             ),
                                             dbc.Row([
