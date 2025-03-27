@@ -6,9 +6,9 @@ def layout() -> html.Div:
     data = fetch_data()
 
     if not data:
-        return html.Div("Errore: nessun dato restituito dalla funzione fetch_data().", className="text-danger")
+        return html.Div("Error: No data returned by the fetch_data() function.", className="text-danger")
     if "terms" not in data:
-        return html.Div("Errore: la chiave 'terms' è assente nei dati restituiti.", className="text-danger")
+        return html.Div("Error: The key ‘terms’ is absent from the returned data.", className="text-danger")
 
     terms = data["terms"]
     input_controls = []
@@ -21,7 +21,12 @@ def layout() -> html.Div:
         domain_min, domain_max = domain
         input_controls.append(
             dbc.Col([
-                dbc.Label(f"{var_name} ({domain_min}-{domain_max})", html_for=f"{var_name}-input", className="mb-2"),
+                dbc.Label(
+                    f"{var_name} ({domain_min}-{domain_max})", 
+                    html_for=f"{var_name}-input", 
+                    className="mb-2 text-center",  # Label centrata
+                    style={"width": "100%"}
+                ),
                 dbc.Input(
                     id=f"{var_name}-input",
                     type="number",
@@ -46,10 +51,11 @@ def layout() -> html.Div:
                     dbc.Card([
                         dbc.CardHeader(
                             f"Classification Result: {var_name}",
-                            className="bg-info text-white fw-medium py-2"
+                            className="bg-info text-white fw-medium py-2 text-center"  # Header centrato
                         ),
                         dbc.CardBody([
-                            html.H2("Classe",
+                            html.H2(
+                                "Classe",
                                 id={"type": "classification-output", "variable": var_name},
                                 className="card-text text-center text-info mb-0",
                                 style={"fontSize": "2.5rem"}
@@ -59,7 +65,7 @@ def layout() -> html.Div:
                                 className="text-center text-dark mt-3"
                             )
                         ])
-                    ], className="variable-card h-100"),
+                    ], className="variable-card h-100 mx-auto"),  # Card centrata
                     md=6,
                     className="pe-2" if idx % 2 == 0 else "ps-2"
                 )
@@ -70,16 +76,17 @@ def layout() -> html.Div:
                     dbc.Card([
                         dbc.CardHeader(
                             f"Result {var_name}",
-                            className="bg-primary text-white fw-medium py-2"
+                            className="bg-primary text-white fw-medium py-2 text-center"  # Header centrato
                         ),
                         dbc.CardBody(
-                            html.H2("0",
+                            html.H2(
+                                "0",
                                 id={"type": "output", "variable": var_name},
                                 className="card-text text-center text-primary mb-0",
                                 style={"fontSize": "2.5rem"}
                             )
                         )
-                    ], className="variable-card h-100"),
+                    ], className="variable-card h-100 mx-auto"),  # Card centrata
                     md=6,
                     className="pe-2" if idx % 2 == 0 else "ps-2"
                 )
@@ -128,7 +135,11 @@ def layout() -> html.Div:
                                     html.Div(
                                         id="rule-membership-section",
                                         children=[
-                                            html.H5("Activation of Rules", className="mb-3 text-center", style={"color": "#2c3e50"}),
+                                            html.H5(
+                                                "Activation of Rules", 
+                                                className="mb-3 text-center", 
+                                                style={"color": "#2c3e50"}
+                                            ),
                                             dbc.Row([
                                                 dbc.Col(
                                                     html.Div(id="rules-list-membership", className="rule-membership-container"),
@@ -144,9 +155,14 @@ def layout() -> html.Div:
                                                 )
                                             ])
                                         ],
-                                        style={"backgroundColor": "#f8f9fa", "borderRadius": "10px", "padding": "1.5rem", "marginBottom": "2rem"}
+                                        style={
+                                            "backgroundColor": "#f8f9fa", 
+                                            "borderRadius": "10px", 
+                                            "padding": "1.5rem", 
+                                            "marginBottom": "2rem"
+                                        }
                                     ),
-                                    dbc.Row(output_controls, className="g-4")
+                                    dbc.Row(output_controls, className="g-4 justify-content-center")  # Output centrati
                                 ], style={"padding": "0 2rem"})
                             ])
                         ], className="main-card"),

@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 
 def layout() -> html.Div:
     return html.Div([
+        # Stores e componenti nascosti
         dcc.Store(id='classification-term-count', data=0),
         dcc.Store(id='classification-confirmed'),
         dcc.Store(id='var-type-store', data='output'),
@@ -20,106 +21,114 @@ def layout() -> html.Div:
         dcc.Input(id='domain-max', type='number', value='1', style={'display': 'none'}),
         dcc.Dropdown(id='defuzzy-type', options=[], style={'display': 'none'}),
         dcc.RadioItems(id='open-type-radio', options=[], style={'display': 'none'}),
-        dcc.Dropdown(id='function-type', options=['Classification'],value='Classification',  style={'display': 'none'}),
+        dcc.Dropdown(id='function-type', options=['Classification'], value='Classification', style={'display': 'none'}),
 
-            dbc.Card([
-                dbc.CardHeader([
-                    html.H4("Classification Mode", className="card-title")
-                ], className="card-header-gradient d-flex justify-content-between align-items-center"
-                ),
-                dbc.CardBody([
-                    dbc.Row([
-                        dbc.Col([
-                            dbc.Label("Variable Name", html_for="variable-name", className="mb-0"),
-                            dbc.Input(
-                                id='variable-name',
-                                type='text',
-                                value='',
-                                pattern="^[a-zA-Z0-9]*$",
-                                className="input-field",
-                                debounce=True,
-                                required=True
+        # Main Content Container centrato e con styling coerente
+        html.Div(
+            id="main-content",
+            className="content",
+            style={"display": "block", "position": "relative"},
+            children=[
+                dbc.Row(
+                    dbc.Col(
+                        dbc.Card([
+                            dbc.CardHeader(
+                                html.H4("Classification Mode", className="card-title mb-0"),
+                                className="card-header-gradient d-flex justify-content-between align-items-center"
                             ),
-                            dbc.Checklist(
-                                id='classification-checkbox',
-                                options=[{'label': 'Classification', 'value': 'Classification'}],
-                                value=['Classification'],
-                                inline=True,
-                                switch=True,
-                                className="pt-2"
-                            )
-                        ], md=6),
-
-                        dbc.Col([
-                            dbc.Label("Class Name", className="mb-0"),
-                            dbc.Input(
-                                id='term-name',
-                                type='text',
-                                value='',
-                                pattern="^[a-zA-Z0-9]*$",
-                                className="input-field",
-                                debounce=True,
-                                required=True
-                            )
-                        ], md=6)
-                    ], className="mb-3"),
-
-                    html.Div(
-                        dbc.Button(
-                            [html.I(className="fas fa-plus mr-2"), " Create Class"],
-                            id='create-term-btn',
-                            color="success",
-                            className="action-btn"
-                        ),
-                        className="d-flex justify-content-center pt-2"
-                    ),
-
-                    html.Div(
-                        id="classification-counter",
-                        className="text-center text-info mt-2",
-                        style={"display": "none"}
-                    ),
-
-                    dbc.Row([
-                        dbc.Col([
-                            html.Div(id="graph-container", children=[
-                                dcc.Graph(id='graph', className="custom-graph", style={"display": "none"})
-                            ])
-                        ], md=8),
-
-                        dbc.Col([
-                            dbc.Card([
-                                dbc.CardHeader("Class List"),
-                                dbc.CardBody(
-                                    dbc.ListGroup(
-                                        id='terms-list',
-                                        children=[
-                                            dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})
-                                        ]
-                                    )
+                            dbc.CardBody([
+                                dbc.Row([
+                                    dbc.Col([
+                                        dbc.Label("Variable Name", html_for="variable-name", className="mb-0 text-center", style={"width": "100%"}),
+                                        dbc.Input(
+                                            id='variable-name',
+                                            type='text',
+                                            value='',
+                                            pattern="^[a-zA-Z0-9]*$",
+                                            className="input-field",
+                                            debounce=True,
+                                            required=True
+                                        ),
+                                        dbc.Checklist(
+                                            id='classification-checkbox',
+                                            options=[{'label': 'Classification', 'value': 'Classification'}],
+                                            value=['Classification'],
+                                            inline=True,
+                                            switch=True,
+                                            className="pt-2"
+                                        )
+                                    ], md=6),
+                                    dbc.Col([
+                                        dbc.Label("Class Name", className="mb-0 text-center", style={"width": "100%"}),
+                                        dbc.Input(
+                                            id='term-name',
+                                            type='text',
+                                            value='',
+                                            pattern="^[a-zA-Z0-9]*$",
+                                            className="input-field",
+                                            debounce=True,
+                                            required=True
+                                        )
+                                    ], md=6)
+                                ], className="mb-3"),
+                                html.Div(
+                                    dbc.Button(
+                                        [html.I(className="fas fa-plus mr-2"), " Create Class"],
+                                        id='create-term-btn',
+                                        color="success",
+                                        className="action-btn"
+                                    ),
+                                    className="d-flex justify-content-center pt-2"
                                 ),
-                                dbc.CardFooter(
-                                    dbc.ButtonGroup([
-                                        dbc.Button("Modify", id="modify-term-btn", color="primary", disabled=True),
-                                        dbc.Button("Delete", id="delete-term-btn", color="danger", disabled=True)
-                                    ], size="sm", className="d-flex justify-content-end")
-                                )
+                                html.Div(
+                                    id="classification-counter",
+                                    className="text-center text-info mt-2",
+                                    style={"display": "none"}
+                                ),
+                                dbc.Row([
+                                    dbc.Col([
+                                        html.Div(id="graph-container", children=[
+                                            dcc.Graph(id='graph', className="custom-graph", style={"display": "none"})
+                                        ])
+                                    ], md=8),
+                                    dbc.Col([
+                                        dbc.Card([
+                                            dbc.CardHeader("Class List", className="text-center"),
+                                            dbc.CardBody(
+                                                dbc.ListGroup(
+                                                    id='terms-list',
+                                                    children=[
+                                                        dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})
+                                                    ]
+                                                )
+                                            ),
+                                            dbc.CardFooter(
+                                                dbc.ButtonGroup([
+                                                    dbc.Button("Modify", id="modify-term-btn", color="primary", disabled=True),
+                                                    dbc.Button("Delete", id="delete-term-btn", color="danger", disabled=True)
+                                                ], size="sm", className="d-flex justify-content-end")
+                                            )
+                                        ], className="mx-auto")
+                                    ], md=4)
+                                ], className="mt-4"),
+                                html.Div(id='message', style={'display': 'none'}),
+                                dbc.Modal(
+                                    id="error-modal",
+                                    is_open=False,
+                                    size="md",
+                                    children=[
+                                        dbc.ModalHeader("Errore"),
+                                        dbc.ModalBody(id="error-modal-body"),
+                                    ],
+                                    centered=True,
+                                    backdrop="static"
+                                ),
                             ])
-                        ], md=4)
-                    ], className="mt-4"),
-                    html.Div(id='message', style={'display': 'none'}),
-
-                    dbc.Modal(
-                        id="error-modal",
-                        is_open=False,
-                        size="md",
-                        children=[
-                            dbc.ModalHeader("Errore"),
-                            dbc.ModalBody(id="error-modal-body"),
-                        ],
-                        centered=True,
-                        backdrop="static"
-                    ),
-                ])
-            ])
-        ])
+                        ], className="main-card mx-auto", style={"maxWidth": "900px", "boxShadow": "0 4px 8px rgba(0,0,0,0.1)"}),
+                        width={"size": 10, "offset": 1},
+                        className="py-4"
+                    )
+                )
+            ]
+        )
+    ])
