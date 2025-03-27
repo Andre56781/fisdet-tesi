@@ -65,7 +65,7 @@ def layout() -> html.Div:
                                 className="text-center text-dark mt-3"
                             )
                         ])
-                    ], className="variable-card h-100 mx-auto"),  # Card centrata
+                    ], className="variable-card h-100 mx-auto"),
                     md=6,
                     className="pe-2" if idx % 2 == 0 else "ps-2"
                 )
@@ -125,11 +125,21 @@ def layout() -> html.Div:
                                     html.Div(
                                         dbc.Button([
                                             html.I(className="fas fa-calculator mr-2"), " Calculate Inference"
-                                        ],
+                                            ],
                                         id="start-inference",
                                         color="primary",
                                         className="action-btn",
-                                        style={"width": "300px"}),
+                                        style={"width": "290px"}),
+                                        className="d-flex justify-content-center mb-4"
+                                    ),
+                                    html.Div(
+                                        dbc.Button([
+                                            html.I(className="fas fa-chart-line mr-2"), " Visualize Plot"
+                                            ],
+                                        id="visualize-plot",
+                                        color="success",
+                                        className="action-btn",
+                                        style={"width": "250px"}),
                                         className="d-flex justify-content-center mb-4"
                                     ),
                                     html.Div(
