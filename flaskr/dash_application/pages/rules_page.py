@@ -39,7 +39,7 @@ def layout() -> html.Div:
                                     color="primary",
                                     className="action-btn"
                                 ),
-                                className="d-flex justify-content-center pt-3"
+                                className="d-flex justify-content-center pt-3 mb-3"
                             ),
                             # Contenitore dei THEN centrato
                             dbc.Row([
