@@ -1438,7 +1438,7 @@ def register_callbacks(dash_app):
         if not inputs_dict:
             fig = go.Figure()
             fig.add_annotation(
-                text="Nessun input fornito.",
+                text="No input provided.",
                 xref="paper", yref="paper", showarrow=False,
                 font=dict(size=18, color="red")
             )
@@ -1448,7 +1448,7 @@ def register_callbacks(dash_app):
         if response.status_code != 200:
             fig = go.Figure()
             fig.add_annotation(
-                text="Errore durante l'inferenza.",
+                text="Error during inference.",
                 xref="paper", yref="paper", showarrow=False,
                 font=dict(size=16, color="red")
             )
@@ -1460,7 +1460,7 @@ def register_callbacks(dash_app):
         if not rule_outputs:
             fig = go.Figure()
             fig.add_annotation(
-                text="Nessun risultato di inferenza disponibile.",
+                text="No inference results available.",
                 xref="paper", yref="paper", showarrow=False,
                 font=dict(size=16)
             )
@@ -1481,9 +1481,9 @@ def register_callbacks(dash_app):
             fig.add_trace(go.Bar(x=x, y=y, name=output_var))
 
         fig.update_layout(
-            title="Attivazione dei Termini di Output",
-            xaxis_title="Termini di Output",
-            yaxis_title="Livello di Attivazione",
+            title="Activation of Output Terms",
+            xaxis_title="Output Terms",
+            yaxis_title="Activation Level",
             yaxis=dict(range=[0, 1]),
             barmode='group',
             template="plotly_white"
