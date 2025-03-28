@@ -165,7 +165,7 @@ def layout() -> html.Div:
                                             "marginBottom": "2rem"
                                         }
                                     ),
-                                    dbc.Row(output_controls, className="g-4 justify-content-center")  # Output centrati
+                                    dbc.Row(output_controls, className="g-4 justify-content-center") 
                                 ], style={"padding": "0 2rem"})
                             ])
                         ], className="main-card"),
