@@ -97,7 +97,7 @@ def layout() -> html.Div:
 
                             dbc.Row([
                                 dbc.Col([
-                                    dbc.Label("Defuzzyfication Method", className="mb-0"),
+                                    dbc.Label("Defuzzification Method", className="mb-0"),
                                     dcc.Dropdown(
                                         id='defuzzy-type',
                                         options=[
