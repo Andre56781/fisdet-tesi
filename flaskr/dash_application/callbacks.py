@@ -155,6 +155,50 @@ def register_callbacks(dash_app):
         return current_index, back_button_style, next_button_style
 
     @dash_app.callback(
+        [
+            Output('variable-name', 'value', allow_duplicate=True),
+            Output('domain-min', 'value', allow_duplicate=True),
+            Output('domain-max', 'value', allow_duplicate=True),
+            Output('function-type', 'value', allow_duplicate=True),
+            Output('term-name', 'value', allow_duplicate=True),
+            Output('create-term-btn', 'children', allow_duplicate=True),
+            Output('selected-term', 'data', allow_duplicate=True),
+            Output('classification-term-count', 'data', allow_duplicate=True),
+            Output('terms-list', 'children', allow_duplicate=True),
+            Output('graph', 'figure', allow_duplicate=True)
+        ],
+        Input('current-index', 'data'),
+        prevent_initial_call=True
+    )
+    def reset_static_fields(current_index):
+        default_terms = [dbc.ListGroupItem("No Terms Present", style={"textAlign": "center"})]
+        empty_graph = {
+            'data': [],
+            'layout': go.Layout(
+                title='Fuzzy Set',
+                xaxis={'title': 'Domain'},
+                yaxis={'title': 'Degree of membership'}
+            )
+        }
+        return '', 0, '', None, '', 'Create term', None, 0, default_terms, empty_graph
+
+    @dash_app.callback(
+        [
+            Output('param-a', 'value', allow_duplicate=True),
+            Output('param-b', 'value', allow_duplicate=True),
+            Output('param-c', 'value', allow_duplicate=True),
+            Output('param-d', 'value', allow_duplicate=True),
+            Output('param-mean', 'value', allow_duplicate=True),
+            Output('param-sigma', 'value', allow_duplicate=True),
+        ],
+        [Input('function-type', 'value')],
+        prevent_initial_call=True
+    )
+    def reset_fuzzy_parameters(function_type):
+        return '', '', '', '', '', ''
+
+
+    @dash_app.callback(
         Output('open-type', 'value'),  
         Input('open-type-radio', 'value')  
     )
@@ -518,6 +562,9 @@ def register_callbacks(dash_app):
         except (ValueError, TypeError):
             return dash.no_update, True, "The Domain values must be numbers.", dash.no_update, dash.no_update
 
+        if not variable_name or not re.match(r"^[A-Za-z0-9_-]+$", variable_name):
+            return dash.no_update, True, "The variable name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update, dash.no_update
+        
         if not term_name or not re.match(r"^[A-Za-z0-9_-]+$", term_name):
             return dash.no_update, True, "The term name is blank or contains invalid characters. Use only letters, numbers, hyphens, and underscores.", dash.no_update, dash.no_update
 

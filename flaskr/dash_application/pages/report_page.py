@@ -8,7 +8,7 @@ def layout():
     data = fetch_data()
 
     if not data:
-        return html.Div("Error while loading data.", className="text-danger")
+        return html.Div("Error: no data, please add a Fuzzy set of inputs and outputs", className="text-danger")
 
     terms = data.get("terms", {})
     rules = data.get("rules", [])

@@ -6,7 +6,7 @@ def layout() -> html.Div:
     data = fetch_data()
 
     if not data:
-        return html.Div("Error: No data returned by the fetch_data() function.", className="text-danger")
+        return html.Div("Error: no data, please add a Fuzzy set of inputs and outputs", className="text-danger")
     if "terms" not in data:
         return html.Div("Error: The key ‘terms’ is absent from the returned data.", className="text-danger")
 
@@ -24,7 +24,7 @@ def layout() -> html.Div:
                 dbc.Label(
                     f"{var_name} ({domain_min}-{domain_max})", 
                     html_for=f"{var_name}-input", 
-                    className="mb-2 text-center",  # Label centrata
+                    className="mb-2 text-center",  
                     style={"width": "100%"}
                 ),
                 dbc.Input(
