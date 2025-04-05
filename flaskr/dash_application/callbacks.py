@@ -29,7 +29,7 @@ def register_callbacks(dash_app):
                     data = response.json()
                     return (
                         {
-                            "content": json.dumps(data, indent=4, ensure_ascii=False),
+                            "content": json.dumps(data, indent=4, ensure_ascii=False, sort_keys=False),
                             "filename": f"fis_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                         },
                         ""

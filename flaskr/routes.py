@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, Response
 import os
 from flaskr.file_handler import *
 import logging
@@ -659,16 +659,38 @@ def aggregate_and_defuzzify(terms_data, rule_outputs):
 
 
 
-
 #IMPORT/EXPORT
 @bp.route("/export_json", methods=["GET"])
 def export_json():
-    """Esporta tutti i dati della sessione corrente in formato JSON."""  
     try:
         data = load_data()
-        return jsonify(data), 200
+
+        ordered_data = {}
+
+        # 1. input
+        if "input" in data:
+            ordered_data["input"] = data["input"]
+
+        # 2. output
+        if "output" in data:
+            ordered_data["output"] = data["output"]
+
+        # 3. Rule0, Rule1, ..., RuleN (ordinati numericamente)
+        rules = {k: v for k, v in data.items() if k.startswith("Rule")}
+        sorted_rules = dict(sorted(rules.items(), key=lambda x: int(x[0].replace("Rule", ""))))
+        ordered_data.update(sorted_rules)
+
+        # Usa json.dumps per mantenere l’ordine
+        json_data = json.dumps(ordered_data, indent=4, ensure_ascii=False)
+
+        return Response(json_data, mimetype='application/json')
+
     except Exception as e:
-        return jsonify({"error": f"Error during export: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
+
+
+
+
 
 @bp.route("/import_json", methods=["POST"])
 def import_json():
