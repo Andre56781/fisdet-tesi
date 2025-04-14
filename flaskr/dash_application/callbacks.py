@@ -1333,10 +1333,12 @@ def register_callbacks(dash_app):
         if not input_variables or input_count >= len(input_variables):
             return current_inputs, input_count
 
+        new_label = "IF" if input_count == 0 else "AND"
+
         new_input = html.Div([
-            dbc.Label("IF", className="w-100 text-center mb-0"),
+            dbc.Label(new_label, className="w-100 text-center mb-0"),
             dcc.Dropdown(id={"type": "if-dropdown", "index": input_count}, placeholder="Select Input Variable", style={"width": "200px"}),
-            dbc.Label("Term", className="w-100 text-center mb-0"),
+            dbc.Label("TERM", className="w-100 text-center mb-0"),
             dcc.Dropdown(id={"type": "if-term-dropdown", "index": input_count}, placeholder="Select Term", style={"width": "200px"}),
         ], className="d-flex flex-column align-items-center border rounded p-2", style={"minWidth": "220px"})
 
